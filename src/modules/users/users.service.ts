@@ -1,9 +1,10 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -44,6 +45,70 @@ export class UsersService {
         });
 
         return this.userRepository.save(user);
+    }
+
+    /**
+     * Actualiza un usuario existente
+     * Basado en: update_usuario del modelo legacy PHP
+     * Si se envía password, se hashea; si no, se mantiene el actual
+     */
+    async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+        const user = await this.findById(id);
+
+        if (!user) {
+            throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+        }
+
+        // Si se envía un nuevo email, verificar que no esté en uso por otro usuario
+        if (updateUserDto.email && updateUserDto.email !== user.email) {
+            const existingUser = await this.findByEmail(updateUserDto.email);
+            if (existingUser && existingUser.id !== id) {
+                throw new ConflictException('El correo electrónico ya está en uso');
+            }
+        }
+
+        // Preparar datos de actualización
+        const updateData: Partial<User> = {
+            fechaModificacion: new Date(),
+        };
+
+        // Solo actualizar campos que se enviaron
+        if (updateUserDto.nombre !== undefined) {
+            updateData.nombre = updateUserDto.nombre;
+        }
+        if (updateUserDto.apellido !== undefined) {
+            updateData.apellido = updateUserDto.apellido;
+        }
+        if (updateUserDto.email !== undefined) {
+            updateData.email = updateUserDto.email;
+        }
+        if (updateUserDto.rolId !== undefined) {
+            updateData.rolId = updateUserDto.rolId;
+        }
+        if (updateUserDto.regionalId !== undefined) {
+            updateData.regionalId = updateUserDto.regionalId;
+        }
+        if (updateUserDto.cargoId !== undefined) {
+            updateData.cargoId = updateUserDto.cargoId;
+        }
+        if (updateUserDto.departamentoId !== undefined) {
+            updateData.departamentoId = updateUserDto.departamentoId;
+        }
+        if (updateUserDto.esNacional !== undefined) {
+            updateData.esNacional = updateUserDto.esNacional;
+        }
+        if (updateUserDto.cedula !== undefined) {
+            updateData.cedula = updateUserDto.cedula;
+        }
+
+        // Si se envía password, hashearlo (igual que en PHP legacy)
+        if (updateUserDto.password) {
+            updateData.password = await bcrypt.hash(updateUserDto.password, 10);
+        }
+
+        await this.userRepository.update(id, updateData);
+
+        return this.findById(id) as Promise<User>;
     }
 
     /**
@@ -94,5 +159,25 @@ export class UsersService {
             where: { departamentoId, estado: 1 },
             order: { nombre: 'ASC' },
         });
+    }
+
+    /**
+     * Elimina un usuario (soft delete)
+     * Basado en: delete_usuario del modelo legacy PHP
+     * No elimina físicamente, solo marca est=0 y fech_elim=NOW()
+     */
+    async delete(id: number): Promise<{ deleted: boolean; id: number }> {
+        const user = await this.findById(id);
+
+        if (!user) {
+            throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+        }
+
+        await this.userRepository.update(id, {
+            estado: 0,
+            fechaEliminacion: new Date(),
+        });
+
+        return { deleted: true, id };
     }
 }

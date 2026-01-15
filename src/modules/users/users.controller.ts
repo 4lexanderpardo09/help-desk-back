@@ -2,6 +2,8 @@ import {
     Controller,
     Get,
     Post,
+    Put,
+    Delete,
     Body,
     Param,
     ParseIntPipe,
@@ -11,6 +13,7 @@ import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -20,6 +23,21 @@ export class UsersController {
     @Post()
     async create(@Body() createUserDto: CreateUserDto): Promise<User> {
         return this.usersService.create(createUserDto);
+    }
+
+    @Put(':id')
+    async update(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() updateUserDto: UpdateUserDto,
+    ): Promise<User> {
+        return this.usersService.update(id, updateUserDto);
+    }
+
+    @Delete(':id')
+    async delete(
+        @Param('id', ParseIntPipe) id: number,
+    ): Promise<{ deleted: boolean; id: number }> {
+        return this.usersService.delete(id);
     }
 
     @Get()
