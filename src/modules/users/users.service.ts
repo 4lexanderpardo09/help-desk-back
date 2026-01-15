@@ -1,7 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -9,6 +11,40 @@ export class UsersService {
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
     ) { }
+
+    /**
+     * Crea un nuevo usuario
+     * Basado en: insert_usuario del modelo legacy PHP
+     */
+    async create(createUserDto: CreateUserDto): Promise<User> {
+        // Verificar si el email ya existe
+        const existingUser = await this.findByEmail(createUserDto.email);
+        if (existingUser) {
+            throw new ConflictException('El correo electrónico ya está registrado');
+        }
+
+        // Hash del password con bcrypt (compatible con PHP password_hash)
+        const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
+        const user = this.userRepository.create({
+            nombre: createUserDto.nombre,
+            apellido: createUserDto.apellido,
+            email: createUserDto.email,
+            password: hashedPassword,
+            rolId: createUserDto.rolId,
+            regionalId: createUserDto.regionalId ?? null,
+            cargoId: createUserDto.cargoId ?? null,
+            departamentoId: createUserDto.departamentoId ?? null,
+            esNacional: createUserDto.esNacional,
+            cedula: createUserDto.cedula ?? null,
+            fechaCreacion: new Date(),
+            fechaModificacion: null,
+            fechaEliminacion: null,
+            estado: 1,
+        });
+
+        return this.userRepository.save(user);
+    }
 
     /**
      * Busca un usuario por email

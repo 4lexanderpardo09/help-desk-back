@@ -286,3 +286,71 @@ De jQuery a React
 De código acoplado a arquitectura limpia
 
 La meta no es rehacer todo rápido, sino hacerlo bien sin romper nada.
+
+16. Documentación y testing automatizado (regla obligatoria)
+
+Cada vez que el asistente:
+
+- Cree código
+
+- Modifique lógica
+
+- Añada endpoints
+
+- Cambie comportamiento existente
+
+DEBE:
+
+1. Crear o actualizar `docs/DOCUMENTATION.md`
+
+   - No sobrescribir
+
+   - Usar formato por fecha
+
+   - Explicar contexto, cambios y decisiones
+
+2. Crear o actualizar la colección Postman
+
+   - Archivo: `postman/help-desk-api.postman_collection.json`
+
+   - Usar variables `base_url` y `token`
+
+   - Añadir tests básicos por request
+
+   - Mantener compatibilidad con JWT
+
+Si no es posible documentar o testear algo, debe explicarse el motivo.
+
+18. Documentación de código (regla obligatoria)
+
+El código debe documentarse de forma clara y consistente.
+
+Reglas:
+
+- Se usan comentarios JSDoc / TSDoc
+
+- Se documenta el "por qué", no lo obvio
+
+- Se documentan decisiones relacionadas con legacy
+
+- Se documentan limitaciones temporales
+
+- Se documentan puntos de migración futura
+
+Dónde documentar:
+
+- Services: lógica de negocio y reglas
+
+- Models: particularidades del esquema legacy
+
+- Guards / Auth: decisiones de seguridad
+
+- Controllers: solo si hay comportamiento no trivial
+
+No se permiten:
+
+- Comentarios redundantes
+
+- Comentarios que repitan el nombre de la función
+
+- Código sin explicación cuando rompe reglas ideales por compatibilidad legacy
