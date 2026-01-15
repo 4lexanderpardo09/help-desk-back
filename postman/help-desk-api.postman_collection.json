@@ -292,6 +292,44 @@
                     "response": []
                 },
                 {
+                    "name": "Get User by Email",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Usuario obtenido por email', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/users/email/soportemesaayuda@gmail.com",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "email",
+                                "soportemesaayuda@gmail.com"
+                            ]
+                        },
+                        "description": "Obtiene un usuario por su correo electrónico.\n\n**Requiere:** Token JWT válido"
+                    },
+                    "response": []
+                },
+                {
                     "name": "Create User",
                     "event": [
                         {

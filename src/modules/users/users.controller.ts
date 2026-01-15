@@ -56,4 +56,9 @@ export class UsersController {
     ): Promise<User[]> {
         return this.usersService.findByDepartamento(departamentoId);
     }
+
+    @Get('email/:email')
+    async findByEmail(@Param('email') email: string): Promise<User | null> {
+        return this.usersService.findByEmail(email);
+    }
 }
