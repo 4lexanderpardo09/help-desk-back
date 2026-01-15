@@ -33,9 +33,13 @@ export class AuthService {
         }
 
         const payload: JwtPayload = {
-            sub: user.id,
-            email: user.email,
-            role: this.getRoleFromRolId(user.rolId),
+            usu_id: user.id,
+            usu_correo: user.email,
+            rol_id: user.rolId,
+            reg_id: user.regionalId,
+            car_id: user.cargoId,
+            dp_id: user.departamentoId,
+            es_nacional: user.esNacional
         };
 
         return {
@@ -69,19 +73,6 @@ export class AuthService {
 
         // Comparación directa (sin hash - no recomendado pero posible en sistemas legacy)
         return plainPassword === hashedPassword;
-    }
-
-    /**
-     * Mapea rol_id a nombre de rol
-     * TODO: Obtener roles de la tabla correspondiente
-     */
-    private getRoleFromRolId(rolId: number | null): string {
-        const roles: Record<number, string> = {
-            1: 'admin',
-            2: 'agente',
-            3: 'usuario',
-        };
-        return roles[rolId ?? 0] || 'usuario';
     }
 
     /**
