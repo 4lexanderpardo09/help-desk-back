@@ -1,30 +1,41 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
+import { UsersService } from '../users/users.service';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
-    constructor(private readonly jwtService: JwtService) { }
+    constructor(
+        private readonly jwtService: JwtService,
+        private readonly usersService: UsersService,
+    ) { }
 
     /**
      * Valida credenciales y genera token JWT
-     * TODO: Implementar validación real contra la DB legacy
      */
     async login(
         email: string,
         password: string,
     ): Promise<{ accessToken: string }> {
-        // TODO: Reemplazar con consulta real a la tabla de usuarios
-        const user = await this.validateUser(email, password);
+        const user = await this.usersService.findByEmailWithPassword(email);
 
         if (!user) {
+            throw new UnauthorizedException('Credenciales inválidas');
+        }
+
+        // Verificar password
+        // El sistema legacy puede usar MD5 o bcrypt, verificamos ambos
+        const isPasswordValid = await this.verifyPassword(password, user.password);
+
+        if (!isPasswordValid) {
             throw new UnauthorizedException('Credenciales inválidas');
         }
 
         const payload: JwtPayload = {
             sub: user.id,
             email: user.email,
-            role: user.role,
+            role: this.getRoleFromRolId(user.rolId),
         };
 
         return {
@@ -33,19 +44,44 @@ export class AuthService {
     }
 
     /**
-     * Valida usuario contra la base de datos
-     * TODO: Conectar con UserModel cuando exista
+     * Verifica password - soporta bcrypt de PHP ($2y$) y Node.js ($2a$), y MD5
      */
-    private async validateUser(
-        email: string,
-        password: string,
-    ): Promise<{ id: number; email: string; role: string } | null> {
-        // Placeholder - será reemplazado con consulta real
-        // Por ahora retorna un usuario de prueba
-        if (email === 'admin@test.com' && password === 'test123') {
-            return { id: 1, email: 'admin@test.com', role: 'admin' };
+    private async verifyPassword(
+        plainPassword: string,
+        hashedPassword: string,
+    ): Promise<boolean> {
+        // Verificar si es bcrypt (empieza con $2)
+        if (hashedPassword.startsWith('$2')) {
+            // PHP usa $2y$, Node.js bcrypt usa $2a$ - son compatibles, solo hay que convertir
+            const normalizedHash = hashedPassword.replace(/^\$2y\$/, '$2a$');
+            return bcrypt.compare(plainPassword, normalizedHash);
         }
-        return null;
+
+        // Verificar si es MD5 (32 caracteres hex)
+        if (hashedPassword.length === 32) {
+            const crypto = await import('crypto');
+            const md5Hash = crypto
+                .createHash('md5')
+                .update(plainPassword)
+                .digest('hex');
+            return md5Hash === hashedPassword;
+        }
+
+        // Comparación directa (sin hash - no recomendado pero posible en sistemas legacy)
+        return plainPassword === hashedPassword;
+    }
+
+    /**
+     * Mapea rol_id a nombre de rol
+     * TODO: Obtener roles de la tabla correspondiente
+     */
+    private getRoleFromRolId(rolId: number | null): string {
+        const roles: Record<number, string> = {
+            1: 'admin',
+            2: 'agente',
+            3: 'usuario',
+        };
+        return roles[rolId ?? 0] || 'usuario';
     }
 
     /**
