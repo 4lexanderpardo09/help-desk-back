@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Zona } from './zona.entity';
 
 @Entity('tm_regional')
 export class Regional {
@@ -14,8 +15,7 @@ export class Regional {
     @Column({ name: 'zona_id', type: 'int', nullable: true })
     zonaId: number | null;
 
-    // TODO: Agregar relaciones ManyToOne
-    // @ManyToOne(() => Zona)
-    // @JoinColumn({ name: 'zona_id' })
-    // zona: Zona;
+    @ManyToOne(() => Zona, (zona) => zona.regionales)
+    @JoinColumn({ name: 'zona_id' })
+    zona: Zona;
 }

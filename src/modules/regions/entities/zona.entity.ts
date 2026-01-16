@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Regional } from './regional.entity';
 
 @Entity('tm_zona')
 export class Zona {
@@ -11,7 +12,6 @@ export class Zona {
     @Column({ name: 'est', type: 'int', default: 1, nullable: true })
     estado: number | null;
 
-    // TODO: Agregar relaciones OneToMany
-    // @OneToMany(() => Regional, (regional) => regional.zona)
-    // regionales: Regional[];
+    @OneToMany(() => Regional, (regional) => regional.zona)
+    regionales: Regional[];
 }
