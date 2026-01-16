@@ -155,6 +155,24 @@ export class UsersController {
         return this.usersService.findById(id);
     }
 
+    /**
+     * Endpoint unificado para obtener usuario por ID
+     * Query param: includeEmpresas=true para incluir empresas asociadas
+     */
+    @Get(':id/search')
+    async findByIdUnified(
+        @Param('id', ParseIntPipe) id: number,
+        @Query('includeEmpresas') includeEmpresasStr?: string,
+    ): Promise<User | Record<string, unknown> | null> {
+        return this.usersService.findByIdUnified(id, {
+            includeEmpresas: includeEmpresasStr === 'true',
+        });
+    }
+
+    // ===============================================
+    // ENDPOINTS LEGACY (usar /:id/search en su lugar)
+    // ===============================================
+
     @Get(':id/with-empresas')
     async findByIdWithEmpresas(
         @Param('id', ParseIntPipe) id: number,

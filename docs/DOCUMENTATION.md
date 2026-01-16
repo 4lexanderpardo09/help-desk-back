@@ -167,8 +167,9 @@ export class User {
 | GET | `/users/cargo/:cargoId/zona/:zona` | *(deprecated)* Por cargo y zona | `get_usuario_por_cargo_y_zona()` |
 | GET | `/users/rol/:id` | Por rol | `get_usuario_x_rol()` (dinámico) |
 | GET | `/users/agentes` | Solo agentes (rol_id=2) | `get_usuario_x_rol()` |
-| GET | `/users/:id` | Por ID | `findById()` |
-| GET | `/users/:id/with-empresas` | Por ID con empresas | `get_usuario_x_id()` |
+| GET | `/users/:id` | *(legacy)* Por ID | `findById()` |
+| GET | `/users/:id/search` | **UNIFICADO** - Por ID con opciones | Reemplaza findById + withEmpresas |
+| GET | `/users/:id/with-empresas` | *(deprecated)* Por ID con empresas | `get_usuario_x_id()` |
 | POST | `/users` | Crear usuario | `insert_usuario()` |
 | POST | `/users/by-ids` | Por lista de IDs | `get_usuarios_por_ids()` |
 | PUT | `/users/:id` | Actualizar usuario | `update_usuario()` |
