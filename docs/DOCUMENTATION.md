@@ -151,18 +151,23 @@ export class User {
 
 ### Endpoints (todos requieren autenticación)
 
-#### `GET /users`
-Lista todos los usuarios activos.
+| Método | Ruta | Descripción | Función PHP Legacy |
+|--------|------|-------------|-------------------|
+| GET | `/users` | Lista usuarios activos | `findAll()` |
+| GET | `/users/with-departamento` | Usuarios con JOIN departamento | `get_usuario()` → `sp_l_usuario_01` |
+| GET | `/users/departamento/:id` | Por departamento | `get_usuario_x_departamento()` |
+| GET | `/users/sin-departamento` | Sin departamento asignado | `get_usuario_x_departamento(null)` |
+| GET | `/users/email/:email` | Por correo electrónico | `get_usuario_por_correo()` |
+| GET | `/users/cargo/:id` | Por cargo (con regional) | `get_usuarios_por_cargo()` |
+| GET | `/users/rol/:id` | Por rol | `get_usuario_x_rol()` (dinámico) |
+| GET | `/users/agentes` | Solo agentes (rol_id=2) | `get_usuario_x_rol()` |
+| GET | `/users/:id` | Por ID | `findById()` |
+| POST | `/users` | Crear usuario | `insert_usuario()` |
+| PUT | `/users/:id` | Actualizar usuario | `update_usuario()` |
+| PUT | `/users/:id/firma` | Actualizar firma | `update_firma()` |
+| DELETE | `/users/:id` | Soft delete | `delete_usuario()` |
 
-#### `GET /users/:id`
-Obtiene un usuario por ID.
-
-#### `GET /users/departamento/:id`
-Obtiene usuarios de un departamento.
-
-#### `POST /users`
-Crea un nuevo usuario.
-
+#### `POST /users` - Crear Usuario
 **Request:**
 ```json
 {
@@ -178,6 +183,20 @@ Crea un nuevo usuario.
   "cedula": "1234567890"
 }
 ```
+
+#### `PUT /users/:id` - Actualizar Usuario
+Solo se actualizan los campos enviados. Si se envía `password`, se hashea automáticamente.
+
+#### `PUT /users/:id/firma` - Actualizar Firma
+```json
+{
+  "firma": "path/to/firma.png"
+}
+```
+
+#### `DELETE /users/:id` - Soft Delete
+No elimina físicamente. Marca `est=0` y `fech_elim=NOW()`.
+
 
 ---
 

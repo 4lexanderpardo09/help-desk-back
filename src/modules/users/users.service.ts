@@ -236,7 +236,24 @@ export class UsersService {
     async findAgentes(): Promise<User[]> {
         return this.findByRol(2);
     }
+
+    /**
+     * Actualiza la firma de un usuario
+     * Basado en: update_firma del modelo legacy PHP
+     */
+    async updateFirma(id: number, firma: string): Promise<{ updated: boolean; id: number }> {
+        const user = await this.findById(id);
+
+        if (!user) {
+            throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+        }
+
+        await this.userRepository.update(id, { firma });
+
+        return { updated: true, id };
+    }
 }
+
 
 
 

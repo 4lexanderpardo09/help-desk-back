@@ -93,4 +93,13 @@ export class UsersController {
     ): Promise<{ deleted: boolean; id: number }> {
         return this.usersService.delete(id);
     }
+
+    @Put(':id/firma')
+    async updateFirma(
+        @Param('id', ParseIntPipe) id: number,
+        @Body('firma') firma: string,
+    ): Promise<{ updated: boolean; id: number }> {
+        return this.usersService.updateFirma(id, firma);
+    }
 }
+

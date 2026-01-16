@@ -471,6 +471,137 @@
                         "description": "Elimina un usuario (soft delete). No borra físicamente, solo marca:\n- `est = 0`\n- `fech_elim = NOW()`\n\n**Requiere:** Token JWT válido"
                     },
                     "response": []
+                },
+                {
+                    "name": "Get Users Sin Departamento",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/users/sin-departamento",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "sin-departamento"
+                            ]
+                        },
+                        "description": "Obtiene usuarios sin departamento asignado (dp_id IS NULL)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Users by Cargo",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/users/cargo/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "cargo",
+                                "1"
+                            ]
+                        },
+                        "description": "Obtiene usuarios por cargo con datos de regional."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Users by Rol",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/users/rol/2",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "rol",
+                                "2"
+                            ]
+                        },
+                        "description": "Obtiene usuarios por rol (dinámico)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Agentes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/users/agentes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "agentes"
+                            ]
+                        },
+                        "description": "Obtiene agentes (usuarios con rol_id=2). Equivalente a get_usuario_x_rol."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Firma",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"firma\": \"path/to/firma.png\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/users/1/firma",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "1",
+                                "firma"
+                            ]
+                        },
+                        "description": "Actualiza la firma de un usuario."
+                    },
+                    "response": []
                 }
             ]
         }
