@@ -1,0 +1,31 @@
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+
+@Entity('tm_subcategoria')
+export class Subcategoria {
+    @PrimaryGeneratedColumn({ name: 'cats_id' })
+    id: number;
+
+    @Column({ name: 'cat_id', type: 'int', nullable: true })
+    categoriaId: number | null;
+
+    @Column({ name: 'pd_id', type: 'int', nullable: true, comment: 'Prioridad por defecto' })
+    prioridadId: number | null;
+
+    @Column({ name: 'cats_nom', type: 'varchar', length: 255, nullable: true })
+    nombre: string | null;
+
+    @Column({ name: 'cats_descrip', type: 'mediumtext', nullable: true })
+    descripcion: string | null;
+
+    @Column({ name: 'est', type: 'int', nullable: true })
+    estado: number | null;
+
+    // TODO: Agregar relaciones ManyToOne
+    // @ManyToOne(() => Categoria)
+    // @JoinColumn({ name: 'cat_id' })
+    // categoria: Categoria;
+
+    // @ManyToOne(() => Prioridad)
+    // @JoinColumn({ name: 'pd_id' })
+    // prioridad: Prioridad;
+}
