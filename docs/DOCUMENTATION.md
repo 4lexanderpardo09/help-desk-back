@@ -162,6 +162,7 @@ export class User {
 | GET | `/users/rol/:id` | Por rol | `get_usuario_x_rol()` (dinámico) |
 | GET | `/users/agentes` | Solo agentes (rol_id=2) | `get_usuario_x_rol()` |
 | GET | `/users/:id` | Por ID | `findById()` |
+| GET | `/users/:id/with-empresas` | Por ID con empresas | `get_usuario_x_id()` |
 | POST | `/users` | Crear usuario | `insert_usuario()` |
 | PUT | `/users/:id` | Actualizar usuario | `update_usuario()` |
 | PUT | `/users/:id/firma` | Actualizar firma | `update_firma()` |

@@ -79,6 +79,13 @@ export class UsersController {
         return this.usersService.findById(id);
     }
 
+    @Get(':id/with-empresas')
+    async findByIdWithEmpresas(
+        @Param('id', ParseIntPipe) id: number,
+    ): Promise<Record<string, unknown> | null> {
+        return this.usersService.findByIdWithEmpresas(id);
+    }
+
     @Put(':id')
     async update(
         @Param('id', ParseIntPipe) id: number,

@@ -142,6 +142,27 @@ export class UsersService {
     }
 
     /**
+     * Obtiene usuario por ID con empresas asociadas
+     * Basado en: get_usuario_x_id del modelo legacy PHP
+     * Incluye LEFT JOIN con empresa_usuario y GROUP_CONCAT de emp_ids
+     */
+    async findByIdWithEmpresas(id: number): Promise<Record<string, unknown> | null> {
+        const result = await this.userRepository.query(
+            `SELECT 
+                u.usu_id, u.usu_nom, u.usu_ape, u.usu_correo, 
+                u.rol_id, u.dp_id, u.reg_id, u.car_id, 
+                u.es_nacional, u.usu_firma,
+                GROUP_CONCAT(eu.emp_id) as emp_ids
+             FROM tm_usuario u
+             LEFT JOIN empresa_usuario eu ON u.usu_id = eu.usu_id
+             WHERE u.usu_id = ?
+             GROUP BY u.usu_id`,
+            [id],
+        );
+        return result[0] || null;
+    }
+
+    /**
      * Obtiene todos los usuarios activos
      */
     async findAll(): Promise<User[]> {
