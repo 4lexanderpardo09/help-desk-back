@@ -193,7 +193,29 @@ export class UsersService {
     }
 
     /**
-     * Obtiene todos los usuarios activos
+     * Búsqueda unificada de todos los usuarios
+     * - includeDepartamento: true para ejecutar stored procedure legacy con JOINs
+     */
+    async findAllUnified(options?: {
+        includeDepartamento?: boolean;
+    }): Promise<User[] | Record<string, unknown>[]> {
+        if (options?.includeDepartamento) {
+            const result = await this.userRepository.query('CALL sp_l_usuario_01()');
+            return result[0] || [];
+        }
+
+        return this.userRepository.find({
+            where: { estado: 1 },
+            order: { nombre: 'ASC' },
+        });
+    }
+
+    // ===============================================
+    // MÉTODOS LEGACY (usar findAllUnified en su lugar)
+    // ===============================================
+
+    /**
+     * @deprecated Usar findAllUnified()
      */
     async findAll(): Promise<User[]> {
         return this.userRepository.find({
@@ -262,9 +284,7 @@ export class UsersService {
     }
 
     /**
-     * Obtiene todos los usuarios con datos del departamento
-     * Basado en: get_usuario que ejecuta sp_l_usuario_01
-     * El SP hace: LEFT JOIN tm_departamento WHERE est=1
+     * @deprecated Usar findAllUnified({ includeDepartamento: true })
      */
     async getAllWithDepartamento(): Promise<Record<string, unknown>[]> {
         const result = await this.userRepository.query('CALL sp_l_usuario_01()');

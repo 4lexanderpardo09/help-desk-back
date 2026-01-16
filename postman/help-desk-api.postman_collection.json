@@ -199,15 +199,22 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/users",
+                            "raw": "{{base_url}}/users?includeDepartamento=true",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
                                 "users"
+                            ],
+                            "query": [
+                                {
+                                    "key": "includeDepartamento",
+                                    "value": "true",
+                                    "description": "Incluir datos del departamento (JOINs)"
+                                }
                             ]
                         },
-                        "description": "Obtiene todos los usuarios activos del sistema.\n\n**Requiere:** Token JWT válido"
+                        "description": "Obtiene todos los usuarios activos del sistema. Soporta query param `includeDepartamento=true` para traer datos extra."
                     },
                     "response": []
                 },

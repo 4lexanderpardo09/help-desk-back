@@ -22,9 +22,19 @@ export class UsersController {
     constructor(private readonly usersService: UsersService) { }
 
     // === RUTAS SIN PARÁMETROS ===
+    // === RUTAS SIN PARÁMETROS ===
+
+    /**
+     * Endpoint unificado para listar usuarios
+     * Query param: includeDepartamento=true para ejecutar SP legacy con JOINs
+     */
     @Get()
-    async findAll(): Promise<User[]> {
-        return this.usersService.findAll();
+    async findAllUnified(
+        @Query('includeDepartamento') includeDepartamentoStr?: string,
+    ): Promise<User[] | Record<string, unknown>[]> {
+        return this.usersService.findAllUnified({
+            includeDepartamento: includeDepartamentoStr === 'true',
+        });
     }
 
     @Post()
@@ -40,6 +50,10 @@ export class UsersController {
     }
 
     // === RUTAS CON PREFIJOS ESPECÍFICOS (antes de :id) ===
+
+    /**
+     * @deprecated Usar GET /users?includeDepartamento=true
+     */
     @Get('with-departamento')
     async getAllWithDepartamento(): Promise<Record<string, unknown>[]> {
         return this.usersService.getAllWithDepartamento();

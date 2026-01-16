@@ -153,8 +153,8 @@ export class User {
 
 | Método | Ruta | Descripción | Función PHP Legacy |
 |--------|------|-------------|-------------------|
-| GET | `/users` | Lista usuarios activos | `findAll()` |
-| GET | `/users/with-departamento` | Usuarios con JOIN departamento | `get_usuario()` → `sp_l_usuario_01` |
+| GET | `/users` | Lista usuarios (activable `?includeDepartamento=true`) | `findAll()` / `get_usuario()` |
+| GET | `/users/with-departamento` | *(deprecated)* Usuarios con JOIN departamento | `get_usuario()` → `sp_l_usuario_01` |
 | GET | `/users/departamento/:id` | Por departamento | `get_usuario_x_departamento()` |
 | GET | `/users/sin-departamento` | Sin departamento asignado | `get_usuario_x_departamento(null)` |
 | GET | `/users/email/:email` | Por correo electrónico | `get_usuario_por_correo()` |
