@@ -712,6 +712,34 @@
                         "description": "Obtiene usuarios por lista de IDs con datos de regional."
                     },
                     "response": []
+                },
+                {
+                    "name": "Get All Users by Cargo and Regional",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/users/cargo/1/regional/1/all",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "cargo",
+                                "1",
+                                "regional",
+                                "1",
+                                "all"
+                            ]
+                        },
+                        "description": "Obtiene TODOS los usuarios por cargo y regional."
+                    },
+                    "response": []
                 }
             ]
         }

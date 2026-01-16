@@ -268,6 +268,17 @@ export class UsersService {
     }
 
     /**
+     * Obtiene TODOS los usuarios por cargo y regional
+     * Basado en: get_usuarios_por_cargo_y_regional_all del modelo legacy PHP
+     */
+    async findAllByCargoAndRegional(cargoId: number, regionalId: number): Promise<User[]> {
+        return this.userRepository.find({
+            where: { cargoId, regionalId, estado: 1 },
+            order: { nombre: 'ASC' },
+        });
+    }
+
+    /**
      * Obtiene UN usuario por cargo (el primero encontrado)
      * Basado en: get_usuario_por_cargo del modelo legacy PHP
      * Retorna solo el primer resultado (LIMIT 1)
