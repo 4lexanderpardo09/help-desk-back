@@ -239,6 +239,17 @@ export class UsersService {
     }
 
     /**
+     * Obtiene un usuario por cargo y regional
+     * Basado en: get_usuario_por_cargo_y_regional del modelo legacy PHP
+     * Retorna solo el primer resultado (LIMIT 1)
+     */
+    async findByCargoAndRegional(cargoId: number, regionalId: number): Promise<User | null> {
+        return this.userRepository.findOne({
+            where: { cargoId, regionalId, estado: 1 },
+        });
+    }
+
+    /**
      * Obtiene usuarios por rol
      * Basado en: get_usuario_x_rol del modelo legacy PHP
      * Nota: El legacy hardcodea rol_id=2, aquí lo hacemos dinámico

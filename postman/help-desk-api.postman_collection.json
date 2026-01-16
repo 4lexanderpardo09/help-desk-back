@@ -627,6 +627,33 @@
                         "description": "Obtiene usuario por ID con empresas asociadas (GROUP_CONCAT de emp_ids)."
                     },
                     "response": []
+                },
+                {
+                    "name": "Get User by Cargo and Regional",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/users/cargo/1/regional/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "cargo",
+                                "1",
+                                "regional",
+                                "1"
+                            ]
+                        },
+                        "description": "Obtiene un usuario por cargo y regional (LIMIT 1)."
+                    },
+                    "response": []
                 }
             ]
         }

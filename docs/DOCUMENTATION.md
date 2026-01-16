@@ -159,6 +159,7 @@ export class User {
 | GET | `/users/sin-departamento` | Sin departamento asignado | `get_usuario_x_departamento(null)` |
 | GET | `/users/email/:email` | Por correo electrónico | `get_usuario_por_correo()` |
 | GET | `/users/cargo/:id` | Por cargo (con regional) | `get_usuarios_por_cargo()` |
+| GET | `/users/cargo/:cargoId/regional/:regionalId` | Por cargo y regional | `get_usuario_por_cargo_y_regional()` |
 | GET | `/users/rol/:id` | Por rol | `get_usuario_x_rol()` (dinámico) |
 | GET | `/users/agentes` | Solo agentes (rol_id=2) | `get_usuario_x_rol()` |
 | GET | `/users/:id` | Por ID | `findById()` |
