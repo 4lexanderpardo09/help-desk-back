@@ -243,8 +243,72 @@ export class UsersService {
     }
 
     /**
-     * Obtiene usuarios por cargo con datos de regional
-     * Basado en: get_usuarios_por_cargo del modelo legacy PHP
+     * Búsqueda unificada de usuarios por cargo con filtros opcionales
+     * Reemplaza 6 endpoints legacy fragmentados
+     * 
+     * Ejemplos de uso:
+     * - findByCargoUnified({ cargoId: 1 }) → Todos por cargo
+     * - findByCargoUnified({ cargoId: 1, limit: 1 }) → Uno por cargo
+     * - findByCargoUnified({ cargoId: 1, regionalId: 2 }) → Todos por cargo+regional
+     * - findByCargoUnified({ cargoId: 1, regionalId: 2, limit: 1 }) → Uno por cargo+regional
+     * - findByCargoUnified({ cargoId: 1, regionalId: 2, includeNacional: true }) → Regional O Nacional
+     * - findByCargoUnified({ cargoId: 1, zona: 'Norte', limit: 1 }) → Por zona
+     */
+    async findByCargoUnified(options: {
+        cargoId: number;
+        regionalId?: number;
+        zona?: string;
+        includeNacional?: boolean;
+        limit?: number;
+    }): Promise<User[] | User | null> {
+        const { cargoId, regionalId, zona, includeNacional, limit } = options;
+
+        // Caso especial: búsqueda por zona requiere JOINs
+        if (zona) {
+            const result = await this.userRepository.query(
+                `SELECT u.* 
+                 FROM tm_usuario u
+                 INNER JOIN tm_regional r ON u.reg_id = r.reg_id
+                 INNER JOIN tm_zona z ON r.zona_id = z.zona_id
+                 WHERE u.car_id = ? AND z.zona_nom = ? AND u.est = 1
+                 ${limit ? `LIMIT ${limit}` : ''}`,
+                [cargoId, zona],
+            );
+            return limit === 1 ? (result[0] || null) : result;
+        }
+
+        // Query builder para los demás casos
+        const qb = this.userRepository
+            .createQueryBuilder('user')
+            .where('user.cargoId = :cargoId', { cargoId })
+            .andWhere('user.estado = :estado', { estado: 1 });
+
+        // Filtro por regional (con o sin nacionales)
+        if (regionalId !== undefined) {
+            if (includeNacional) {
+                qb.andWhere('(user.regionalId = :regionalId OR user.esNacional = 1)', { regionalId });
+            } else {
+                qb.andWhere('user.regionalId = :regionalId', { regionalId });
+            }
+        }
+
+        qb.orderBy('user.nombre', 'ASC');
+
+        // Retornar uno o todos
+        if (limit === 1) {
+            return qb.getOne();
+        }
+
+        return qb.getMany();
+    }
+
+    // ===============================================
+    // MÉTODOS LEGACY (usar findByCargoUnified en su lugar)
+    // Se mantienen para compatibilidad con endpoints actuales
+    // ===============================================
+
+    /**
+     * @deprecated Usar findByCargoUnified({ cargoId })
      */
     async findByCargo(cargoId: number): Promise<Record<string, unknown>[]> {
         return this.userRepository.query(
@@ -257,9 +321,7 @@ export class UsersService {
     }
 
     /**
-     * Obtiene un usuario por cargo y regional
-     * Basado en: get_usuario_por_cargo_y_regional del modelo legacy PHP
-     * Retorna solo el primer resultado (LIMIT 1)
+     * @deprecated Usar findByCargoUnified({ cargoId, regionalId, limit: 1 })
      */
     async findByCargoAndRegional(cargoId: number, regionalId: number): Promise<User | null> {
         return this.userRepository.findOne({
@@ -268,8 +330,7 @@ export class UsersService {
     }
 
     /**
-     * Obtiene TODOS los usuarios por cargo y regional
-     * Basado en: get_usuarios_por_cargo_y_regional_all del modelo legacy PHP
+     * @deprecated Usar findByCargoUnified({ cargoId, regionalId })
      */
     async findAllByCargoAndRegional(cargoId: number, regionalId: number): Promise<User[]> {
         return this.userRepository.find({
@@ -279,9 +340,7 @@ export class UsersService {
     }
 
     /**
-     * Obtiene UN usuario por cargo (el primero encontrado)
-     * Basado en: get_usuario_por_cargo del modelo legacy PHP
-     * Retorna solo el primer resultado (LIMIT 1)
+     * @deprecated Usar findByCargoUnified({ cargoId, limit: 1 })
      */
     async findOneByCargo(cargoId: number): Promise<User | null> {
         return this.userRepository.findOne({
@@ -290,9 +349,7 @@ export class UsersService {
     }
 
     /**
-     * Obtiene usuarios por cargo que sean de una regional O sean nacionales
-     * Basado en: get_usuarios_por_cargo_regional_o_nacional del modelo legacy PHP
-     * Lógica: car_id = X AND (reg_id = Y OR es_nacional = 1)
+     * @deprecated Usar findByCargoUnified({ cargoId, regionalId, includeNacional: true })
      */
     async findByCargoRegionalOrNacional(cargoId: number, regionalId: number): Promise<User[]> {
         return this.userRepository
@@ -305,9 +362,7 @@ export class UsersService {
     }
 
     /**
-     * Obtiene usuario por cargo y zona
-     * Basado en: get_usuario_por_cargo_y_zona del modelo legacy PHP
-     * JOIN con tm_regional y tm_zona para filtrar por nombre de zona
+     * @deprecated Usar findByCargoUnified({ cargoId, zona, limit: 1 })
      */
     async findByCargoAndZona(cargoId: number, zonaNombre: string): Promise<Record<string, unknown> | null> {
         const result = await this.userRepository.query(

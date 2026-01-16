@@ -571,6 +571,55 @@
                     "response": []
                 },
                 {
+                    "name": "Search Users by Cargo (UNIFIED)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/users/cargo/1/search?regionalId=1&includeNacional=true&limit=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "cargo",
+                                "1",
+                                "search"
+                            ],
+                            "query": [
+                                {
+                                    "key": "regionalId",
+                                    "value": "1",
+                                    "description": "Filtrar por regional"
+                                },
+                                {
+                                    "key": "zona",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": "Filtrar por nombre de zona"
+                                },
+                                {
+                                    "key": "includeNacional",
+                                    "value": "true",
+                                    "description": "Incluir usuarios nacionales"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "1",
+                                    "description": "1 para un solo resultado"
+                                }
+                            ]
+                        },
+                        "description": "Endpoint UNIFICADO para buscar usuarios por cargo. Reemplaza 6 endpoints fragmentados. Query params: regionalId, zona, includeNacional, limit."
+                    },
+                    "response": []
+                },
+                {
                     "name": "Update Firma",
                     "request": {
                         "method": "PUT",

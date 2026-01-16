@@ -158,12 +158,13 @@ export class User {
 | GET | `/users/departamento/:id` | Por departamento | `get_usuario_x_departamento()` |
 | GET | `/users/sin-departamento` | Sin departamento asignado | `get_usuario_x_departamento(null)` |
 | GET | `/users/email/:email` | Por correo electrónico | `get_usuario_por_correo()` |
-| GET | `/users/cargo/:id` | Por cargo (con regional) | `get_usuarios_por_cargo()` |
-| GET | `/users/cargo/:cargoId/regional/:regionalId` | Por cargo y regional | `get_usuario_por_cargo_y_regional()` |
-| GET | `/users/cargo/:cargoId/regional/:regionalId/all` | TODOS por cargo y regional | `get_usuarios_por_cargo_y_regional_all()` |
-| GET | `/users/cargo/:id/one` | UN usuario por cargo | `get_usuario_por_cargo()` |
-| GET | `/users/cargo/:cargoId/regional-or-nacional/:regionalId` | Por cargo (regional O nacional) | `get_usuarios_por_cargo_regional_o_nacional()` |
-| GET | `/users/cargo/:cargoId/zona/:zona` | Por cargo y zona | `get_usuario_por_cargo_y_zona()` |
+| GET | `/users/cargo/:cargoId/search` | **UNIFICADO** - Buscar por cargo con filtros | Reemplaza 6 endpoints legacy |
+| GET | `/users/cargo/:id` | *(deprecated)* Por cargo | `get_usuarios_por_cargo()` |
+| GET | `/users/cargo/:cargoId/regional/:regionalId` | *(deprecated)* Por cargo y regional | `get_usuario_por_cargo_y_regional()` |
+| GET | `/users/cargo/:cargoId/regional/:regionalId/all` | *(deprecated)* TODOS por cargo y regional | `get_usuarios_por_cargo_y_regional_all()` |
+| GET | `/users/cargo/:id/one` | *(deprecated)* UN usuario por cargo | `get_usuario_por_cargo()` |
+| GET | `/users/cargo/:cargoId/regional-or-nacional/:regionalId` | *(deprecated)* Por cargo (regional O nacional) | `get_usuarios_por_cargo_regional_o_nacional()` |
+| GET | `/users/cargo/:cargoId/zona/:zona` | *(deprecated)* Por cargo y zona | `get_usuario_por_cargo_y_zona()` |
 | GET | `/users/rol/:id` | Por rol | `get_usuario_x_rol()` (dinámico) |
 | GET | `/users/agentes` | Solo agentes (rol_id=2) | `get_usuario_x_rol()` |
 | GET | `/users/:id` | Por ID | `findById()` |

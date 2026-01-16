@@ -6,6 +6,7 @@ import {
     Delete,
     Body,
     Param,
+    Query,
     ParseIntPipe,
     UseGuards,
 } from '@nestjs/common';
@@ -60,6 +61,35 @@ export class UsersController {
     async findByEmail(@Param('email') email: string): Promise<User | null> {
         return this.usersService.findByEmail(email);
     }
+
+    /**
+     * Endpoint unificado para buscar usuarios por cargo
+     * Query params:
+     * - regionalId: (opcional) filtrar por regional
+     * - zona: (opcional) filtrar por nombre de zona
+     * - includeNacional: (opcional) incluir usuarios nacionales si se filtra por regional
+     * - limit: (opcional) 1 para retornar solo uno
+     */
+    @Get('cargo/:cargoId/search')
+    async findByCargoUnified(
+        @Param('cargoId', ParseIntPipe) cargoId: number,
+        @Query('regionalId') regionalIdStr?: string,
+        @Query('zona') zona?: string,
+        @Query('includeNacional') includeNacionalStr?: string,
+        @Query('limit') limitStr?: string,
+    ): Promise<User[] | User | null> {
+        return this.usersService.findByCargoUnified({
+            cargoId,
+            regionalId: regionalIdStr ? parseInt(regionalIdStr, 10) : undefined,
+            zona,
+            includeNacional: includeNacionalStr === 'true',
+            limit: limitStr ? parseInt(limitStr, 10) : undefined,
+        });
+    }
+
+    // ===============================================
+    // ENDPOINTS LEGACY (usar /cargo/:cargoId/search en su lugar)
+    // ===============================================
 
     @Get('cargo/:id')
     async findByCargo(
