@@ -166,6 +166,7 @@ export class User {
 | GET | `/users/:id` | Por ID | `findById()` |
 | GET | `/users/:id/with-empresas` | Por ID con empresas | `get_usuario_x_id()` |
 | POST | `/users` | Crear usuario | `insert_usuario()` |
+| POST | `/users/by-ids` | Por lista de IDs | `get_usuarios_por_ids()` |
 | PUT | `/users/:id` | Actualizar usuario | `update_usuario()` |
 | PUT | `/users/:id/firma` | Actualizar firma | `update_firma()` |
 | DELETE | `/users/:id` | Soft delete | `delete_usuario()` |

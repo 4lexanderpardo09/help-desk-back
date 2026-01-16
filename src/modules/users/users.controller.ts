@@ -31,6 +31,13 @@ export class UsersController {
         return this.usersService.create(createUserDto);
     }
 
+    @Post('by-ids')
+    async findByIds(
+        @Body('ids') ids: number[],
+    ): Promise<Record<string, unknown>[]> {
+        return this.usersService.findByIds(ids);
+    }
+
     // === RUTAS CON PREFIJOS ESPECÍFICOS (antes de :id) ===
     @Get('with-departamento')
     async getAllWithDepartamento(): Promise<Record<string, unknown>[]> {

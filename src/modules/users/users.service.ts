@@ -173,6 +173,24 @@ export class UsersService {
     }
 
     /**
+     * Obtiene usuarios por lista de IDs con datos de regional
+     * Basado en: get_usuarios_por_ids del modelo legacy PHP
+     */
+    async findByIds(userIds: number[]): Promise<Record<string, unknown>[]> {
+        if (userIds.length === 0) {
+            return [];
+        }
+
+        return this.userRepository.query(
+            `SELECT u.usu_id, u.usu_nom, u.usu_ape, u.usu_correo, r.reg_nom
+             FROM tm_usuario u
+             LEFT JOIN tm_regional r ON u.reg_id = r.reg_id
+             WHERE u.usu_id IN (?) AND u.est = 1`,
+            [userIds],
+        );
+    }
+
+    /**
      * Busca usuarios por departamento
      * Basado en: get_usuario_x_departamento del modelo legacy PHP
      * Si departamentoId es null, busca usuarios sin departamento asignado

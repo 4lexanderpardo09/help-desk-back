@@ -680,6 +680,38 @@
                         "description": "Obtiene UN usuario por cargo (LIMIT 1)."
                     },
                     "response": []
+                },
+                {
+                    "name": "Get Users by IDs",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ids\": [1, 2, 3]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/users/by-ids",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "by-ids"
+                            ]
+                        },
+                        "description": "Obtiene usuarios por lista de IDs con datos de regional."
+                    },
+                    "response": []
                 }
             ]
         }
