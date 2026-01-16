@@ -20,9 +20,63 @@ import { UpdateUserDto } from './dto/update-user.dto';
 export class UsersController {
     constructor(private readonly usersService: UsersService) { }
 
+    // === RUTAS SIN PARÁMETROS ===
+    @Get()
+    async findAll(): Promise<User[]> {
+        return this.usersService.findAll();
+    }
+
     @Post()
     async create(@Body() createUserDto: CreateUserDto): Promise<User> {
         return this.usersService.create(createUserDto);
+    }
+
+    // === RUTAS CON PREFIJOS ESPECÍFICOS (antes de :id) ===
+    @Get('with-departamento')
+    async getAllWithDepartamento(): Promise<Record<string, unknown>[]> {
+        return this.usersService.getAllWithDepartamento();
+    }
+
+    @Get('departamento/:id')
+    async findByDepartamento(
+        @Param('id', ParseIntPipe) departamentoId: number,
+    ): Promise<User[]> {
+        return this.usersService.findByDepartamento(departamentoId);
+    }
+
+    @Get('sin-departamento')
+    async findWithoutDepartamento(): Promise<User[]> {
+        return this.usersService.findByDepartamento(null);
+    }
+
+    @Get('email/:email')
+    async findByEmail(@Param('email') email: string): Promise<User | null> {
+        return this.usersService.findByEmail(email);
+    }
+
+    @Get('cargo/:id')
+    async findByCargo(
+        @Param('id', ParseIntPipe) cargoId: number,
+    ): Promise<Record<string, unknown>[]> {
+        return this.usersService.findByCargo(cargoId);
+    }
+
+    @Get('rol/:id')
+    async findByRol(
+        @Param('id', ParseIntPipe) rolId: number,
+    ): Promise<User[]> {
+        return this.usersService.findByRol(rolId);
+    }
+
+    @Get('agentes')
+    async findAgentes(): Promise<User[]> {
+        return this.usersService.findAgentes();
+    }
+
+    // === RUTAS CON :id (al final para evitar conflictos) ===
+    @Get(':id')
+    async findOne(@Param('id', ParseIntPipe) id: number): Promise<User | null> {
+        return this.usersService.findById(id);
     }
 
     @Put(':id')
@@ -38,27 +92,5 @@ export class UsersController {
         @Param('id', ParseIntPipe) id: number,
     ): Promise<{ deleted: boolean; id: number }> {
         return this.usersService.delete(id);
-    }
-
-    @Get()
-    async findAll(): Promise<User[]> {
-        return this.usersService.findAll();
-    }
-
-    @Get(':id')
-    async findOne(@Param('id', ParseIntPipe) id: number): Promise<User | null> {
-        return this.usersService.findById(id);
-    }
-
-    @Get('departamento/:id')
-    async findByDepartamento(
-        @Param('id', ParseIntPipe) departamentoId: number,
-    ): Promise<User[]> {
-        return this.usersService.findByDepartamento(departamentoId);
-    }
-
-    @Get('email/:email')
-    async findByEmail(@Param('email') email: string): Promise<User | null> {
-        return this.usersService.findByEmail(email);
     }
 }

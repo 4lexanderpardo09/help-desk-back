@@ -153,8 +153,19 @@ export class UsersService {
 
     /**
      * Busca usuarios por departamento
+     * Basado en: get_usuario_x_departamento del modelo legacy PHP
+     * Si departamentoId es null, busca usuarios sin departamento asignado
      */
-    async findByDepartamento(departamentoId: number): Promise<User[]> {
+    async findByDepartamento(departamentoId: number | null): Promise<User[]> {
+        if (departamentoId === null) {
+            return this.userRepository
+                .createQueryBuilder('user')
+                .where('user.departamentoId IS NULL')
+                .andWhere('user.estado = :estado', { estado: 1 })
+                .orderBy('user.nombre', 'ASC')
+                .getMany();
+        }
+
         return this.userRepository.find({
             where: { departamentoId, estado: 1 },
             order: { nombre: 'ASC' },
@@ -180,4 +191,52 @@ export class UsersService {
 
         return { deleted: true, id };
     }
+
+    /**
+     * Obtiene todos los usuarios con datos del departamento
+     * Basado en: get_usuario que ejecuta sp_l_usuario_01
+     * El SP hace: LEFT JOIN tm_departamento WHERE est=1
+     */
+    async getAllWithDepartamento(): Promise<Record<string, unknown>[]> {
+        const result = await this.userRepository.query('CALL sp_l_usuario_01()');
+        // MySQL devuelve el resultado en result[0]
+        return result[0] || [];
+    }
+
+    /**
+     * Obtiene usuarios por cargo con datos de regional
+     * Basado en: get_usuarios_por_cargo del modelo legacy PHP
+     */
+    async findByCargo(cargoId: number): Promise<Record<string, unknown>[]> {
+        return this.userRepository.query(
+            `SELECT u.usu_id, u.usu_nom, u.usu_ape, r.reg_nom
+             FROM tm_usuario u
+             LEFT JOIN tm_regional r ON u.reg_id = r.reg_id
+             WHERE u.car_id = ? AND u.est = 1`,
+            [cargoId],
+        );
+    }
+
+    /**
+     * Obtiene usuarios por rol
+     * Basado en: get_usuario_x_rol del modelo legacy PHP
+     * Nota: El legacy hardcodea rol_id=2, aquí lo hacemos dinámico
+     */
+    async findByRol(rolId: number): Promise<User[]> {
+        return this.userRepository.find({
+            where: { rolId, estado: 1 },
+            order: { nombre: 'ASC' },
+        });
+    }
+
+    /**
+     * Obtiene agentes (usuarios con rol_id = 2)
+     * Wrapper para mantener compatibilidad con legacy get_usuario_x_rol
+     */
+    async findAgentes(): Promise<User[]> {
+        return this.findByRol(2);
+    }
 }
+
+
+
