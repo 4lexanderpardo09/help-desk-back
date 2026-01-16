@@ -69,6 +69,13 @@ export class UsersController {
         return this.usersService.findByCargoAndRegional(cargoId, regionalId);
     }
 
+    @Get('cargo/:id/one')
+    async findOneByCargo(
+        @Param('id', ParseIntPipe) cargoId: number,
+    ): Promise<User | null> {
+        return this.usersService.findOneByCargo(cargoId);
+    }
+
     @Get('rol/:id')
     async findByRol(
         @Param('id', ParseIntPipe) rolId: number,

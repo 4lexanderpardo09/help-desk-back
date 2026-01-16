@@ -250,6 +250,17 @@ export class UsersService {
     }
 
     /**
+     * Obtiene UN usuario por cargo (el primero encontrado)
+     * Basado en: get_usuario_por_cargo del modelo legacy PHP
+     * Retorna solo el primer resultado (LIMIT 1)
+     */
+    async findOneByCargo(cargoId: number): Promise<User | null> {
+        return this.userRepository.findOne({
+            where: { cargoId, estado: 1 },
+        });
+    }
+
+    /**
      * Obtiene usuarios por rol
      * Basado en: get_usuario_x_rol del modelo legacy PHP
      * Nota: El legacy hardcodea rol_id=2, aquí lo hacemos dinámico
