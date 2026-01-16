@@ -91,6 +91,22 @@ export class UsersController {
         return this.usersService.findOneByCargo(cargoId);
     }
 
+    @Get('cargo/:cargoId/regional-or-nacional/:regionalId')
+    async findByCargoRegionalOrNacional(
+        @Param('cargoId', ParseIntPipe) cargoId: number,
+        @Param('regionalId', ParseIntPipe) regionalId: number,
+    ): Promise<User[]> {
+        return this.usersService.findByCargoRegionalOrNacional(cargoId, regionalId);
+    }
+
+    @Get('cargo/:cargoId/zona/:zona')
+    async findByCargoAndZona(
+        @Param('cargoId', ParseIntPipe) cargoId: number,
+        @Param('zona') zona: string,
+    ): Promise<Record<string, unknown> | null> {
+        return this.usersService.findByCargoAndZona(cargoId, zona);
+    }
+
     @Get('rol/:id')
     async findByRol(
         @Param('id', ParseIntPipe) rolId: number,

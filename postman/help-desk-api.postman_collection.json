@@ -740,6 +740,60 @@
                         "description": "Obtiene TODOS los usuarios por cargo y regional."
                     },
                     "response": []
+                },
+                {
+                    "name": "Get Users by Cargo Regional or Nacional",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/users/cargo/1/regional-or-nacional/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "cargo",
+                                "1",
+                                "regional-or-nacional",
+                                "1"
+                            ]
+                        },
+                        "description": "Obtiene usuarios por cargo que sean de la regional O sean nacionales (es_nacional=1)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get User by Cargo and Zona",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/users/cargo/1/zona/Norte",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "cargo",
+                                "1",
+                                "zona",
+                                "Norte"
+                            ]
+                        },
+                        "description": "Obtiene un usuario por cargo y nombre de zona (JOIN con tm_regional y tm_zona)."
+                    },
+                    "response": []
                 }
             ]
         }

@@ -290,6 +290,39 @@ export class UsersService {
     }
 
     /**
+     * Obtiene usuarios por cargo que sean de una regional O sean nacionales
+     * Basado en: get_usuarios_por_cargo_regional_o_nacional del modelo legacy PHP
+     * Lógica: car_id = X AND (reg_id = Y OR es_nacional = 1)
+     */
+    async findByCargoRegionalOrNacional(cargoId: number, regionalId: number): Promise<User[]> {
+        return this.userRepository
+            .createQueryBuilder('user')
+            .where('user.cargoId = :cargoId', { cargoId })
+            .andWhere('(user.regionalId = :regionalId OR user.esNacional = 1)', { regionalId })
+            .andWhere('user.estado = :estado', { estado: 1 })
+            .orderBy('user.nombre', 'ASC')
+            .getMany();
+    }
+
+    /**
+     * Obtiene usuario por cargo y zona
+     * Basado en: get_usuario_por_cargo_y_zona del modelo legacy PHP
+     * JOIN con tm_regional y tm_zona para filtrar por nombre de zona
+     */
+    async findByCargoAndZona(cargoId: number, zonaNombre: string): Promise<Record<string, unknown> | null> {
+        const result = await this.userRepository.query(
+            `SELECT u.* 
+             FROM tm_usuario u
+             INNER JOIN tm_regional r ON u.reg_id = r.reg_id
+             INNER JOIN tm_zona z ON r.zona_id = z.zona_id
+             WHERE u.car_id = ? AND z.zona_nom = ? AND u.est = 1
+             LIMIT 1`,
+            [cargoId, zonaNombre],
+        );
+        return result[0] || null;
+    }
+
+    /**
      * Obtiene usuarios por rol
      * Basado en: get_usuario_x_rol del modelo legacy PHP
      * Nota: El legacy hardcodea rol_id=2, aquí lo hacemos dinámico
