@@ -28,13 +28,47 @@ export class UsersController {
      * Endpoint unificado para listar usuarios
      * Query param: includeDepartamento=true para ejecutar SP legacy con JOINs
      */
+    /**
+     * **MASTER ENDPOINT**: Listado y búsqueda unificada de usuarios.
+     * 
+     * Este endpoint centraliza todas las consultas de usuarios. Permite filtrar por múltiples
+     * criterios y combinar filtros (ej: cargo + regional).
+     * 
+     * @param includeDepartamento "true" para incluir nombre del departamento (JOIN legacy).
+     * @param departamentoId ID del departamento para filtrar.
+     * @param sinDepartamento "true" para obtener usuarios SIN departamento asignado.
+     * @param rolId ID del rol para filtrar (ej: 2 = Agentes).
+     * @param email Email exacto para buscar un usuario específico.
+     * @param cargoId ID del cargo para filtrar.
+     * @param regionalId ID de la regional (requiere cargoId usualmente, o filtro general).
+     * @param zona Nombre de la zona (ej: "Norte") (requiere cargoId).
+     * @param includeNacional "true" para incluir usuarios marcados como nacionales (esNacional=1) al filtrar por regional.
+     * @param limit Limitar la cantidad de resultados (útil para buscar uno solo con limit=1).
+     */
     @Get()
     async findAllUnified(
         @Query('includeDepartamento') includeDepartamentoStr?: string,
+        @Query('departamentoId') departamentoIdStr?: string,
+        @Query('sinDepartamento') sinDepartamentoStr?: string,
+        @Query('rolId') rolIdStr?: string,
+        @Query('email') email?: string,
+        @Query('cargoId') cargoIdStr?: string,
+        @Query('regionalId') regionalIdStr?: string,
+        @Query('zona') zona?: string,
+        @Query('includeNacional') includeNacionalStr?: string,
+        @Query('limit') limitStr?: string,
     ): Promise<User[] | Record<string, unknown>[]> {
         return this.usersService.findAllUnified({
             includeDepartamento: includeDepartamentoStr === 'true',
-        });
+            departamentoId: sinDepartamentoStr === 'true' ? null : (departamentoIdStr ? parseInt(departamentoIdStr, 10) : undefined),
+            rolId: rolIdStr ? parseInt(rolIdStr, 10) : undefined,
+            email,
+            cargoId: cargoIdStr ? parseInt(cargoIdStr, 10) : undefined,
+            regionalId: regionalIdStr ? parseInt(regionalIdStr, 10) : undefined,
+            zona,
+            includeNacional: includeNacionalStr === 'true',
+            limit: limitStr ? parseInt(limitStr, 10) : undefined,
+        }) as Promise<User[] | Record<string, unknown>[]>;
     }
 
     @Post()
@@ -59,6 +93,9 @@ export class UsersController {
         return this.usersService.getAllWithDepartamento();
     }
 
+    /**
+     * @deprecated Usar GET /users?departamentoId=:id
+     */
     @Get('departamento/:id')
     async findByDepartamento(
         @Param('id', ParseIntPipe) departamentoId: number,
@@ -66,23 +103,24 @@ export class UsersController {
         return this.usersService.findByDepartamento(departamentoId);
     }
 
+    /**
+     * @deprecated Usar GET /users?sinDepartamento=true
+     */
     @Get('sin-departamento')
     async findWithoutDepartamento(): Promise<User[]> {
         return this.usersService.findByDepartamento(null);
     }
 
+    /**
+     * @deprecated Usar GET /users?email=:email
+     */
     @Get('email/:email')
     async findByEmail(@Param('email') email: string): Promise<User | null> {
         return this.usersService.findByEmail(email);
     }
 
     /**
-     * Endpoint unificado para buscar usuarios por cargo
-     * Query params:
-     * - regionalId: (opcional) filtrar por regional
-     * - zona: (opcional) filtrar por nombre de zona
-     * - includeNacional: (opcional) incluir usuarios nacionales si se filtra por regional
-     * - limit: (opcional) 1 para retornar solo uno
+     * @deprecated Usar GET /users?cargoId=:id...
      */
     @Get('cargo/:cargoId/search')
     async findByCargoUnified(
@@ -151,6 +189,9 @@ export class UsersController {
         return this.usersService.findByCargoAndZona(cargoId, zona);
     }
 
+    /**
+     * @deprecated Usar GET /users?rolId=:id
+     */
     @Get('rol/:id')
     async findByRol(
         @Param('id', ParseIntPipe) rolId: number,
@@ -158,6 +199,9 @@ export class UsersController {
         return this.usersService.findByRol(rolId);
     }
 
+    /**
+     * @deprecated Usar GET /users?rolId=2
+     */
     @Get('agentes')
     async findAgentes(): Promise<User[]> {
         return this.usersService.findAgentes();

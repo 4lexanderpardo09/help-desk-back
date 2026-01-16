@@ -19,8 +19,8 @@ export class UsersService {
      */
     async create(createUserDto: CreateUserDto): Promise<User> {
         // Verificar si el email ya existe
-        const existingUser = await this.findByEmail(createUserDto.email);
-        if (existingUser) {
+        const existingUsers = await this.findAllUnified({ email: createUserDto.email }) as User[];
+        if (existingUsers.length > 0) {
             throw new ConflictException('El correo electrónico ya está registrado');
         }
 
@@ -53,7 +53,7 @@ export class UsersService {
      * Si se envía password, se hashea; si no, se mantiene el actual
      */
     async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-        const user = await this.findById(id);
+        const user = await this.findByIdUnified(id) as User;
 
         if (!user) {
             throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
@@ -61,7 +61,8 @@ export class UsersService {
 
         // Si se envía un nuevo email, verificar que no esté en uso por otro usuario
         if (updateUserDto.email && updateUserDto.email !== user.email) {
-            const existingUser = await this.findByEmail(updateUserDto.email);
+            const existingUsers = await this.findAllUnified({ email: updateUserDto.email }) as User[];
+            const existingUser = existingUsers[0];
             if (existingUser && existingUser.id !== id) {
                 throw new ConflictException('El correo electrónico ya está en uso');
             }
@@ -108,16 +109,15 @@ export class UsersService {
 
         await this.userRepository.update(id, updateData);
 
-        return this.findById(id) as Promise<User>;
+        return this.findByIdUnified(id) as Promise<User>;
     }
 
     /**
      * Busca un usuario por email
      */
     async findByEmail(email: string): Promise<User | null> {
-        return this.userRepository.findOne({
-            where: { email, estado: 1 },
-        });
+        const users = await this.findAllUnified({ email }) as User[];
+        return users[0] || null;
     }
 
     /**
@@ -168,46 +168,136 @@ export class UsersService {
      * @deprecated Usar findByIdUnified(id)
      */
     async findById(id: number): Promise<User | null> {
-        return this.userRepository.findOne({
-            where: { id, estado: 1 },
-        });
+        return this.findByIdUnified(id) as Promise<User | null>;
     }
 
     /**
      * @deprecated Usar findByIdUnified(id, { includeEmpresas: true })
      */
     async findByIdWithEmpresas(id: number): Promise<Record<string, unknown> | null> {
-        const result = await this.userRepository.query(
-            `SELECT 
-                u.usu_id, u.usu_nom, u.usu_ape, u.usu_correo, 
-                u.rol_id, u.dp_id, u.reg_id, u.car_id, 
-                u.es_nacional, u.usu_firma,
-                GROUP_CONCAT(eu.emp_id) as emp_ids
-             FROM tm_usuario u
-             LEFT JOIN empresa_usuario eu ON u.usu_id = eu.usu_id
-             WHERE u.usu_id = ?
-             GROUP BY u.usu_id`,
-            [id],
-        );
-        return result[0] || null;
+        return this.findByIdUnified(id, { includeEmpresas: true }) as Promise<Record<string, unknown> | null>;
     }
 
     /**
-     * Búsqueda unificada de todos los usuarios
-     * - includeDepartamento: true para ejecutar stored procedure legacy con JOINs
+     * **Búsqueda Maestra Unificada**
+     * 
+     * Reemplaza múltiples consultas legacy fragmentadas.
+     * Permite buscar usuarios aplicando cualquier combinación de filtros.
+     * 
+     * Lógica especial:
+     * - Si se provee `zona`, realiza JOINs con tm_regional y tm_zona.
+     * - Si se provee `regionalId` y `includeNacional`, aplica lógica OR (regional = X OR esNacional = 1).
+     * - Si `includeDepartamento` es true, realiza un raw query para incluir nombre del departamento (compatibilidad legacy).
+     * 
+     * @param options Opciones de filtrado y paginación (limit).
      */
     async findAllUnified(options?: {
         includeDepartamento?: boolean;
-    }): Promise<User[] | Record<string, unknown>[]> {
-        if (options?.includeDepartamento) {
-            const result = await this.userRepository.query('CALL sp_l_usuario_01()');
-            return result[0] || [];
+        departamentoId?: number | null; // null explícito para buscar users con dp_id IS NULL
+        rolId?: number;
+        email?: string;
+        cargoId?: number;
+        regionalId?: number;
+        zona?: string;       // Nombre de zona
+        includeNacional?: boolean;
+        limit?: number;      // Para findOne legacy
+    }): Promise<User[] | Record<string, unknown>[] | User | null> {
+        // Caso especial: búsqueda por zona requiere JOINs específicos
+        if (options?.zona && options?.cargoId) {
+            const result = await this.userRepository.query(
+                `SELECT u.* 
+                 FROM tm_usuario u
+                 INNER JOIN tm_regional r ON u.reg_id = r.reg_id
+                 INNER JOIN tm_zona z ON r.zona_id = z.zona_id
+                 WHERE u.car_id = ? AND z.zona_nom = ? AND u.est = 1
+                 ${options.limit ? `LIMIT ${options.limit}` : ''}`,
+                [options.cargoId, options.zona],
+            );
+            return options.limit === 1 ? (result[0] || null) : result;
         }
 
-        return this.userRepository.find({
-            where: { estado: 1 },
-            order: { nombre: 'ASC' },
-        });
+        const qb = this.userRepository.createQueryBuilder('user');
+
+        // Filtros base
+        qb.where('user.estado = :estado', { estado: 1 });
+
+        if (options?.email) {
+            qb.andWhere('user.email = :email', { email: options.email });
+        }
+
+        if (options?.rolId) {
+            qb.andWhere('user.rolId = :rolId', { rolId: options.rolId });
+        }
+
+        if (options?.cargoId) {
+            qb.andWhere('user.cargoId = :cargoId', { cargoId: options.cargoId });
+        }
+
+        // Filtro de departamento (manejo especial para null)
+        if (options?.departamentoId !== undefined) {
+            if (options.departamentoId === null) {
+                qb.andWhere('user.departamentoId IS NULL');
+            } else {
+                qb.andWhere('user.departamentoId = :departamentoId', { departamentoId: options.departamentoId });
+            }
+        }
+
+        // Filtro por regional (con lógica de includeNacional para cargos)
+        if (options?.regionalId !== undefined) {
+            if (options.includeNacional) {
+                qb.andWhere('(user.regionalId = :regionalId OR user.esNacional = 1)', { regionalId: options.regionalId });
+            } else {
+                qb.andWhere('user.regionalId = :regionalId', { regionalId: options.regionalId });
+            }
+        }
+
+        // Ordenamiento default
+        qb.orderBy('user.nombre', 'ASC');
+
+        // Si se pide incluir departamento, hacemos un RAW query o join para replicar el SP legacy
+        if (options?.includeDepartamento) {
+            let whereClause = 'u.est = 1';
+            const params: any[] = [];
+
+            if (options.email) {
+                whereClause += ' AND u.usu_correo = ?';
+                params.push(options.email);
+            }
+            if (options.rolId) {
+                whereClause += ' AND u.rol_id = ?';
+                params.push(options.rolId);
+            }
+            if (options.cargoId) {
+                whereClause += ' AND u.car_id = ?';
+                params.push(options.cargoId);
+            }
+            if (options.departamentoId !== undefined) {
+                if (options.departamentoId === null) {
+                    whereClause += ' AND u.dp_id IS NULL';
+                } else {
+                    whereClause += ' AND u.dp_id = ?';
+                    params.push(options.departamentoId);
+                }
+            }
+            // Nota: El legacy SP no soportaba regional/zona/nacional, así que no los implementamos en raw mode
+            // a menos que sea necesario. (Originalmente findAllUnified solo reemplazaba sp_l_usuario_01)
+
+            return this.userRepository.query(
+                `SELECT u.*, d.dp_nom 
+                 FROM tm_usuario u
+                 LEFT JOIN tm_departamento d ON u.dp_id = d.dp_id
+                 WHERE ${whereClause}
+                 ORDER BY u.usu_nom ASC`,
+                params
+            );
+        }
+
+        // Retornar uno o todos
+        if (options?.limit === 1) {
+            return qb.getOne();
+        }
+
+        return qb.getMany();
     }
 
     // ===============================================
@@ -218,10 +308,7 @@ export class UsersService {
      * @deprecated Usar findAllUnified()
      */
     async findAll(): Promise<User[]> {
-        return this.userRepository.find({
-            where: { estado: 1 },
-            order: { nombre: 'ASC' },
-        });
+        return this.findAllUnified() as Promise<User[]>;
     }
 
     /**
@@ -248,19 +335,7 @@ export class UsersService {
      * Si departamentoId es null, busca usuarios sin departamento asignado
      */
     async findByDepartamento(departamentoId: number | null): Promise<User[]> {
-        if (departamentoId === null) {
-            return this.userRepository
-                .createQueryBuilder('user')
-                .where('user.departamentoId IS NULL')
-                .andWhere('user.estado = :estado', { estado: 1 })
-                .orderBy('user.nombre', 'ASC')
-                .getMany();
-        }
-
-        return this.userRepository.find({
-            where: { departamentoId, estado: 1 },
-            order: { nombre: 'ASC' },
-        });
+        return this.findAllUnified({ departamentoId }) as Promise<User[]>;
     }
 
     /**
@@ -269,7 +344,7 @@ export class UsersService {
      * No elimina físicamente, solo marca est=0 y fech_elim=NOW()
      */
     async delete(id: number): Promise<{ deleted: boolean; id: number }> {
-        const user = await this.findById(id);
+        const user = await this.findByIdUnified(id);
 
         if (!user) {
             throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
@@ -287,9 +362,7 @@ export class UsersService {
      * @deprecated Usar findAllUnified({ includeDepartamento: true })
      */
     async getAllWithDepartamento(): Promise<Record<string, unknown>[]> {
-        const result = await this.userRepository.query('CALL sp_l_usuario_01()');
-        // MySQL devuelve el resultado en result[0]
-        return result[0] || [];
+        return this.findAllUnified({ includeDepartamento: true }) as Promise<Record<string, unknown>[]>;
     }
 
     /**
@@ -304,6 +377,9 @@ export class UsersService {
      * - findByCargoUnified({ cargoId: 1, regionalId: 2, includeNacional: true }) → Regional O Nacional
      * - findByCargoUnified({ cargoId: 1, zona: 'Norte', limit: 1 }) → Por zona
      */
+    /**
+     * @deprecated Usar findAllUnified({ cargoId, ... })
+     */
     async findByCargoUnified(options: {
         cargoId: number;
         regionalId?: number;
@@ -311,45 +387,7 @@ export class UsersService {
         includeNacional?: boolean;
         limit?: number;
     }): Promise<User[] | User | null> {
-        const { cargoId, regionalId, zona, includeNacional, limit } = options;
-
-        // Caso especial: búsqueda por zona requiere JOINs
-        if (zona) {
-            const result = await this.userRepository.query(
-                `SELECT u.* 
-                 FROM tm_usuario u
-                 INNER JOIN tm_regional r ON u.reg_id = r.reg_id
-                 INNER JOIN tm_zona z ON r.zona_id = z.zona_id
-                 WHERE u.car_id = ? AND z.zona_nom = ? AND u.est = 1
-                 ${limit ? `LIMIT ${limit}` : ''}`,
-                [cargoId, zona],
-            );
-            return limit === 1 ? (result[0] || null) : result;
-        }
-
-        // Query builder para los demás casos
-        const qb = this.userRepository
-            .createQueryBuilder('user')
-            .where('user.cargoId = :cargoId', { cargoId })
-            .andWhere('user.estado = :estado', { estado: 1 });
-
-        // Filtro por regional (con o sin nacionales)
-        if (regionalId !== undefined) {
-            if (includeNacional) {
-                qb.andWhere('(user.regionalId = :regionalId OR user.esNacional = 1)', { regionalId });
-            } else {
-                qb.andWhere('user.regionalId = :regionalId', { regionalId });
-            }
-        }
-
-        qb.orderBy('user.nombre', 'ASC');
-
-        // Retornar uno o todos
-        if (limit === 1) {
-            return qb.getOne();
-        }
-
-        return qb.getMany();
+        return this.findAllUnified(options) as Promise<User[] | User | null>;
     }
 
     // ===============================================
@@ -361,6 +399,24 @@ export class UsersService {
      * @deprecated Usar findByCargoUnified({ cargoId })
      */
     async findByCargo(cargoId: number): Promise<Record<string, unknown>[]> {
+        // Nota: El original devuelve Record<string, unknown>[], pero findByCargoUnified devuelve User[]
+        // Se asume compatibilidad o se ajusta si es necesario. El query original devolvía campos específicos.
+        // Dado que findByCargoUnified devuelve entidades completas, esto es una mejora (data extra),
+        // pero para evitar romper tipos estrictos devolvemos as any o transformamos.
+        // El legacy devuelve: usu_id, usu_nom, usu_ape, reg_nom
+        // El unificado con User[] no tiene reg_nom directo (es relación).
+        // Si el frontend usa reg_nom, esto podría romper.
+        // REVISIÓN: El método legacy findByCargo hacía un JOIN con regional.
+        // User entity tiene regionalId pero no reg_nom flat. 
+        // findByCargoUnified usa createQueryBuilder y NO hace join explícito para seleccionar reg_nom en el select.
+        // Ups, findByCargoUnified retorna User entity. Si el front necesita reg_nom, debemos asegurarnos.
+        // Por seguridad y compatibilidad, mantendré la query original en findByCargoOld o usaré el unified SI
+        // el unified provee lo mismo. 
+        // El unified provee `User` entity. `User` entity podría tener relation con Regional cargada?
+        // En findByCargoUnified no estoy haciendo `leftJoinAndSelect`.
+        // MANTENDRÉ LA IMPLEMENTACIÓN ORIGINAL para findByCargo para no romper el front que espera `reg_nom`.
+        // Los otros (byId, etc) sí parecen seguros.
+
         return this.userRepository.query(
             `SELECT u.usu_id, u.usu_nom, u.usu_ape, r.reg_nom
              FROM tm_usuario u
@@ -374,57 +430,37 @@ export class UsersService {
      * @deprecated Usar findByCargoUnified({ cargoId, regionalId, limit: 1 })
      */
     async findByCargoAndRegional(cargoId: number, regionalId: number): Promise<User | null> {
-        return this.userRepository.findOne({
-            where: { cargoId, regionalId, estado: 1 },
-        });
+        return this.findByCargoUnified({ cargoId, regionalId, limit: 1 }) as Promise<User | null>;
     }
 
     /**
      * @deprecated Usar findByCargoUnified({ cargoId, regionalId })
      */
     async findAllByCargoAndRegional(cargoId: number, regionalId: number): Promise<User[]> {
-        return this.userRepository.find({
-            where: { cargoId, regionalId, estado: 1 },
-            order: { nombre: 'ASC' },
-        });
+        return this.findByCargoUnified({ cargoId, regionalId }) as Promise<User[]>;
     }
 
     /**
      * @deprecated Usar findByCargoUnified({ cargoId, limit: 1 })
      */
     async findOneByCargo(cargoId: number): Promise<User | null> {
-        return this.userRepository.findOne({
-            where: { cargoId, estado: 1 },
-        });
+        return this.findByCargoUnified({ cargoId, limit: 1 }) as Promise<User | null>;
     }
 
     /**
      * @deprecated Usar findByCargoUnified({ cargoId, regionalId, includeNacional: true })
      */
     async findByCargoRegionalOrNacional(cargoId: number, regionalId: number): Promise<User[]> {
-        return this.userRepository
-            .createQueryBuilder('user')
-            .where('user.cargoId = :cargoId', { cargoId })
-            .andWhere('(user.regionalId = :regionalId OR user.esNacional = 1)', { regionalId })
-            .andWhere('user.estado = :estado', { estado: 1 })
-            .orderBy('user.nombre', 'ASC')
-            .getMany();
+        return this.findByCargoUnified({ cargoId, regionalId, includeNacional: true }) as Promise<User[]>;
     }
 
     /**
      * @deprecated Usar findByCargoUnified({ cargoId, zona, limit: 1 })
      */
     async findByCargoAndZona(cargoId: number, zonaNombre: string): Promise<Record<string, unknown> | null> {
-        const result = await this.userRepository.query(
-            `SELECT u.* 
-             FROM tm_usuario u
-             INNER JOIN tm_regional r ON u.reg_id = r.reg_id
-             INNER JOIN tm_zona z ON r.zona_id = z.zona_id
-             WHERE u.car_id = ? AND z.zona_nom = ? AND u.est = 1
-             LIMIT 1`,
-            [cargoId, zonaNombre],
-        );
-        return result[0] || null;
+        // Este retorna Record<string, unknown> en legacy query, el unified retorna User | Record...
+        // En caso zona, el unified retorna result[0] que es raw packet, compatible.
+        return this.findByCargoUnified({ cargoId, zona: zonaNombre, limit: 1 }) as Promise<Record<string, unknown> | null>;
     }
 
     /**
@@ -433,10 +469,7 @@ export class UsersService {
      * Nota: El legacy hardcodea rol_id=2, aquí lo hacemos dinámico
      */
     async findByRol(rolId: number): Promise<User[]> {
-        return this.userRepository.find({
-            where: { rolId, estado: 1 },
-            order: { nombre: 'ASC' },
-        });
+        return this.findAllUnified({ rolId }) as Promise<User[]>;
     }
 
     /**
@@ -444,7 +477,7 @@ export class UsersService {
      * Wrapper para mantener compatibilidad con legacy get_usuario_x_rol
      */
     async findAgentes(): Promise<User[]> {
-        return this.findByRol(2);
+        return this.findAllUnified({ rolId: 2 }) as Promise<User[]>;
     }
 
     /**
@@ -452,7 +485,7 @@ export class UsersService {
      * Basado en: update_firma del modelo legacy PHP
      */
     async updateFirma(id: number, firma: string): Promise<{ updated: boolean; id: number }> {
-        const user = await this.findById(id);
+        const user = await this.findByIdUnified(id);
 
         if (!user) {
             throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
@@ -470,7 +503,7 @@ export class UsersService {
      * 2. Inserta los nuevos perfiles
      */
     async syncPerfiles(userId: number, perfilIds: number[]): Promise<{ synced: boolean; userId: number; perfilCount: number }> {
-        const user = await this.findById(userId);
+        const user = await this.findByIdUnified(userId);
 
         if (!user) {
             throw new NotFoundException(`Usuario con ID ${userId} no encontrado`);
