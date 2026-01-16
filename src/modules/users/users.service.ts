@@ -357,6 +357,55 @@ export class UsersService {
 
         return { updated: true, id };
     }
+
+    /**
+     * Sincroniza perfiles de un usuario
+     * Basado en: insert_usuario_perfil del modelo legacy PHP
+     * 1. Elimina perfiles existentes del usuario
+     * 2. Inserta los nuevos perfiles
+     */
+    async syncPerfiles(userId: number, perfilIds: number[]): Promise<{ synced: boolean; userId: number; perfilCount: number }> {
+        const user = await this.findById(userId);
+
+        if (!user) {
+            throw new NotFoundException(`Usuario con ID ${userId} no encontrado`);
+        }
+
+        // 1. Eliminar perfiles existentes
+        await this.userRepository.query(
+            'DELETE FROM tm_usuario_perfiles WHERE usu_id = ?',
+            [userId],
+        );
+
+        // 2. Insertar nuevos perfiles
+        if (perfilIds && perfilIds.length > 0) {
+            for (const perfilId of perfilIds) {
+                if (perfilId) {
+                    await this.userRepository.query(
+                        'INSERT INTO tm_usuario_perfiles (usu_id, per_id, est) VALUES (?, ?, 1)',
+                        [userId, perfilId],
+                    );
+                }
+            }
+        }
+
+        return { synced: true, userId, perfilCount: perfilIds?.length || 0 };
+    }
+
+    /**
+     * Obtiene los perfiles de un usuario
+     * Basado en: get_perfiles_por_usuario del modelo legacy PHP
+     * JOIN con tm_perfil para obtener nombre del perfil
+     */
+    async getPerfiles(userId: number): Promise<Record<string, unknown>[]> {
+        return this.userRepository.query(
+            `SELECT p.per_id, p.per_nom 
+             FROM tm_usuario_perfiles up
+             JOIN tm_perfil p ON up.per_id = p.per_id
+             WHERE up.usu_id = ? AND up.est = 1`,
+            [userId],
+        );
+    }
 }
 
 

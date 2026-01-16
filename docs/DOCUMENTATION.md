@@ -172,6 +172,8 @@ export class User {
 | POST | `/users/by-ids` | Por lista de IDs | `get_usuarios_por_ids()` |
 | PUT | `/users/:id` | Actualizar usuario | `update_usuario()` |
 | PUT | `/users/:id/firma` | Actualizar firma | `update_firma()` |
+| PUT | `/users/:id/perfiles` | Sincronizar perfiles | `insert_usuario_perfil()` |
+| GET | `/users/:id/perfiles` | Obtener perfiles | `get_perfiles_por_usuario()` |
 | DELETE | `/users/:id` | Soft delete | `delete_usuario()` |
 
 #### `POST /users` - Crear Usuario

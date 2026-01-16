@@ -154,5 +154,20 @@ export class UsersController {
     ): Promise<{ updated: boolean; id: number }> {
         return this.usersService.updateFirma(id, firma);
     }
+
+    @Put(':id/perfiles')
+    async syncPerfiles(
+        @Param('id', ParseIntPipe) id: number,
+        @Body('perfilIds') perfilIds: number[],
+    ): Promise<{ synced: boolean; userId: number; perfilCount: number }> {
+        return this.usersService.syncPerfiles(id, perfilIds);
+    }
+
+    @Get(':id/perfiles')
+    async getPerfiles(
+        @Param('id', ParseIntPipe) id: number,
+    ): Promise<Record<string, unknown>[]> {
+        return this.usersService.getPerfiles(id);
+    }
 }
 
