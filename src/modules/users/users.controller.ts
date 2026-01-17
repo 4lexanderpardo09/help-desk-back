@@ -83,134 +83,12 @@ export class UsersController {
         return this.usersService.findByIds(ids);
     }
 
-    // === RUTAS CON PREFIJOS ESPECÍFICOS (antes de :id) ===
 
-    /**
-     * @deprecated Usar GET /users?includeDepartamento=true
-     */
-    @Get('with-departamento')
-    async getAllWithDepartamento(): Promise<Record<string, unknown>[]> {
-        return this.usersService.getAllWithDepartamento();
-    }
-
-    /**
-     * @deprecated Usar GET /users?departamentoId=:id
-     */
-    @Get('departamento/:id')
-    async findByDepartamento(
-        @Param('id', ParseIntPipe) departamentoId: number,
-    ): Promise<User[]> {
-        return this.usersService.findByDepartamento(departamentoId);
-    }
-
-    /**
-     * @deprecated Usar GET /users?sinDepartamento=true
-     */
-    @Get('sin-departamento')
-    async findWithoutDepartamento(): Promise<User[]> {
-        return this.usersService.findByDepartamento(null);
-    }
-
-    /**
-     * @deprecated Usar GET /users?email=:email
-     */
-    @Get('email/:email')
-    async findByEmail(@Param('email') email: string): Promise<User | null> {
-        return this.usersService.findByEmail(email);
-    }
-
-    /**
-     * @deprecated Usar GET /users?cargoId=:id...
-     */
-    @Get('cargo/:cargoId/search')
-    async findByCargoUnified(
-        @Param('cargoId', ParseIntPipe) cargoId: number,
-        @Query('regionalId') regionalIdStr?: string,
-        @Query('zona') zona?: string,
-        @Query('includeNacional') includeNacionalStr?: string,
-        @Query('limit') limitStr?: string,
-    ): Promise<User[] | User | null> {
-        return this.usersService.findByCargoUnified({
-            cargoId,
-            regionalId: regionalIdStr ? parseInt(regionalIdStr, 10) : undefined,
-            zona,
-            includeNacional: includeNacionalStr === 'true',
-            limit: limitStr ? parseInt(limitStr, 10) : undefined,
-        });
-    }
-
-    // ===============================================
-    // ENDPOINTS LEGACY (usar /cargo/:cargoId/search en su lugar)
-    // ===============================================
-
-    @Get('cargo/:id')
-    async findByCargo(
-        @Param('id', ParseIntPipe) cargoId: number,
-    ): Promise<Record<string, unknown>[]> {
-        return this.usersService.findByCargo(cargoId);
-    }
-
-    @Get('cargo/:cargoId/regional/:regionalId')
-    async findByCargoAndRegional(
-        @Param('cargoId', ParseIntPipe) cargoId: number,
-        @Param('regionalId', ParseIntPipe) regionalId: number,
-    ): Promise<User | null> {
-        return this.usersService.findByCargoAndRegional(cargoId, regionalId);
-    }
-
-    @Get('cargo/:cargoId/regional/:regionalId/all')
-    async findAllByCargoAndRegional(
-        @Param('cargoId', ParseIntPipe) cargoId: number,
-        @Param('regionalId', ParseIntPipe) regionalId: number,
-    ): Promise<User[]> {
-        return this.usersService.findAllByCargoAndRegional(cargoId, regionalId);
-    }
-
-    @Get('cargo/:id/one')
-    async findOneByCargo(
-        @Param('id', ParseIntPipe) cargoId: number,
-    ): Promise<User | null> {
-        return this.usersService.findOneByCargo(cargoId);
-    }
-
-    @Get('cargo/:cargoId/regional-or-nacional/:regionalId')
-    async findByCargoRegionalOrNacional(
-        @Param('cargoId', ParseIntPipe) cargoId: number,
-        @Param('regionalId', ParseIntPipe) regionalId: number,
-    ): Promise<User[]> {
-        return this.usersService.findByCargoRegionalOrNacional(cargoId, regionalId);
-    }
-
-    @Get('cargo/:cargoId/zona/:zona')
-    async findByCargoAndZona(
-        @Param('cargoId', ParseIntPipe) cargoId: number,
-        @Param('zona') zona: string,
-    ): Promise<Record<string, unknown> | null> {
-        return this.usersService.findByCargoAndZona(cargoId, zona);
-    }
-
-    /**
-     * @deprecated Usar GET /users?rolId=:id
-     */
-    @Get('rol/:id')
-    async findByRol(
-        @Param('id', ParseIntPipe) rolId: number,
-    ): Promise<User[]> {
-        return this.usersService.findByRol(rolId);
-    }
-
-    /**
-     * @deprecated Usar GET /users?rolId=2
-     */
-    @Get('agentes')
-    async findAgentes(): Promise<User[]> {
-        return this.usersService.findAgentes();
-    }
 
     // === RUTAS CON :id (al final para evitar conflictos) ===
     @Get(':id')
     async findOne(@Param('id', ParseIntPipe) id: number): Promise<User | null> {
-        return this.usersService.findById(id);
+        return this.usersService.findByIdUnified(id) as Promise<User | null>;
     }
 
     /**
@@ -227,16 +105,7 @@ export class UsersController {
         });
     }
 
-    // ===============================================
-    // ENDPOINTS LEGACY (usar /:id/search en su lugar)
-    // ===============================================
 
-    @Get(':id/with-empresas')
-    async findByIdWithEmpresas(
-        @Param('id', ParseIntPipe) id: number,
-    ): Promise<Record<string, unknown> | null> {
-        return this.usersService.findByIdWithEmpresas(id);
-    }
 
     @Put(':id')
     async update(

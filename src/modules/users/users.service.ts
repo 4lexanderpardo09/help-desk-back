@@ -172,23 +172,7 @@ export class UsersService {
         return user;
     }
 
-    // ===============================================
-    // MÉTODOS LEGACY (usar findByIdUnified en su lugar)
-    // ===============================================
 
-    /**
-     * @deprecated Usar findByIdUnified(id)
-     */
-    async findById(id: number): Promise<User | null> {
-        return this.findByIdUnified(id) as Promise<User | null>;
-    }
-
-    /**
-     * @deprecated Usar findByIdUnified(id, { includeEmpresas: true })
-     */
-    async findByIdWithEmpresas(id: number): Promise<Record<string, unknown> | null> {
-        return this.findByIdUnified(id, { includeEmpresas: true }) as Promise<Record<string, unknown> | null>;
-    }
 
     /**
      * **Búsqueda Maestra Unificada**
@@ -270,16 +254,7 @@ export class UsersService {
         return qb.getMany();
     }
 
-    // ===============================================
-    // MÉTODOS LEGACY (usar findAllUnified en su lugar)
-    // ===============================================
 
-    /**
-     * @deprecated Usar findAllUnified()
-     */
-    async findAll(): Promise<User[]> {
-        return this.findAllUnified() as Promise<User[]>;
-    }
 
     /**
      * Obtiene usuarios por lista de IDs con datos de regional
@@ -328,127 +303,7 @@ export class UsersService {
         return { deleted: true, id };
     }
 
-    /**
-     * @deprecated Usar findAllUnified({ includeDepartamento: true })
-     */
-    async getAllWithDepartamento(): Promise<Record<string, unknown>[]> {
-        return this.findAllUnified({ includeDepartamento: true }) as Promise<Record<string, unknown>[]>;
-    }
 
-    /**
-     * Búsqueda unificada de usuarios por cargo con filtros opcionales
-     * Reemplaza 6 endpoints legacy fragmentados
-     * 
-     * Ejemplos de uso:
-     * - findByCargoUnified({ cargoId: 1 }) → Todos por cargo
-     * - findByCargoUnified({ cargoId: 1, limit: 1 }) → Uno por cargo
-     * - findByCargoUnified({ cargoId: 1, regionalId: 2 }) → Todos por cargo+regional
-     * - findByCargoUnified({ cargoId: 1, regionalId: 2, limit: 1 }) → Uno por cargo+regional
-     * - findByCargoUnified({ cargoId: 1, regionalId: 2, includeNacional: true }) → Regional O Nacional
-     * - findByCargoUnified({ cargoId: 1, zona: 'Norte', limit: 1 }) → Por zona
-     */
-    /**
-     * @deprecated Usar findAllUnified({ cargoId, ... })
-     */
-    async findByCargoUnified(options: {
-        cargoId: number;
-        regionalId?: number;
-        zona?: string;
-        includeNacional?: boolean;
-        limit?: number;
-    }): Promise<User[] | User | null> {
-        return this.findAllUnified(options) as Promise<User[] | User | null>;
-    }
-
-    // ===============================================
-    // MÉTODOS LEGACY (usar findByCargoUnified en su lugar)
-    // Se mantienen para compatibilidad con endpoints actuales
-    // ===============================================
-
-    /**
-     * @deprecated Usar findByCargoUnified({ cargoId })
-     */
-    async findByCargo(cargoId: number): Promise<Record<string, unknown>[]> {
-        // Nota: El original devuelve Record<string, unknown>[], pero findByCargoUnified devuelve User[]
-        // Se asume compatibilidad o se ajusta si es necesario. El query original devolvía campos específicos.
-        // Dado que findByCargoUnified devuelve entidades completas, esto es una mejora (data extra),
-        // pero para evitar romper tipos estrictos devolvemos as any o transformamos.
-        // El legacy devuelve: usu_id, usu_nom, usu_ape, reg_nom
-        // El unificado con User[] no tiene reg_nom directo (es relación).
-        // Si el frontend usa reg_nom, esto podría romper.
-        // REVISIÓN: El método legacy findByCargo hacía un JOIN con regional.
-        // User entity tiene regionalId pero no reg_nom flat. 
-        // findByCargoUnified usa createQueryBuilder y NO hace join explícito para seleccionar reg_nom en el select.
-        // Ups, findByCargoUnified retorna User entity. Si el front necesita reg_nom, debemos asegurarnos.
-        // Por seguridad y compatibilidad, mantendré la query original en findByCargoOld o usaré el unified SI
-        // el unified provee lo mismo. 
-        // El unified provee `User` entity. `User` entity podría tener relation con Regional cargada?
-        // En findByCargoUnified no estoy haciendo `leftJoinAndSelect`.
-        // MANTENDRÉ LA IMPLEMENTACIÓN ORIGINAL para findByCargo para no romper el front que espera `reg_nom`.
-        // Los otros (byId, etc) sí parecen seguros.
-
-        return this.userRepository.query(
-            `SELECT u.usu_id, u.usu_nom, u.usu_ape, r.reg_nom
-             FROM tm_usuario u
-             LEFT JOIN tm_regional r ON u.reg_id = r.reg_id
-             WHERE u.car_id = ? AND u.est = 1`,
-            [cargoId],
-        );
-    }
-
-    /**
-     * @deprecated Usar findByCargoUnified({ cargoId, regionalId, limit: 1 })
-     */
-    async findByCargoAndRegional(cargoId: number, regionalId: number): Promise<User | null> {
-        return this.findByCargoUnified({ cargoId, regionalId, limit: 1 }) as Promise<User | null>;
-    }
-
-    /**
-     * @deprecated Usar findByCargoUnified({ cargoId, regionalId })
-     */
-    async findAllByCargoAndRegional(cargoId: number, regionalId: number): Promise<User[]> {
-        return this.findByCargoUnified({ cargoId, regionalId }) as Promise<User[]>;
-    }
-
-    /**
-     * @deprecated Usar findByCargoUnified({ cargoId, limit: 1 })
-     */
-    async findOneByCargo(cargoId: number): Promise<User | null> {
-        return this.findByCargoUnified({ cargoId, limit: 1 }) as Promise<User | null>;
-    }
-
-    /**
-     * @deprecated Usar findByCargoUnified({ cargoId, regionalId, includeNacional: true })
-     */
-    async findByCargoRegionalOrNacional(cargoId: number, regionalId: number): Promise<User[]> {
-        return this.findByCargoUnified({ cargoId, regionalId, includeNacional: true }) as Promise<User[]>;
-    }
-
-    /**
-     * @deprecated Usar findByCargoUnified({ cargoId, zona, limit: 1 })
-     */
-    async findByCargoAndZona(cargoId: number, zonaNombre: string): Promise<Record<string, unknown> | null> {
-        // Este retorna Record<string, unknown> en legacy query, el unified retorna User | Record...
-        // En caso zona, el unified retorna result[0] que es raw packet, compatible.
-        return this.findByCargoUnified({ cargoId, zona: zonaNombre, limit: 1 }) as Promise<Record<string, unknown> | null>;
-    }
-
-    /**
-     * Obtiene usuarios por rol
-     * Basado en: get_usuario_x_rol del modelo legacy PHP
-     * Nota: El legacy hardcodea rol_id=2, aquí lo hacemos dinámico
-     */
-    async findByRol(rolId: number): Promise<User[]> {
-        return this.findAllUnified({ rolId }) as Promise<User[]>;
-    }
-
-    /**
-     * Obtiene agentes (usuarios con rol_id = 2)
-     * Wrapper para mantener compatibilidad con legacy get_usuario_x_rol
-     */
-    async findAgentes(): Promise<User[]> {
-        return this.findAllUnified({ rolId: 2 }) as Promise<User[]>;
-    }
 
     /**
      * Actualiza la firma de un usuario
