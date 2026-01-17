@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Flujo } from './flujo.entity';
+import { RutaPaso } from './ruta-paso.entity';
 
 @Entity('tm_ruta')
 export class Ruta {
@@ -14,11 +16,10 @@ export class Ruta {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
-    // TODO: Agregar relaciones
-    // @ManyToOne(() => Flujo)
-    // @JoinColumn({ name: 'flujo_id' })
-    // flujo: Flujo;
+    @ManyToOne(() => Flujo)
+    @JoinColumn({ name: 'flujo_id' })
+    flujo: Flujo;
 
-    // @OneToMany(() => FlujoTransicion, (ft) => ft.ruta)
-    // transiciones: FlujoTransicion[];
+    @OneToMany(() => RutaPaso, (rp) => rp.ruta)
+    rutaPasos: RutaPaso[];
 }

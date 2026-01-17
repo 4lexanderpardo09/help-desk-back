@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Subcategoria } from '../../subcategories/entities/subcategoria.entity';
+import { PasoFlujo } from './paso-flujo.entity';
 
 @Entity('tm_flujo')
 export class Flujo {
@@ -20,14 +22,10 @@ export class Flujo {
     @Column({ name: 'flujo_nom_adjunto', type: 'varchar', length: 255, nullable: true })
     nombreAdjunto: string | null;
 
-    // TODO: Agregar relaciones ManyToOne / OneToMany
-    // @OneToOne(() => Subcategoria)
-    // @JoinColumn({ name: 'cats_id' })
-    // subcategoria: Subcategoria;
+    @ManyToOne(() => Subcategoria)
+    @JoinColumn({ name: 'cats_id' })
+    subcategoria: Subcategoria;
 
-    // @OneToMany(() => PasoFlujo, (paso) => paso.flujo)
-    // pasos: PasoFlujo[];
-
-    // @OneToMany(() => DataExcel, (data) => data.flujo)
-    // datasExcel: DataExcel[];
+    @OneToMany(() => PasoFlujo, (paso) => paso.flujo)
+    pasos: PasoFlujo[];
 }

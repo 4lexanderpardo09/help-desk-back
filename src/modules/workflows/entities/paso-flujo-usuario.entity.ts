@@ -1,4 +1,7 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { PasoFlujo } from './paso-flujo.entity';
+import { User } from '../../users/entities/user.entity';
+import { Cargo } from '../../positions/entities/cargo.entity';
 
 @Entity('tm_flujo_paso_usuarios')
 export class PasoFlujoUsuario {
@@ -14,16 +17,15 @@ export class PasoFlujoUsuario {
     @Column({ name: 'car_id', type: 'int', nullable: true })
     cargoId: number | null;
 
-    // TODO: Agregar relaciones ManyToOne
-    // @ManyToOne(() => PasoFlujo)
-    // @JoinColumn({ name: 'paso_id' })
-    // paso: PasoFlujo;
+    @ManyToOne(() => PasoFlujo)
+    @JoinColumn({ name: 'paso_id' })
+    paso: PasoFlujo;
 
-    // @ManyToOne(() => User)
-    // @JoinColumn({ name: 'usu_id' })
-    // usuario: User;
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'usu_id' })
+    usuario: User;
 
-    // @ManyToOne(() => Cargo)
-    // @JoinColumn({ name: 'car_id' })
-    // cargo: Cargo;
+    @ManyToOne(() => Cargo)
+    @JoinColumn({ name: 'car_id' })
+    cargo: Cargo;
 }

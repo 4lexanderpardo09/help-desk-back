@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Flujo } from './flujo.entity';
+import { Empresa } from '../../companies/entities/empresa.entity';
 
 @Entity('tm_flujo_plantilla')
 export class FlujoPlantilla {
@@ -17,12 +19,11 @@ export class FlujoPlantilla {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
-    // TODO: Agregar relaciones ManyToOne
-    // @ManyToOne(() => Flujo)
-    // @JoinColumn({ name: 'flujo_id' })
-    // flujo: Flujo;
+    @ManyToOne(() => Flujo)
+    @JoinColumn({ name: 'flujo_id' })
+    flujo: Flujo;
 
-    // @ManyToOne(() => Empresa)
-    // @JoinColumn({ name: 'emp_id' })
-    // empresa: Empresa;
+    @ManyToOne(() => Empresa)
+    @JoinColumn({ name: 'emp_id' })
+    empresa: Empresa;
 }

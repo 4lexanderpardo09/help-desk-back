@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Flujo } from './flujo.entity';
+import { Cargo } from '../../positions/entities/cargo.entity';
 
 @Entity('tm_flujo_paso')
 export class PasoFlujo {
@@ -65,12 +67,11 @@ export class PasoFlujo {
     @Column({ name: 'permite_despacho_masivo', type: 'tinyint', default: 0, nullable: true })
     permiteDespachoMasivo: boolean | null;
 
-    // TODO: Agregar relaciones
-    // @ManyToOne(() => Flujo)
-    // @JoinColumn({ name: 'flujo_id' })
-    // flujo: Flujo;
+    @ManyToOne(() => Flujo, (f) => f.pasos)
+    @JoinColumn({ name: 'flujo_id' })
+    flujo: Flujo;
 
-    // @ManyToOne(() => Cargo)
-    // @JoinColumn({ name: 'cargo_id_asignado' })
-    // cargoAsignado: Cargo;
+    @ManyToOne(() => Cargo)
+    @JoinColumn({ name: 'cargo_id_asignado' })
+    cargoAsignado: Cargo;
 }
