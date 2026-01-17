@@ -18,32 +18,22 @@ export class UsersService {
 
     /**
      * Crea un nuevo usuario
-     * Basado en: insert_usuario del modelo legacy PHP
      */
     async create(createUserDto: CreateUserDto): Promise<User> {
-        // Verificar si el email ya existe
-        const existingUsers = await this.findAllUnified({ email: createUserDto.email }) as User[];
-        if (existingUsers.length > 0) {
+        // Verificar si el email ya existe (Optimizado: usar count/findOne en lugar de findAllUnified)
+        const emailExists = await this.userRepository.exists({ where: { email: createUserDto.email, estado: 1 } });
+        if (emailExists) {
             throw new ConflictException('El correo electrónico ya está registrado');
         }
 
-        // Hash del password con bcrypt (compatible con PHP password_hash)
+        // Hash del password con bcrypt
         const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
+        // TypeORM maneja automáticamente los undefined como null para columnas nullable
         const user = this.userRepository.create({
-            nombre: createUserDto.nombre,
-            apellido: createUserDto.apellido,
-            email: createUserDto.email,
+            ...createUserDto,
             password: hashedPassword,
-            rolId: createUserDto.rolId,
-            regionalId: createUserDto.regionalId ?? null,
-            cargoId: createUserDto.cargoId ?? null,
-            departamentoId: createUserDto.departamentoId ?? null,
-            esNacional: createUserDto.esNacional,
-            cedula: createUserDto.cedula ?? null,
             fechaCreacion: new Date(),
-            fechaModificacion: null,
-            fechaEliminacion: null,
             estado: 1,
         });
 
