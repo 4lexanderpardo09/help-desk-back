@@ -113,10 +113,16 @@ export class ApiQueryHelper {
                 if (!value || value === '') return;
 
                 if (allowed.includes(key)) {
-                    // Filtro simple LIKE
                     // Generamos un nombre de parámetro único para evitar colisiones
                     const paramName = `filter_${key}`;
-                    qb.andWhere(`${mainAlias}.${key} LIKE :${paramName}`, { [paramName]: `%${value}%` });
+
+                    // Lógica inteligente: ID y Estado o claves que terminan en Id usan IGUALDAD estricta
+                    // Texto usa LIKE
+                    if (key === 'id' || key.endsWith('Id') || key === 'estado' || key === 'est') {
+                        qb.andWhere(`${mainAlias}.${key} = :${paramName}`, { [paramName]: value });
+                    } else {
+                        qb.andWhere(`${mainAlias}.${key} LIKE :${paramName}`, { [paramName]: `%${value}%` });
+                    }
                 }
             });
         } catch (error) {

@@ -90,8 +90,8 @@ export class UsersService {
     }
 
     // Listas permitidas para "Scopes" dinámicos (estilo Laravel)
-    private readonly allowedIncludes = ['regional', 'regional.zona', 'cargo', 'departamento', 'empresaUsuarios', 'usuarioPerfiles', 'etiquetasPropias', 'etiquetasAsignadas'];
-    private readonly allowedFilters = ['nombre', 'apellido', 'email', 'cedula', 'estado'];
+    private readonly allowedIncludes = ['regional', 'regional.zona', 'cargo', 'departamento', 'empresaUsuarios', 'usuarioPerfiles', 'etiquetasPropias', 'etiquetasAsignadas', 'rol'];
+    private readonly allowedFilters = ['nombre', 'apellido', 'email', 'cedula', 'estado', 'rolId', 'cargoId', 'regionalId', 'departamentoId'];
 
     /**
      * Búsqueda unificada de usuario por ID con opciones

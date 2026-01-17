@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { Regional } from '../../regions/entities/regional.entity';
+import { Role } from '../../roles/entities/role.entity';
 import { Cargo } from '../../positions/entities/cargo.entity';
 import { Departamento } from '../../departments/entities/departamento.entity';
 import { Perfil } from '../../profiles/entities/perfil.entity';
@@ -90,6 +91,10 @@ export class User {
     @ManyToOne(() => Departamento)
     @JoinColumn({ name: 'dp_id' })
     departamento: Departamento;
+
+    @ManyToOne(() => Role, (r) => r.usuarios)
+    @JoinColumn({ name: 'rol_id' })
+    role: Role;
 
     @OneToMany(() => EmpresaUsuario, (eu) => eu.usuario)
     empresaUsuarios: EmpresaUsuario[];

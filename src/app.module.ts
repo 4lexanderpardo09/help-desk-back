@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { RolesModule } from './modules/roles/roles.module';
 import { User } from './modules/users/entities/user.entity';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
@@ -30,6 +31,7 @@ import jwtConfig from './config/jwt.config';
       }),
     }),
     UsersModule,
+    RolesModule,
     AuthModule,
   ],
   controllers: [AppController],
