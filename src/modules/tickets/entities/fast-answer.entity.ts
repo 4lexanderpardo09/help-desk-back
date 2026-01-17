@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { TicketAsignacionHistorico } from './ticket-asignacion-historico.entity';
 
 @Entity('tm_fast_answer')
 export class FastAnswer {
@@ -26,7 +27,6 @@ export class FastAnswer {
     @Column({ name: 'est', type: 'int', nullable: true })
     estado: number | null;
 
-    // TODO: Agregar relaciones OneToMany
-    // @OneToMany(() => TicketAsignacionHistorico, (th) => th.errorCode)
-    // historiales: TicketAsignacionHistorico[];
+    @OneToMany(() => TicketAsignacionHistorico, (th) => th.errorCode)
+    historiales: TicketAsignacionHistorico[];
 }
