@@ -83,9 +83,42 @@ export class UsersController {
         return this.usersService.findByIds(ids);
     }
 
+    /**
+     * @deprecated Usar GET /users?departamentoId={id}
+     */
+    @Get('departamento/:id')
+    async findByDepartamento(
+        @Param('id', ParseIntPipe) departamentoId: number,
+    ): Promise<User[]> {
+        return this.usersService.findAllUnified({ departamentoId }) as Promise<User[]>;
+    }
+
+    /**
+     * @deprecated Usar GET /users?sinDepartamento=true
+     */
+    @Get('sin-departamento')
+    async findWithoutDepartamento(): Promise<User[]> {
+        return this.usersService.findAllUnified({ departamentoId: null }) as Promise<User[]>;
+    }
+
+    /**
+     * @deprecated Usar GET /users?rolId=2
+     */
+    @Get('agentes')
+    async findAgentes(): Promise<User[]> {
+        return this.usersService.findAllUnified({ rolId: 2 }) as Promise<User[]>;
+    }
 
 
     // === RUTAS CON :id (al final para evitar conflictos) ===
+    /**
+     * @deprecated Usar GET /users?email={email}
+     */
+    @Get('email/:email')
+    async findByEmail(@Param('email') email: string): Promise<User | null> {
+        return this.usersService.findAllUnified({ email, limit: 1 }) as Promise<User | null>;
+    }
+
     @Get(':id')
     async findOne(@Param('id', ParseIntPipe) id: number): Promise<User | null> {
         return this.usersService.findByIdUnified(id) as Promise<User | null>;

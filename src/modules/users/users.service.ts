@@ -115,13 +115,7 @@ export class UsersService {
         return this.findByIdUnified(id) as Promise<User>;
     }
 
-    /**
-     * Busca un usuario por email
-     */
-    async findByEmail(email: string): Promise<User | null> {
-        const users = await this.findAllUnified({ email }) as User[];
-        return users[0] || null;
-    }
+
 
     /**
      * Busca un usuario por email incluyendo el password (para auth)
@@ -274,14 +268,7 @@ export class UsersService {
         );
     }
 
-    /**
-     * Busca usuarios por departamento
-     * Basado en: get_usuario_x_departamento del modelo legacy PHP
-     * Si departamentoId es null, busca usuarios sin departamento asignado
-     */
-    async findByDepartamento(departamentoId: number | null): Promise<User[]> {
-        return this.findAllUnified({ departamentoId }) as Promise<User[]>;
-    }
+
 
     /**
      * Elimina un usuario (soft delete)
