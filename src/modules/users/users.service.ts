@@ -5,12 +5,15 @@ import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { DataSource } from 'typeorm';
+import { UsuarioPerfil } from '../profiles/entities/usuario-perfil.entity';
 
 @Injectable()
 export class UsersService {
     constructor(
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
+        private readonly dataSource: DataSource,
     ) { }
 
     /**
@@ -136,28 +139,37 @@ export class UsersService {
      * Búsqueda unificada de usuario por ID con opciones
      * - includeEmpresas: true para incluir GROUP_CONCAT de emp_ids
      */
+    /**
+     * Búsqueda unificada de usuario por ID con opciones
+     * - includeEmpresas: true para incluir relaciones con empresas
+     */
     async findByIdUnified(id: number, options?: {
         includeEmpresas?: boolean;
     }): Promise<User | Record<string, unknown> | null> {
+        const relations = [];
         if (options?.includeEmpresas) {
-            const result = await this.userRepository.query(
-                `SELECT 
-                    u.usu_id, u.usu_nom, u.usu_ape, u.usu_correo, 
-                    u.rol_id, u.dp_id, u.reg_id, u.car_id, 
-                    u.es_nacional, u.usu_firma,
-                    GROUP_CONCAT(eu.emp_id) as emp_ids
-                 FROM tm_usuario u
-                 LEFT JOIN empresa_usuario eu ON u.usu_id = eu.usu_id
-                 WHERE u.usu_id = ?
-                 GROUP BY u.usu_id`,
-                [id],
-            );
-            return result[0] || null;
+            relations.push('empresaUsuarios');
         }
 
-        return this.userRepository.findOne({
+        const user = await this.userRepository.findOne({
             where: { id, estado: 1 },
+            relations: relations,
         });
+
+        if (!user) {
+            return null;
+        }
+
+        // Si se pidieron empresas, simulamos el comportamiento legacy de GROUP_CONCAT emp_ids
+        // para mantener compatibilidad si el frontend lo espera como string "1,2,3"
+        // aunque ahora devolvemos el objeto User enriquecido.
+        if (options?.includeEmpresas) {
+            const userWithLegacy = user as any;
+            userWithLegacy.emp_ids = user.empresaUsuarios?.map(eu => eu.empresaId).join(',') || null;
+            return userWithLegacy;
+        }
+
+        return user;
     }
 
     // ===============================================
@@ -202,24 +214,20 @@ export class UsersService {
         includeNacional?: boolean;
         limit?: number;      // Para findOne legacy
     }): Promise<User[] | Record<string, unknown>[] | User | null> {
-        // Caso especial: búsqueda por zona requiere JOINs específicos
-        if (options?.zona && options?.cargoId) {
-            const result = await this.userRepository.query(
-                `SELECT u.* 
-                 FROM tm_usuario u
-                 INNER JOIN tm_regional r ON u.reg_id = r.reg_id
-                 INNER JOIN tm_zona z ON r.zona_id = z.zona_id
-                 WHERE u.car_id = ? AND z.zona_nom = ? AND u.est = 1
-                 ${options.limit ? `LIMIT ${options.limit}` : ''}`,
-                [options.cargoId, options.zona],
-            );
-            return options.limit === 1 ? (result[0] || null) : result;
-        }
-
         const qb = this.userRepository.createQueryBuilder('user');
 
         // Filtros base
         qb.where('user.estado = :estado', { estado: 1 });
+
+        // JOINs necesarios
+        if (options?.zona) {
+            qb.innerJoin('user.regional', 'regional');
+            qb.innerJoin('regional.zona', 'zona');
+            qb.andWhere('zona.nombre = :zona', { zona: options.zona });
+        } else if (options?.includeDepartamento) {
+            // Solo hacemos join si necesitamos datos del departamento
+            qb.leftJoinAndSelect('user.departamento', 'departamento');
+        }
 
         if (options?.email) {
             qb.andWhere('user.email = :email', { email: options.email });
@@ -253,44 +261,6 @@ export class UsersService {
 
         // Ordenamiento default
         qb.orderBy('user.nombre', 'ASC');
-
-        // Si se pide incluir departamento, hacemos un RAW query o join para replicar el SP legacy
-        if (options?.includeDepartamento) {
-            let whereClause = 'u.est = 1';
-            const params: any[] = [];
-
-            if (options.email) {
-                whereClause += ' AND u.usu_correo = ?';
-                params.push(options.email);
-            }
-            if (options.rolId) {
-                whereClause += ' AND u.rol_id = ?';
-                params.push(options.rolId);
-            }
-            if (options.cargoId) {
-                whereClause += ' AND u.car_id = ?';
-                params.push(options.cargoId);
-            }
-            if (options.departamentoId !== undefined) {
-                if (options.departamentoId === null) {
-                    whereClause += ' AND u.dp_id IS NULL';
-                } else {
-                    whereClause += ' AND u.dp_id = ?';
-                    params.push(options.departamentoId);
-                }
-            }
-            // Nota: El legacy SP no soportaba regional/zona/nacional, así que no los implementamos en raw mode
-            // a menos que sea necesario. (Originalmente findAllUnified solo reemplazaba sp_l_usuario_01)
-
-            return this.userRepository.query(
-                `SELECT u.*, d.dp_nom 
-                 FROM tm_usuario u
-                 LEFT JOIN tm_departamento d ON u.dp_id = d.dp_id
-                 WHERE ${whereClause}
-                 ORDER BY u.usu_nom ASC`,
-                params
-            );
-        }
 
         // Retornar uno o todos
         if (options?.limit === 1) {
@@ -509,23 +479,28 @@ export class UsersService {
             throw new NotFoundException(`Usuario con ID ${userId} no encontrado`);
         }
 
-        // 1. Eliminar perfiles existentes
-        await this.userRepository.query(
-            'DELETE FROM tm_usuario_perfiles WHERE usu_id = ?',
-            [userId],
-        );
+        await this.dataSource.transaction(async (manager) => {
+            // 1. Eliminar perfiles existentes
+            await manager.delete(UsuarioPerfil, { usuarioId: userId });
 
-        // 2. Insertar nuevos perfiles
-        if (perfilIds && perfilIds.length > 0) {
-            for (const perfilId of perfilIds) {
-                if (perfilId) {
-                    await this.userRepository.query(
-                        'INSERT INTO tm_usuario_perfiles (usu_id, per_id, est) VALUES (?, ?, 1)',
-                        [userId, perfilId],
-                    );
+            // 2. Insertar nuevos perfiles
+            if (perfilIds && perfilIds.length > 0) {
+                const nuevosPerfiles = perfilIds
+                    .filter(pid => pid) // Filtrar nulos/ceros
+                    .map(perfilId => {
+                        return manager.create(UsuarioPerfil, {
+                            usuarioId: userId,
+                            perfilId: perfilId,
+                            estado: 1,
+                            fechaCreacion: new Date()
+                        });
+                    });
+
+                if (nuevosPerfiles.length > 0) {
+                    await manager.save(UsuarioPerfil, nuevosPerfiles);
                 }
             }
-        }
+        });
 
         return { synced: true, userId, perfilCount: perfilIds?.length || 0 };
     }
@@ -536,13 +511,22 @@ export class UsersService {
      * JOIN con tm_perfil para obtener nombre del perfil
      */
     async getPerfiles(userId: number): Promise<Record<string, unknown>[]> {
-        return this.userRepository.query(
-            `SELECT p.per_id, p.per_nom 
-             FROM tm_usuario_perfiles up
-             JOIN tm_perfil p ON up.per_id = p.per_id
-             WHERE up.usu_id = ? AND up.est = 1`,
-            [userId],
-        );
+        const user = await this.userRepository.findOne({
+            where: { id: userId, estado: 1 },
+            relations: ['usuarioPerfiles', 'usuarioPerfiles.perfil'],
+        });
+
+        if (!user || !user.usuarioPerfiles) {
+            return [];
+        }
+
+        // Mapear al formato esperado por el frontend (id, nombre)
+        return user.usuarioPerfiles
+            .filter(up => up.estado === 1 && up.perfil)
+            .map(up => ({
+                per_id: up.perfil.id,
+                per_nom: up.perfil.nombre
+            }));
     }
 }
 
