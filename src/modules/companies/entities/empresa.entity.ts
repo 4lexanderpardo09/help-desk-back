@@ -1,5 +1,6 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { EmpresaUsuario } from './empresa-usuario.entity';
+import { Ticket } from '../../tickets/entities/ticket.entity';
 import { CategoriaEmpresa } from 'src/modules/categories/entities/categoria-empresa.entity';
 
 @Entity('td_empresa')
@@ -24,4 +25,7 @@ export class Empresa {
 
     @OneToMany(() => CategoriaEmpresa, (ce) => ce.empresa)
     categoriaEmpresa: CategoriaEmpresa[];
+
+    @OneToMany(() => Ticket, (t) => t.empresa)
+    tickets: Ticket[];
 }

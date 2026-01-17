@@ -22,8 +22,8 @@ export class Categoria {
     categoriaDepartamentos: CategoriaDepartamento[];
 
     @OneToMany(() => CategoriaEmpresa, (cd) => cd.categoria)
-    categoriaEmpresa: CategoriaEmpresa[];   
-    
+    categoriaEmpresa: CategoriaEmpresa[];
+
     @OneToMany(() => Ticket, (t) => t.categoria)
-    ticket: Ticket[];
+    tickets: Ticket[];
 }

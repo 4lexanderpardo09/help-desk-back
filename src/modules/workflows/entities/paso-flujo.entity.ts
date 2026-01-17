@@ -1,6 +1,9 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Flujo } from './flujo.entity';
 import { Cargo } from '../../positions/entities/cargo.entity';
+import { TicketParalelo } from '../../tickets/entities/ticket-paralelo.entity';
+import { TicketNovedad } from '../../tickets/entities/ticket-novedad.entity';
+import { TicketAsignacionHistorico } from '../../tickets/entities/ticket-asignacion-historico.entity';
 
 @Entity('tm_flujo_paso')
 export class PasoFlujo {
@@ -74,4 +77,13 @@ export class PasoFlujo {
     @ManyToOne(() => Cargo)
     @JoinColumn({ name: 'cargo_id_asignado' })
     cargoAsignado: Cargo;
+
+    @OneToMany(() => TicketParalelo, (tp) => tp.paso)
+    ticketParalelos: TicketParalelo[];
+
+    @OneToMany(() => TicketNovedad, (tn) => tn.pasoPausado)
+    ticketNovedades: TicketNovedad[];
+
+    @OneToMany(() => TicketAsignacionHistorico, (th) => th.paso)
+    historiales: TicketAsignacionHistorico[];
 }

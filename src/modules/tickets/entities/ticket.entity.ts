@@ -8,6 +8,10 @@ import { User } from 'src/modules/users/entities/user.entity';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { TicketDetalle } from './ticket-detalle.entity';
 import { Notificacion } from 'src/modules/notifications/entities/notificacion.entity';
+import { TicketParalelo } from './ticket-paralelo.entity';
+import { TicketError } from './ticket-error.entity';
+import { TicketNovedad } from './ticket-novedad.entity';
+import { TicketAsignacionHistorico } from './ticket-asignacion-historico.entity';
 
 @Entity('tm_ticket')
 export class Ticket {
@@ -78,27 +82,27 @@ export class Ticket {
     @JoinColumn({ name: 'usu_id' })
     usuario: User;
 
-    @ManyToOne(() => Categoria)
+    @ManyToOne(() => Categoria, (c) => c.tickets)
     @JoinColumn({ name: 'cat_id' })
     categoria: Categoria;
 
-    @ManyToOne(() => Subcategoria)
+    @ManyToOne(() => Subcategoria, (s) => s.tickets)
     @JoinColumn({ name: 'cats_id' })
     subcategoria: Subcategoria;
 
-    @ManyToOne(() => Prioridad)
+    @ManyToOne(() => Prioridad, (p) => p.tickets)
     @JoinColumn({ name: 'pd_id' })
     prioridad: Prioridad;
 
-    @ManyToOne(() => Empresa)
+    @ManyToOne(() => Empresa, (e) => e.tickets)
     @JoinColumn({ name: 'emp_id' })
     empresa: Empresa;
 
-    @ManyToOne(() => Departamento)
+    @ManyToOne(() => Departamento, (d) => d.tickets)
     @JoinColumn({ name: 'dp_id' })
     departamento: Departamento;
 
-    @ManyToOne(() => Regional)
+    @ManyToOne(() => Regional, (r) => r.tickets)
     @JoinColumn({ name: 'reg_id' })
     regional: Regional;
 
@@ -107,4 +111,16 @@ export class Ticket {
 
     @OneToMany(() => Notificacion, (n) => n.ticket)
     notificacion: Notificacion[];
+
+    @OneToMany(() => TicketParalelo, (tp) => tp.ticket)
+    ticketParalelos: TicketParalelo[];
+
+    @OneToMany(() => TicketError, (te) => te.ticket)
+    ticketErrors: TicketError[];
+
+    @OneToMany(() => TicketNovedad, (tn) => tn.ticket)
+    ticketNovedades: TicketNovedad[];
+
+    @OneToMany(() => TicketAsignacionHistorico, (th) => th.ticket)
+    historiales: TicketAsignacionHistorico[];
 }

@@ -32,19 +32,19 @@ export class TicketNovedad {
     @Column({ name: 'estado_novedad', type: 'enum', enum: ['Abierta', 'Resuelta'], default: 'Abierta' })
     estado: 'Abierta' | 'Resuelta';
 
-    @ManyToOne(() => Ticket)
+    @ManyToOne(() => Ticket, (t) => t.ticketNovedades)
     @JoinColumn({ name: 'tick_id' })
     ticket: Ticket;
 
-    @ManyToOne(() => PasoFlujo)
+    @ManyToOne(() => PasoFlujo, (p) => p.ticketNovedades)
     @JoinColumn({ name: 'paso_id_pausado' })
     pasoPausado: PasoFlujo;
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, (u) => u.ticketNovedadesAsignadas)
     @JoinColumn({ name: 'usu_asig_novedad' })
     usuarioAsignado: User;
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, (u) => u.ticketNovedadesCreadas)
     @JoinColumn({ name: 'usu_crea_novedad' })
     usuarioCreador: User;
 }

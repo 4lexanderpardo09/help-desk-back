@@ -1,5 +1,6 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
+import { Ticket } from '../../tickets/entities/ticket.entity';
 import { CategoriaDepartamento } from 'src/modules/categories/entities/categoria-departamento.entity';
 
 @Entity('tm_departamento')
@@ -26,5 +27,8 @@ export class Departamento {
     usuarios: User[];
 
     @OneToMany(() => CategoriaDepartamento, (cd) => cd.departamento)
-    categoriaDepartamento: CategoriaDepartamento[];    
+    categoriaDepartamento: CategoriaDepartamento[];
+
+    @OneToMany(() => Ticket, (t) => t.departamento)
+    tickets: Ticket[];
 }

@@ -7,6 +7,10 @@ import { UsuarioPerfil } from '../../profiles/entities/usuario-perfil.entity';
 import { EmpresaUsuario } from 'src/modules/companies/entities/empresa-usuario.entity';
 import { Notificacion } from 'src/modules/notifications/entities/notificacion.entity';
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
+import { TicketParalelo } from 'src/modules/tickets/entities/ticket-paralelo.entity';
+import { TicketError } from 'src/modules/tickets/entities/ticket-error.entity';
+import { TicketNovedad } from 'src/modules/tickets/entities/ticket-novedad.entity';
+import { TicketAsignacionHistorico } from 'src/modules/tickets/entities/ticket-asignacion-historico.entity';
 
 @Entity('tm_usuario')
 export class User {
@@ -80,7 +84,7 @@ export class User {
     @ManyToOne(() => Departamento)
     @JoinColumn({ name: 'dp_id' })
     departamento: Departamento;
-    
+
     @OneToMany(() => EmpresaUsuario, (eu) => eu.usuario)
     empresaUsuarios: EmpresaUsuario[];
 
@@ -92,6 +96,27 @@ export class User {
 
     @OneToMany(() => Ticket, (t) => t.usuario)
     ticket: Ticket[];
+
+    @OneToMany(() => TicketParalelo, (tp) => tp.usuario)
+    ticketParalelos: TicketParalelo[];
+
+    @OneToMany(() => TicketError, (te) => te.usuarioReporta)
+    ticketErrorsReportados: TicketError[];
+
+    @OneToMany(() => TicketError, (te) => te.usuarioResponsable)
+    ticketErrorsResponsable: TicketError[];
+
+    @OneToMany(() => TicketNovedad, (tn) => tn.usuarioAsignado)
+    ticketNovedadesAsignadas: TicketNovedad[];
+
+    @OneToMany(() => TicketNovedad, (tn) => tn.usuarioCreador)
+    ticketNovedadesCreadas: TicketNovedad[];
+
+    @OneToMany(() => TicketAsignacionHistorico, (th) => th.usuarioAsignado)
+    historialesAsignados: TicketAsignacionHistorico[];
+
+    @OneToMany(() => TicketAsignacionHistorico, (th) => th.usuarioAsignador)
+    historialesAsignador: TicketAsignacionHistorico[];
 
     /**
      * Nombre completo del usuario

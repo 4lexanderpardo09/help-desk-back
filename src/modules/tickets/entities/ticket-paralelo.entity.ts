@@ -35,15 +35,15 @@ export class TicketParalelo {
     @Column({ name: 'est', type: 'int', default: 1, nullable: true })
     activo: number | null;
 
-    @ManyToOne(() => Ticket)
+    @ManyToOne(() => Ticket, (t) => t.ticketParalelos)
     @JoinColumn({ name: 'tick_id' })
     ticket: Ticket;
 
-    @ManyToOne(() => PasoFlujo)
+    @ManyToOne(() => PasoFlujo, (p) => p.ticketParalelos)
     @JoinColumn({ name: 'paso_id' })
     paso: PasoFlujo;
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, (u) => u.ticketParalelos)
     @JoinColumn({ name: 'usu_id' })
     usuario: User;
 }

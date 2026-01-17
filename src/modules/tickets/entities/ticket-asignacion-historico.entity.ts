@@ -39,23 +39,23 @@ export class TicketAsignacionHistorico {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
-    @ManyToOne(() => Ticket)
+    @ManyToOne(() => Ticket, (t) => t.historiales)
     @JoinColumn({ name: 'tick_id' })
     ticket: Ticket;
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, (u) => u.historialesAsignados)
     @JoinColumn({ name: 'usu_asig' })
     usuarioAsignado: User;
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, (u) => u.historialesAsignador)
     @JoinColumn({ name: 'how_asig' })
     usuarioAsignador: User;
 
-    @ManyToOne(() => PasoFlujo)
+    @ManyToOne(() => PasoFlujo, (p) => p.historiales)
     @JoinColumn({ name: 'paso_id' })
     paso: PasoFlujo;
 
-    @ManyToOne(() => FastAnswer)
+    @ManyToOne(() => FastAnswer, (fa) => fa.historiales)
     @JoinColumn({ name: 'error_code_id' })
     errorCode: FastAnswer;
 }

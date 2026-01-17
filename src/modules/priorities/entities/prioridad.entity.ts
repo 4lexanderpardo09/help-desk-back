@@ -1,4 +1,5 @@
 import { Subcategoria } from 'src/modules/subcategories/entities/subcategoria.entity';
+import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('td_prioridad')
@@ -14,4 +15,7 @@ export class Prioridad {
 
     @OneToMany(() => Subcategoria, (s) => s.prioridad)
     subcategoria: Subcategoria[];
+
+    @OneToMany(() => Ticket, (t) => t.prioridad)
+    tickets: Ticket[];
 }

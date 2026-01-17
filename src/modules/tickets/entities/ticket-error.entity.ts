@@ -32,19 +32,19 @@ export class TicketError {
     @Column({ name: 'est', type: 'int', default: 1, nullable: true })
     estado: number | null;
 
-    @ManyToOne(() => Ticket)
+    @ManyToOne(() => Ticket, (t) => t.ticketErrors)
     @JoinColumn({ name: 'tick_id' })
     ticket: Ticket;
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, (u) => u.ticketErrorsReportados)
     @JoinColumn({ name: 'usu_id_reporta' })
     usuarioReporta: User;
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, (u) => u.ticketErrorsResponsable)
     @JoinColumn({ name: 'usu_id_responsable' })
     usuarioResponsable: User;
 
-    @ManyToOne(() => FastAnswer)
+    @ManyToOne(() => FastAnswer, (fa) => fa.ticketErrors)
     @JoinColumn({ name: 'answer_id' })
     answer: FastAnswer;
 }
