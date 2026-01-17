@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('tm_etiqueta')
 export class Etiqueta {
@@ -20,11 +21,7 @@ export class Etiqueta {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
-    // TODO: Agregar relaciones
-    // @ManyToOne(() => User)
-    // @JoinColumn({ name: 'usu_id' })
-    // usuario: User;
-
-    // @OneToMany(() => TicketEtiqueta, (te) => te.etiqueta)
-    // ticketEtiquetas: TicketEtiqueta[];
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'usu_id' })
+    usuario: User;
 }

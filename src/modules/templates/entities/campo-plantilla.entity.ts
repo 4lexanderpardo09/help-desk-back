@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { PasoFlujo } from '../../workflows/entities/paso-flujo.entity';
 
 @Entity('tm_campo_plantilla')
 export class CampoPlantilla {
@@ -44,8 +45,7 @@ export class CampoPlantilla {
     @Column({ name: 'mostrar_dias_transcurridos', type: 'tinyint', default: 0 })
     mostrarDiasTranscurridos: boolean;
 
-    // TODO: Agregar relaciones
-    // @ManyToOne(() => PasoFlujo)
-    // @JoinColumn({ name: 'paso_id' })
-    // paso: PasoFlujo;
+    @ManyToOne(() => PasoFlujo)
+    @JoinColumn({ name: 'paso_id' })
+    paso: PasoFlujo;
 }

@@ -1,4 +1,8 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Ticket } from '../../tickets/entities/ticket.entity';
+import { Flujo } from '../../workflows/entities/flujo.entity';
+import { PasoFlujo } from '../../workflows/entities/paso-flujo.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('tm_documento_flujo')
 export class DocumentoFlujo {
@@ -26,20 +30,19 @@ export class DocumentoFlujo {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
-    // TODO: Agregar relaciones
-    // @ManyToOne(() => Ticket)
-    // @JoinColumn({ name: 'tick_id' })
-    // ticket: Ticket;
+    @ManyToOne(() => Ticket)
+    @JoinColumn({ name: 'tick_id' })
+    ticket: Ticket;
 
-    // @ManyToOne(() => Flujo)
-    // @JoinColumn({ name: 'flujo_id' })
-    // flujo: Flujo;
+    @ManyToOne(() => Flujo)
+    @JoinColumn({ name: 'flujo_id' })
+    flujo: Flujo;
 
-    // @ManyToOne(() => PasoFlujo)
-    // @JoinColumn({ name: 'paso_id' })
-    // paso: PasoFlujo;
+    @ManyToOne(() => PasoFlujo)
+    @JoinColumn({ name: 'paso_id' })
+    paso: PasoFlujo;
 
-    // @ManyToOne(() => User)
-    // @JoinColumn({ name: 'usu_id' })
-    // usuario: User;
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'usu_id' })
+    usuario: User;
 }

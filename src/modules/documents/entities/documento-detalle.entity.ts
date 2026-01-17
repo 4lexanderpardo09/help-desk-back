@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { TicketDetalle } from '../../tickets/entities/ticket-detalle.entity';
 
 @Entity('td_documento_detalle')
 export class DocumentoDetalle {
@@ -17,8 +18,7 @@ export class DocumentoDetalle {
     @Column({ name: 'est', type: 'int' })
     estado: number;
 
-    // TODO: Agregar relaciones ManyToOne
-    // @ManyToOne(() => TicketDetalle)
-    // @JoinColumn({ name: 'tickd_id' })
-    // ticketDetalle: TicketDetalle;
+    @ManyToOne(() => TicketDetalle)
+    @JoinColumn({ name: 'tickd_id' })
+    ticketDetalle: TicketDetalle;
 }

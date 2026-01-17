@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Flujo } from '../../workflows/entities/flujo.entity';
 
 @Entity('tm_data_excel')
 export class DataExcel {
@@ -20,8 +21,7 @@ export class DataExcel {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
-    // TODO: Agregar relaciones ManyToOne
-    // @ManyToOne(() => Flujo)
-    // @JoinColumn({ name: 'flujo_id' })
-    // flujo: Flujo;
+    @ManyToOne(() => Flujo)
+    @JoinColumn({ name: 'flujo_id' })
+    flujo: Flujo;
 }
