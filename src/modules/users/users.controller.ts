@@ -82,12 +82,9 @@ export class UsersController {
      * Query param: includeEmpresas=true para incluir empresas asociadas
      */
     @Get(':id/search')
-    async findByIdUnified(
-        @Param('id', ParseIntPipe) id: number,
-        @Query('includeEmpresas') includeEmpresasStr?: string,
-    ): Promise<User | Record<string, unknown> | null> {
-        return this.usersService.findByIdUnified(id, {
-            includeEmpresas: includeEmpresasStr === 'true',
+    async getByIdWithOptions(@Param('id') id: string) {
+        return this.usersService.findByIdUnified(+id, {
+            included: 'empresaUsuarios',
         });
     }
 

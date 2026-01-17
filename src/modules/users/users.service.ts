@@ -98,27 +98,19 @@ export class UsersService {
      * Ahora reutiliza la lógica Maestra de findAllUnified para consistencia.
      */
     async findByIdUnified(id: number, options?: {
-        includeEmpresas?: boolean;
+        included?: string;
     }): Promise<User | Record<string, unknown> | null> {
         // Reutilizamos findAllUnified filtrando por ID y aplicando includes
         const result = await this.findAllUnified({
             filter: { id }, // Filtro por ID
             limit: 1,
-            // Si piden empresas, incluimos la relación
-            included: options?.includeEmpresas ? 'empresaUsuarios' : undefined,
+            included: options?.included,
         });
 
         const user = result as User;
 
         if (!user) {
             return null;
-        }
-
-        // Recuperar lógica legacy de transformación para emp_ids (GROUP_CONCAT simulado)
-        if (options?.includeEmpresas) {
-            const userWithLegacy = user as any;
-            userWithLegacy.emp_ids = user.empresaUsuarios?.map(eu => eu.empresaId).join(',') || null;
-            return userWithLegacy;
         }
 
         return user;
