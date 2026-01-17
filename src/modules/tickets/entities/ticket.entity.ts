@@ -62,8 +62,18 @@ export class Ticket {
     @Column({ name: 'fech_crea', type: 'datetime', nullable: true })
     fechaCreacion: Date | null;
 
-    @Column({ name: 'usu_asig', type: 'varchar', length: 255, nullable: true })
-    usuarioAsignadoDeprecated: string | null;
+    @Column({
+        name: 'usu_asig',
+        type: 'varchar',
+        length: 255,
+        nullable: true,
+        comment: 'IDs de usuarios asignados (legacy)',
+        transformer: {
+            to: (value: number[] | null) => value?.join(',') || null,
+            from: (value: string | null) => value?.split(',').map(Number).filter((n) => !isNaN(n)) || [],
+        },
+    })
+    usuarioAsignadoIds: number[];
 
     @Column({ name: 'how_asig', type: 'int', nullable: true })
     usuarioAsignadorId: number | null;
