@@ -253,7 +253,53 @@ Archivo: `postman/help-desk-api.postman_collection.json`
 
 ---
 
-## 5. Comandos Útiles
+## 5. ApiQueryHelper (Scopes Dinámicos estilo Laravel)
+
+Se ha implementado una utilidad para estandarizar el filtrado y la carga de relaciones en todos los servicios, similar a cómo funcionan los scopes y el eager loading en Laravel.
+
+### Ubicación
+`src/common/utils/api-query-helper.ts`
+
+### Uso en Servicios
+
+```typescript
+// 1. Definir listas blancas (seguridad)
+private readonly allowedIncludes = ['regional', 'regional.zona', 'cargo'];
+private readonly allowedFilters = ['nombre', 'email', 'cedula'];
+
+// 2. Aplicar en el método findAll
+async findAll(options: FindOptions) {
+    const qb = this.repo.createQueryBuilder('entity');
+    
+    // Aplica JOINs automáticamente si están en la lista permitida
+    // included: string separado por comas (ej: 'regional,cargo')
+    ApiQueryHelper.applyIncludes(qb, options.included, this.allowedIncludes, 'entity');
+
+    // Aplica WHERE LIKE automáticamente si están en la lista permitida
+    // filter: objeto (ej: { nombre: 'Juan' })
+    ApiQueryHelper.applyFilters(qb, options.filter, this.allowedFilters, 'entity');
+
+    return qb.getMany();
+}
+```
+
+### Uso en API (Frontend)
+
+- **Incluir Relaciones:** `GET /resource?included=regional,regional.zona`
+  - Carga el recurso, su regional y la zona de esa regional.
+  - Maneja automáticamente alias únicos (`regional_zona`) para evitar colisiones.
+  
+- **Filtrar:** `GET /resource?filter[nombre]=Juan&filter[cedula]=123`
+  - Aplica `AND (nombre LIKE '%Juan%') AND (cedula LIKE '%123%')`.
+
+### Ventajas
+- **DRY:** Elimina bloques `if` repetitivos en los servicios.
+- **Seguro:** Solo permite filtrar/incluir lo definido en las listas blancas.
+- **Robusto:** Maneja colisiones de nombres y errores de relaciones inexistentes (Code 400).
+
+---
+
+## 6. Comandos Útiles
 
 ```bash
 # Desarrollo
