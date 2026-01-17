@@ -1,6 +1,6 @@
 import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -15,6 +15,18 @@ export class UsersService {
         private readonly userRepository: Repository<User>,
         private readonly dataSource: DataSource,
     ) { }
+
+    /**
+     * Busca un usuario por email incluyendo el password (para auth)
+     */
+    async findByEmailWithPassword(email: string): Promise<User | null> {
+        return this.userRepository
+            .createQueryBuilder('user')
+            .addSelect('user.password')
+            .where('user.email = :email', { email })
+            .andWhere('user.estado = :estado', { estado: 1 })
+            .getOne();
+    }
 
     /**
      * Crea un nuevo usuario
@@ -52,71 +64,30 @@ export class UsersService {
             throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
         }
 
-        // Si se envía un nuevo email, verificar que no esté en uso por otro usuario
+        // Optimizado: Verificar email duplicado excluyendo al usuario actual
         if (updateUserDto.email && updateUserDto.email !== user.email) {
-            const existingUsers = await this.findAllUnified({ email: updateUserDto.email }) as User[];
-            const existingUser = existingUsers[0];
-            if (existingUser && existingUser.id !== id) {
+            const emailExists = await this.userRepository.exists({
+                where: { email: updateUserDto.email, estado: 1, id: Not(id) }
+            });
+            if (emailExists) {
                 throw new ConflictException('El correo electrónico ya está en uso');
             }
         }
 
-        // Preparar datos de actualización
+        // Preparar datos: separar password para hashear y spread del resto
+        const { password, ...restData } = updateUserDto;
         const updateData: Partial<User> = {
+            ...restData,
             fechaModificacion: new Date(),
         };
 
-        // Solo actualizar campos que se enviaron
-        if (updateUserDto.nombre !== undefined) {
-            updateData.nombre = updateUserDto.nombre;
-        }
-        if (updateUserDto.apellido !== undefined) {
-            updateData.apellido = updateUserDto.apellido;
-        }
-        if (updateUserDto.email !== undefined) {
-            updateData.email = updateUserDto.email;
-        }
-        if (updateUserDto.rolId !== undefined) {
-            updateData.rolId = updateUserDto.rolId;
-        }
-        if (updateUserDto.regionalId !== undefined) {
-            updateData.regionalId = updateUserDto.regionalId;
-        }
-        if (updateUserDto.cargoId !== undefined) {
-            updateData.cargoId = updateUserDto.cargoId;
-        }
-        if (updateUserDto.departamentoId !== undefined) {
-            updateData.departamentoId = updateUserDto.departamentoId;
-        }
-        if (updateUserDto.esNacional !== undefined) {
-            updateData.esNacional = updateUserDto.esNacional;
-        }
-        if (updateUserDto.cedula !== undefined) {
-            updateData.cedula = updateUserDto.cedula;
-        }
-
-        // Si se envía password, hashearlo (igual que en PHP legacy)
-        if (updateUserDto.password) {
-            updateData.password = await bcrypt.hash(updateUserDto.password, 10);
+        if (password) {
+            updateData.password = await bcrypt.hash(password, 10);
         }
 
         await this.userRepository.update(id, updateData);
 
         return this.findByIdUnified(id) as Promise<User>;
-    }
-
-
-
-    /**
-     * Busca un usuario por email incluyendo el password (para auth)
-     */
-    async findByEmailWithPassword(email: string): Promise<User | null> {
-        return this.userRepository
-            .createQueryBuilder('user')
-            .addSelect('user.password')
-            .where('user.email = :email', { email })
-            .andWhere('user.estado = :estado', { estado: 1 })
-            .getOne();
     }
 
     /**
