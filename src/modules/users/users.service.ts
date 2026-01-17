@@ -54,8 +54,6 @@ export class UsersService {
 
     /**
      * Actualiza un usuario existente
-     * Basado en: update_usuario del modelo legacy PHP
-     * Si se envía password, se hashea; si no, se mantiene el actual
      */
     async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
         const user = await this.findByIdUnified(id) as User;
