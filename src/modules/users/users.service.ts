@@ -7,6 +7,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { DataSource } from 'typeorm';
 import { UsuarioPerfil } from '../profiles/entities/usuario-perfil.entity';
+import { ApiQueryHelper } from 'src/common/utils/api-query-helper';
 
 @Injectable()
 export class UsersService {
@@ -88,34 +89,32 @@ export class UsersService {
         return this.findByIdUnified(id) as Promise<User>;
     }
 
+    // Listas permitidas para "Scopes" dinámicos (estilo Laravel)
+    private readonly allowedIncludes = ['regional', 'regional.zona', 'cargo', 'departamento', 'empresaUsuarios', 'usuarioPerfiles', 'etiquetasPropias', 'etiquetasAsignadas'];
+    private readonly allowedFilters = ['nombre', 'apellido', 'email', 'cedula', 'estado'];
+
     /**
      * Búsqueda unificada de usuario por ID con opciones
-     * - includeEmpresas: true para incluir GROUP_CONCAT de emp_ids
-     */
-    /**
-     * Búsqueda unificada de usuario por ID con opciones
-     * - includeEmpresas: true para incluir relaciones con empresas
+     * Ahora reutiliza la lógica Maestra de findAllUnified para consistencia.
      */
     async findByIdUnified(id: number, options?: {
         includeEmpresas?: boolean;
     }): Promise<User | Record<string, unknown> | null> {
-        const relations = [];
-        if (options?.includeEmpresas) {
-            relations.push('empresaUsuarios');
-        }
-
-        const user = await this.userRepository.findOne({
-            where: { id, estado: 1 },
-            relations: relations,
+        // Reutilizamos findAllUnified filtrando por ID y aplicando includes
+        const result = await this.findAllUnified({
+            filter: { id }, // Filtro por ID
+            limit: 1,
+            // Si piden empresas, incluimos la relación
+            included: options?.includeEmpresas ? 'empresaUsuarios' : undefined,
         });
+
+        const user = result as User;
 
         if (!user) {
             return null;
         }
 
-        // Si se pidieron empresas, simulamos el comportamiento legacy de GROUP_CONCAT emp_ids
-        // para mantener compatibilidad si el frontend lo espera como string "1,2,3"
-        // aunque ahora devolvemos el objeto User enriquecido.
+        // Recuperar lógica legacy de transformación para emp_ids (GROUP_CONCAT simulado)
         if (options?.includeEmpresas) {
             const userWithLegacy = user as any;
             userWithLegacy.emp_ids = user.empresaUsuarios?.map(eu => eu.empresaId).join(',') || null;
@@ -124,8 +123,6 @@ export class UsersService {
 
         return user;
     }
-
-
 
     /**
      * **Búsqueda Maestra Unificada**
@@ -150,20 +147,35 @@ export class UsersService {
         zona?: string;       // Nombre de zona
         includeNacional?: boolean;
         limit?: number;      // Para findOne legacy
+        // Nuevos parámetros para scopes dinámicos
+        included?: string; // ej: 'regional,cargo'
+        filter?: Record<string, any>; // ej: { nombre: 'Juan' }
     }): Promise<User[] | Record<string, unknown>[] | User | null> {
         const qb = this.userRepository.createQueryBuilder('user');
+
+        // 1. Scopes Dinámicos (Estilo Laravel)
+        // Aplica relaciones (joins) automáticamente si están permitidas
+        ApiQueryHelper.applyIncludes(qb, options?.included, this.allowedIncludes, 'user');
+        // Aplica filtros (where like) automáticamente si están permitidos
+        ApiQueryHelper.applyFilters(qb, options?.filter, this.allowedFilters, 'user');
 
         // Filtros base
         qb.where('user.estado = :estado', { estado: 1 });
 
-        // JOINs necesarios
+        // JOINs necesarios (Lógica de negocio específica que ApiQueryHelper no cubre solo)
         if (options?.zona) {
-            qb.innerJoin('user.regional', 'regional');
-            qb.innerJoin('regional.zona', 'zona');
+            // Validar si ApiQueryHelper ya incluyó esto para no duplicar (aunque ApiQueryHelper maneja colisiones, 
+            // aquí forzamos el join si el usuario filtró por zona pero no incluyó la relación en la URL)
+            if (!options.included?.includes('regional.zona')) {
+                qb.innerJoin('user.regional', 'regional');
+                qb.innerJoin('regional.zona', 'zona');
+            }
             qb.andWhere('zona.nombre = :zona', { zona: options.zona });
         } else if (options?.includeDepartamento) {
-            // Solo hacemos join si necesitamos datos del departamento
-            qb.leftJoinAndSelect('user.departamento', 'departamento');
+            // Solo hacemos join si necesitamos datos del departamento y no se pidió por include
+            if (!options.included?.includes('departamento')) {
+                qb.leftJoinAndSelect('user.departamento', 'departamento');
+            }
         }
 
         if (options?.email) {
