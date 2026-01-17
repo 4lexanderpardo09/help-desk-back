@@ -208,56 +208,56 @@
                             ],
                             "query": [
                                 {
-                                    "key": "includeDepartamento",
-                                    "value": "true",
-                                    "description": "Incluir datos del departamento (JOINs)"
+                                    "key": "included",
+                                    "value": "regional,regional.zona,cargo,departamento",
+                                    "description": "Scopes: Incluir relaciones (separadas por coma)"
                                 },
                                 {
-                                    "key": "departamentoId",
-                                    "value": "1",
-                                    "description": "Filtrar por ID de departamento",
-                                    "disabled": true
-                                },
-                                {
-                                    "key": "sinDepartamento",
-                                    "value": "true",
-                                    "description": "Filtrar usuarios sin departamento",
-                                    "disabled": true
-                                },
-                                {
-                                    "key": "rolId",
+                                    "key": "filter[rolId]",
                                     "value": "2",
-                                    "description": "Filtrar por rol (ej: 2 = agentes)",
+                                    "description": "Filtro dinámico por rol (ej: 2 = agentes)",
                                     "disabled": true
                                 },
                                 {
-                                    "key": "email",
-                                    "value": "test@example.com",
-                                    "description": "Filtrar por email exacto",
+                                    "key": "filter[email]",
+                                    "value": "",
+                                    "description": "Filtro dinámico por email",
                                     "disabled": true
                                 },
                                 {
-                                    "key": "cargoId",
+                                    "key": "filter[cargoId]",
                                     "value": "1",
-                                    "description": "Filtrar por ID de cargo",
-                                    "disabled": true
-                                },
-                                {
-                                    "key": "regionalId",
-                                    "value": "2",
-                                    "description": "Filtrar por ID de regional (requiere cargoId)",
+                                    "description": "Filtro dinámico por cargo",
                                     "disabled": true
                                 },
                                 {
                                     "key": "zona",
                                     "value": "Norte",
-                                    "description": "Filtrar por nombre de zona (requiere cargoId)",
+                                    "description": "Filtrar por nombre de zona (Complex JOIN)",
                                     "disabled": true
                                 },
                                 {
                                     "key": "includeNacional",
                                     "value": "true",
                                     "description": "Incluir nacionales al filtrar por regional",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "included",
+                                    "value": "regional,regional.zona,cargo,departamento",
+                                    "description": "Scopes: Incluir relaciones (separadas por coma)",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "filter[email]",
+                                    "value": "",
+                                    "description": "Filtro dinámico por email",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "filter[nombre]",
+                                    "value": "",
+                                    "description": "Filtro dinámico por nombre",
                                     "disabled": true
                                 }
                             ]

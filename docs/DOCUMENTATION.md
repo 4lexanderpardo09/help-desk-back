@@ -154,53 +154,47 @@ export class User {
 Este endpoint unificado reemplaza múltiples rutas legacy. Se recomienda usar siempre `/users` con los query parameters adecuados para filtrar.
 
 #### Parámetros soportados:
-- **`email`**: Filtra por coincidencia exacta de correo.
-- **`rolId`**: Filtra por ID de rol (ej: `2` para agentes).
-- **`cargoId`**: Filtra por ID de cargo.
-- **`regionalId`**: Filtra por ID de regional (útil combinado con cargo).
-- **`zona`**: Filtra por nombre de zona (ej: "Norte", "Sur") (requiere cargoId).
+- **`limit`**: Limitar la cantidad de resultados (útil para buscar uno solo con limit=1).
+- **`zona`**: Filtra por nombre de zona (ej: "Norte", "Sur") -> *Aplica JOINs complejos*.
 - **`includeNacional`**: `true` para incluir usuarios con `esNacional=1` al filtrar por regional.
-- **`departamentoId`**: Filtra por ID de departamento.
-- **`sinDepartamento`**: `true` para usuarios sin departamento asignado (`dp_id IS NULL`).
-- **`includeDepartamento`**: `true` para incluir el nombre del departamento en la respuesta (usa JOINs legacy).
+- **`included`**: **Scope de Relaciones**. Lista separada por comas (ej: `regional,cargo`).
+- **`filter`**: **Scope de Filtros**. Objeto de filtros dinámicos (ej: `filter[email]=x`).
+
+⚠️ **Nota:** Los parámetros antiguos (`email`, `rolId`, `cargoId`, `regionalId`, `includeDepartamento`) han sido **ELIMINADOS** de la firma del controlador en favor de `filter[...]` y `included`.
 
 #### Ejemplos comunes:
 - **Obtener todos los usuarios:** `GET /users`
-- **Obtener agentes:** `GET /users?rolId=2`
-- **Obtener usuarios de un cargo en una regional (incluyendo nacionales):**
-  `GET /users?cargoId=1&regionalId=5&includeNacional=true`
-- **Obtener usuarios de un cargo en una zona:**
-  `GET /users?cargoId=1&zona=Norte`
-- **Obtener usuario por email:** `GET /users?email=juan.perez@example.com`
+- **Obtener agentes:** `GET /users?filter[rolId]=2`
+- **Obtener usuarios de un cargo en una regional (incluyendo relaciones):**
+  `GET /users?filter[cargoId]=1&included=regional,cargo`
+- **Obtener usuarios de un cargo en una zona (JOIN especial):**
+  `GET /users?filter[cargoId]=1&zona=Norte`
+- **Obtener usuario por email:** `GET /users?filter[email]=juan.perez@example.com`
 
-### Endpoints (todos requieren autenticación)
+### Endpoints Unificados (todos requieren autenticación)
 
 | Método | Ruta | Descripción | Función PHP Legacy |
 |--------|------|-------------|-------------------|
-| GET | `/users` | **MASTER ENDPOINT** - Lista y filtra usuarios (departamento, cargo, regional, zona, rol, email) | `findAll()` / `get_usuario()` |
-| GET | `/users/with-departamento` | *(deprecated)* Usuarios con JOIN departamento | `get_usuario()` → `sp_l_usuario_01` |
-| GET | `/users/departamento/:id` | *(deprecated)* Por departamento | `get_usuario_x_departamento()` |
-| GET | `/users/sin-departamento` | *(deprecated)* Sin departamento asignado | `get_usuario_x_departamento(null)` |
-| GET | `/users/email/:email` | *(deprecated)* Por correo electrónico | `get_usuario_por_correo()` |
-| GET | `/users/cargo/:cargoId/search` | *(deprecated)* Usar GET /users?cargoId=... | Reemplazado por `/users` |
-| GET | `/users/cargo/:id` | *(deprecated)* Por cargo | `get_usuarios_por_cargo()` |
-| GET | `/users/cargo/:cargoId/regional/:regionalId` | *(deprecated)* Por cargo y regional | `get_usuario_por_cargo_y_regional()` |
-| GET | `/users/cargo/:cargoId/regional/:regionalId/all` | *(deprecated)* TODOS por cargo y regional | `get_usuarios_por_cargo_y_regional_all()` |
-| GET | `/users/cargo/:id/one` | *(deprecated)* UN usuario por cargo | `get_usuario_por_cargo()` |
-| GET | `/users/cargo/:cargoId/regional-or-nacional/:regionalId` | *(deprecated)* Por cargo (regional O nacional) | `get_usuarios_por_cargo_regional_o_nacional()` |
-| GET | `/users/cargo/:cargoId/zona/:zona` | *(deprecated)* Por cargo y zona | `get_usuario_por_cargo_y_zona()` |
-| GET | `/users/rol/:id` | *(deprecated)* Por rol | `get_usuario_x_rol()` (dinámico) |
-| GET | `/users/agentes` | *(deprecated)* Solo agentes (rol_id=2) | `get_usuario_x_rol()` |
-| GET | `/users/:id` | *(legacy)* Por ID | `findById()` |
-| GET | `/users/:id/search` | **UNIFICADO** - Por ID con opciones | Reemplaza findById + withEmpresas |
-| GET | `/users/:id/with-empresas` | *(deprecated)* Por ID con empresas | `get_usuario_x_id()` |
+| GET | `/users` | **MASTER ENDPOINT** - Lista y filtra usuarios. Soporta `filter[...]` y `included`. | `findAll()` / `get_usuario()` |
+| GET | `/users/:id` | Obtener usuario por ID (usa `findAllUnified` internamente). | `findById()` |
+| GET | `/users/:id/search` | Por ID con opciones (reemplaza `withEmpresas`). | Reemplaza `findById` complex |
 | POST | `/users` | Crear usuario | `insert_usuario()` |
-| POST | `/users/by-ids` | Por lista de IDs | `get_usuarios_por_ids()` |
+| POST | `/users/by-ids` | Por lista de IDs (para selects masivos). | `get_usuarios_por_ids()` |
 | PUT | `/users/:id` | Actualizar usuario | `update_usuario()` |
 | PUT | `/users/:id/firma` | Actualizar firma | `update_firma()` |
 | PUT | `/users/:id/perfiles` | Sincronizar perfiles | `insert_usuario_perfil()` |
 | GET | `/users/:id/perfiles` | Obtener perfiles | `get_perfiles_por_usuario()` |
 | DELETE | `/users/:id` | Soft delete | `delete_usuario()` |
+
+#### Ejemplos de Scopes Dinámicos (`GET /users`)
+El nuevo endpoint maestro soporta una API fluida para filtrar y cargar relaciones:
+
+- **Incluir relaciones:** `?included=regional.zona,cargo,departamento`
+- **Filtrar por campos:** `?filter[email]=juan@test.com&filter[nombre]=Juan`
+- **Combinado:** `?included=regional&filter[rolId]=2`
+
+**Nota de Migración:**
+Los parámetros antiguos fueron eliminados. Ahora debes usar `filter[rolId]=X` en lugar de `rolId=X`.
 
 #### `POST /users` - Crear Usuario
 **Request:**
