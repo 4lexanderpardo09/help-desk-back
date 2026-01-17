@@ -18,7 +18,7 @@ export class DocumentoCierre {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
-    @ManyToOne(() => Ticket)
+    @ManyToOne(() => Ticket, (t) => t.documentosCierre)
     @JoinColumn({ name: 'tick_id' })
     ticket: Ticket;
 }

@@ -25,15 +25,15 @@ export class FlujoTransicion {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
-    @ManyToOne(() => PasoFlujo)
+    @ManyToOne(() => PasoFlujo, (p) => p.transicionesOrigen)
     @JoinColumn({ name: 'paso_origen_id' })
     pasoOrigen: PasoFlujo;
 
-    @ManyToOne(() => PasoFlujo)
+    @ManyToOne(() => PasoFlujo, (p) => p.transicionesDestino)
     @JoinColumn({ name: 'paso_destino_id' })
     pasoDestino: PasoFlujo;
 
-    @ManyToOne(() => Ruta)
+    @ManyToOne(() => Ruta, (r) => r.transiciones)
     @JoinColumn({ name: 'ruta_id' })
     ruta: Ruta;
 }

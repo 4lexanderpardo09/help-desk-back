@@ -21,7 +21,7 @@ export class DataExcel {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
-    @ManyToOne(() => Flujo)
+    @ManyToOne(() => Flujo, (f) => f.dataExcels)
     @JoinColumn({ name: 'flujo_id' })
     flujo: Flujo;
 }

@@ -1,5 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { ReglaMapeo } from './regla-mapeo.entity';
+import { Perfil } from '../../profiles/entities/perfil.entity';
 
 @Entity('regla_creadores_perfil')
 export class ReglaCreadoresPerfil {
@@ -18,7 +19,11 @@ export class ReglaCreadoresPerfil {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
-    @ManyToOne(() => ReglaMapeo)
+    @ManyToOne(() => ReglaMapeo, (rm) => rm.creadoresPerfil)
     @JoinColumn({ name: 'regla_id' })
     regla: ReglaMapeo;
+
+    @ManyToOne(() => Perfil, (p) => p.reglasCreadoresPerfil)
+    @JoinColumn({ name: 'creator_per_id' })
+    perfil: Perfil;
 }

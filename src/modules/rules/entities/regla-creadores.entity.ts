@@ -1,5 +1,6 @@
 import { Cargo } from 'src/modules/positions/entities/cargo.entity';
 import { Entity, JoinColumn, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { ReglaMapeo } from './regla-mapeo.entity';
 
 @Entity('regla_creadores')
 export class ReglaCreadores {
@@ -9,7 +10,11 @@ export class ReglaCreadores {
     @PrimaryColumn({ name: 'creador_car_id', type: 'int' })
     creadorCargoId: number;
 
-    @ManyToOne(() => Cargo)
+    @ManyToOne(() => Cargo, (c) => c.reglasCreadores)
     @JoinColumn({ name: 'creador_car_id' })
     cargo: Cargo;
+
+    @ManyToOne(() => ReglaMapeo, (rm) => rm.creadores)
+    @JoinColumn({ name: 'regla_id' })
+    regla: ReglaMapeo;
 }

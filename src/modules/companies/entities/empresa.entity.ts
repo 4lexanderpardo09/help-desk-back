@@ -2,6 +2,7 @@ import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { EmpresaUsuario } from './empresa-usuario.entity';
 import { Ticket } from '../../tickets/entities/ticket.entity';
 import { CategoriaEmpresa } from 'src/modules/categories/entities/categoria-empresa.entity';
+import { FlujoPlantilla } from 'src/modules/workflows/entities/flujo-plantilla.entity';
 
 @Entity('td_empresa')
 export class Empresa {
@@ -28,4 +29,7 @@ export class Empresa {
 
     @OneToMany(() => Ticket, (t) => t.empresa)
     tickets: Ticket[];
+
+    @OneToMany(() => FlujoPlantilla, (fp) => fp.empresa)
+    flujosPlantilla: FlujoPlantilla[];
 }

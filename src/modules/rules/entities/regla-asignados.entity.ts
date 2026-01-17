@@ -10,7 +10,11 @@ export class ReglaAsignados {
     @PrimaryColumn({ name: 'asignado_car_id', type: 'int' })
     asignadoCargoId: number;
 
-    @ManyToOne(() => Cargo)
+    @ManyToOne(() => Cargo, (c) => c.reglasAsignados)
     @JoinColumn({ name: 'asignado_car_id' })
     cargo: Cargo;
+
+    @ManyToOne(() => ReglaMapeo, (rm) => rm.asignados)
+    @JoinColumn({ name: 'regla_id' })
+    regla: ReglaMapeo;
 }

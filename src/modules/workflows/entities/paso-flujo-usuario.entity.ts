@@ -17,15 +17,15 @@ export class PasoFlujoUsuario {
     @Column({ name: 'car_id', type: 'int', nullable: true })
     cargoId: number | null;
 
-    @ManyToOne(() => PasoFlujo)
+    @ManyToOne(() => PasoFlujo, (p) => p.usuarios)
     @JoinColumn({ name: 'paso_id' })
     paso: PasoFlujo;
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, (u) => u.pasosFlujoAsignados)
     @JoinColumn({ name: 'usu_id' })
     usuario: User;
 
-    @ManyToOne(() => Cargo)
+    @ManyToOne(() => Cargo, (c) => c.usuariosFlujo)
     @JoinColumn({ name: 'car_id' })
     cargo: Cargo;
 }

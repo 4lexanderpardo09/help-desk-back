@@ -18,7 +18,7 @@ export class Documento {
     @Column({ name: 'est', type: 'int' })
     estado: number;
 
-    @ManyToOne(() => Ticket)
+    @ManyToOne(() => Ticket, (t) => t.documentos)
     @JoinColumn({ name: 'tick_id' })
     ticket: Ticket;
 }

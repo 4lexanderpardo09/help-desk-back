@@ -14,6 +14,9 @@ import { TicketAsignacionHistorico } from 'src/modules/tickets/entities/ticket-a
 import { TicketDetalle } from 'src/modules/tickets/entities/ticket-detalle.entity';
 import { TicketEtiqueta } from 'src/modules/tickets/entities/ticket-etiqueta.entity';
 import { Etiqueta } from 'src/modules/tags/entities/etiqueta.entity';
+import { DocumentoFlujo } from 'src/modules/documents/entities/documento-flujo.entity';
+import { PasoFlujoFirma } from 'src/modules/workflows/entities/paso-flujo-firma.entity';
+import { PasoFlujoUsuario } from 'src/modules/workflows/entities/paso-flujo-usuario.entity';
 
 @Entity('tm_usuario')
 export class User {
@@ -129,6 +132,15 @@ export class User {
 
     @OneToMany(() => TicketEtiqueta, (te) => te.asignadoPor)
     etiquetasAsignadas: TicketEtiqueta[];
+
+    @OneToMany(() => DocumentoFlujo, (df) => df.usuario)
+    documentosFlujo: DocumentoFlujo[];
+
+    @OneToMany(() => PasoFlujoFirma, (pff) => pff.usuario)
+    firmasFlujo: PasoFlujoFirma[];
+
+    @OneToMany(() => PasoFlujoUsuario, (pfu) => pfu.usuario)
+    pasosFlujoAsignados: PasoFlujoUsuario[];
 
     /**
      * Nombre completo del usuario

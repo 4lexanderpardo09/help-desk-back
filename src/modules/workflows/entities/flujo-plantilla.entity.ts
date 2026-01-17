@@ -19,11 +19,11 @@ export class FlujoPlantilla {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
-    @ManyToOne(() => Flujo)
+    @ManyToOne(() => Flujo, (f) => f.plantillas)
     @JoinColumn({ name: 'flujo_id' })
     flujo: Flujo;
 
-    @ManyToOne(() => Empresa)
+    @ManyToOne(() => Empresa, (e) => e.flujosPlantilla)
     @JoinColumn({ name: 'emp_id' })
     empresa: Empresa;
 }

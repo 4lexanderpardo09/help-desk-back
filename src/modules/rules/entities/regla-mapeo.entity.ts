@@ -1,5 +1,8 @@
 import { Subcategoria } from 'src/modules/subcategories/entities/subcategoria.entity';
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { ReglaCreadoresPerfil } from './regla-creadores-perfil.entity';
+import { ReglaAsignados } from './regla-asignados.entity';
+import { ReglaCreadores } from './regla-creadores.entity';
 
 @Entity('tm_regla_mapeo')
 export class ReglaMapeo {
@@ -13,6 +16,15 @@ export class ReglaMapeo {
     estado: number;
 
     @ManyToOne(() => Subcategoria, (s) => s.reglaMapeo)
-    @JoinColumn({name: 'cats_id'})
-    subcategoria: Subcategoria[];
+    @JoinColumn({ name: 'cats_id' })
+    subcategoria: Subcategoria;
+
+    @OneToMany(() => ReglaCreadoresPerfil, (rcp) => rcp.regla)
+    creadoresPerfil: ReglaCreadoresPerfil[];
+
+    @OneToMany(() => ReglaAsignados, (ra) => ra.regla)
+    asignados: ReglaAsignados[];
+
+    @OneToMany(() => ReglaCreadores, (rc) => rc.regla)
+    creadores: ReglaCreadores[];
 }

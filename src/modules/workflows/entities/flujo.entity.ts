@@ -1,6 +1,10 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Subcategoria } from '../../subcategories/entities/subcategoria.entity';
 import { PasoFlujo } from './paso-flujo.entity';
+import { DocumentoFlujo } from '../../documents/entities/documento-flujo.entity';
+import { FlujoPlantilla } from './flujo-plantilla.entity';
+import { Ruta } from './ruta.entity';
+import { DataExcel } from '../../imports/entities/data-excel.entity';
 
 @Entity('tm_flujo')
 export class Flujo {
@@ -13,8 +17,17 @@ export class Flujo {
     @Column({ name: 'cats_id', type: 'int', unique: true })
     subcategoriaId: number;
 
-    @Column({ name: 'usu_id_observador', type: 'text', nullable: true, comment: 'IDs de usuarios observadores' })
-    usuarioObservadorIds: string | null;
+    @Column({
+        name: 'usu_id_observador',
+        type: 'text',
+        nullable: true,
+        comment: 'IDs de usuarios observadores',
+        transformer: {
+            to: (value: number[] | null) => value?.join(',') || null,
+            from: (value: string | null) => value?.split(',').map(Number).filter((n) => !isNaN(n)) || [],
+        },
+    })
+    usuarioObservadorIds: number[];
 
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
@@ -28,4 +41,16 @@ export class Flujo {
 
     @OneToMany(() => PasoFlujo, (paso) => paso.flujo)
     pasos: PasoFlujo[];
+
+    @OneToMany(() => DocumentoFlujo, (df) => df.flujo)
+    documentosFlujo: DocumentoFlujo[];
+
+    @OneToMany(() => FlujoPlantilla, (fp) => fp.flujo)
+    plantillas: FlujoPlantilla[];
+
+    @OneToMany(() => Ruta, (r) => r.flujo)
+    rutas: Ruta[];
+
+    @OneToMany(() => DataExcel, (de) => de.flujo)
+    dataExcels: DataExcel[];
 }

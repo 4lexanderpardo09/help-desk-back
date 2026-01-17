@@ -1,6 +1,7 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { UsuarioPerfil } from './usuario-perfil.entity';
+import { ReglaCreadoresPerfil } from '../../rules/entities/regla-creadores-perfil.entity';
 
 @Entity('tm_perfil')
 export class Perfil {
@@ -24,4 +25,7 @@ export class Perfil {
 
     @OneToMany(() => UsuarioPerfil, (up) => up.perfil)
     usuarioPerfiles: UsuarioPerfil[];
+
+    @OneToMany(() => ReglaCreadoresPerfil, (rcp) => rcp.perfil)
+    reglasCreadoresPerfil: ReglaCreadoresPerfil[];
 }

@@ -14,6 +14,9 @@ import { TicketNovedad } from './ticket-novedad.entity';
 import { TicketAsignacionHistorico } from './ticket-asignacion-historico.entity';
 import { TicketEtiqueta } from './ticket-etiqueta.entity';
 import { TicketCampoValor } from './ticket-campo-valor.entity';
+import { Documento } from '../../documents/entities/documento.entity';
+import { DocumentoCierre } from '../../documents/entities/documento-cierre.entity';
+import { DocumentoFlujo } from '../../documents/entities/documento-flujo.entity';
 
 @Entity('tm_ticket')
 export class Ticket {
@@ -131,4 +134,13 @@ export class Ticket {
 
     @OneToMany(() => TicketCampoValor, (cv) => cv.ticket)
     campoValores: TicketCampoValor[];
+
+    @OneToMany(() => Documento, (d) => d.ticket)
+    documentos: Documento[];
+
+    @OneToMany(() => DocumentoCierre, (dc) => dc.ticket)
+    documentosCierre: DocumentoCierre[];
+
+    @OneToMany(() => DocumentoFlujo, (df) => df.ticket)
+    documentosFlujo: DocumentoFlujo[];
 }

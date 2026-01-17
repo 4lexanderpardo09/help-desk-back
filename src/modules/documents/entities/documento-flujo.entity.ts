@@ -30,19 +30,19 @@ export class DocumentoFlujo {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
-    @ManyToOne(() => Ticket)
+    @ManyToOne(() => Ticket, (t) => t.documentosFlujo)
     @JoinColumn({ name: 'tick_id' })
     ticket: Ticket;
 
-    @ManyToOne(() => Flujo)
+    @ManyToOne(() => Flujo, (f) => f.documentosFlujo)
     @JoinColumn({ name: 'flujo_id' })
     flujo: Flujo;
 
-    @ManyToOne(() => PasoFlujo)
+    @ManyToOne(() => PasoFlujo, (p) => p.documentosFlujo)
     @JoinColumn({ name: 'paso_id' })
     paso: PasoFlujo;
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, (u) => u.documentosFlujo)
     @JoinColumn({ name: 'usu_id' })
     usuario: User;
 }

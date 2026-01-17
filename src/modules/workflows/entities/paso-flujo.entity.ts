@@ -5,6 +5,11 @@ import { TicketParalelo } from '../../tickets/entities/ticket-paralelo.entity';
 import { TicketNovedad } from '../../tickets/entities/ticket-novedad.entity';
 import { TicketAsignacionHistorico } from '../../tickets/entities/ticket-asignacion-historico.entity';
 import { CampoPlantilla } from '../../templates/entities/campo-plantilla.entity';
+import { DocumentoFlujo } from '../../documents/entities/documento-flujo.entity';
+import { PasoFlujoFirma } from './paso-flujo-firma.entity';
+import { PasoFlujoUsuario } from './paso-flujo-usuario.entity';
+import { FlujoTransicion } from './flujo-transicion.entity';
+import { RutaPaso } from './ruta-paso.entity';
 
 @Entity('tm_flujo_paso')
 export class PasoFlujo {
@@ -90,4 +95,22 @@ export class PasoFlujo {
 
     @OneToMany(() => CampoPlantilla, (cp) => cp.paso)
     campos: CampoPlantilla[];
+
+    @OneToMany(() => DocumentoFlujo, (df) => df.paso)
+    documentosFlujo: DocumentoFlujo[];
+
+    @OneToMany(() => PasoFlujoFirma, (pff) => pff.paso)
+    firmas: PasoFlujoFirma[];
+
+    @OneToMany(() => PasoFlujoUsuario, (pfu) => pfu.paso)
+    usuarios: PasoFlujoUsuario[];
+
+    @OneToMany(() => FlujoTransicion, (ft) => ft.pasoOrigen)
+    transicionesOrigen: FlujoTransicion[];
+
+    @OneToMany(() => FlujoTransicion, (ft) => ft.pasoDestino)
+    transicionesDestino: FlujoTransicion[];
+
+    @OneToMany(() => RutaPaso, (rp) => rp.paso)
+    rutaPasos: RutaPaso[];
 }

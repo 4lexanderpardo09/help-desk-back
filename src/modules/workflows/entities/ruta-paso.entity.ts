@@ -23,7 +23,7 @@ export class RutaPaso {
     @JoinColumn({ name: 'ruta_id' })
     ruta: Ruta;
 
-    @ManyToOne(() => PasoFlujo)
+    @ManyToOne(() => PasoFlujo, (p) => p.rutaPasos)
     @JoinColumn({ name: 'paso_id' })
     paso: PasoFlujo;
 }

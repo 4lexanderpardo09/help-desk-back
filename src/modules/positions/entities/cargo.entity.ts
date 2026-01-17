@@ -3,6 +3,8 @@ import { User } from '../../users/entities/user.entity';
 import { ReglaAsignados } from 'src/modules/rules/entities/regla-asignados.entity';
 import { ReglaCreadores } from 'src/modules/rules/entities/regla-creadores.entity';
 import { Organigrama } from './organigrama.entity';
+import { PasoFlujoFirma } from '../../workflows/entities/paso-flujo-firma.entity';
+import { PasoFlujoUsuario } from '../../workflows/entities/paso-flujo-usuario.entity';
 
 @Entity('tm_cargo')
 export class Cargo {
@@ -29,4 +31,10 @@ export class Cargo {
 
     @OneToMany(() => Organigrama, (o) => o.jefeCargo)
     organigramaJefe: Organigrama[];
+
+    @OneToMany(() => PasoFlujoFirma, (pff) => pff.cargo)
+    firmasFlujo: PasoFlujoFirma[];
+
+    @OneToMany(() => PasoFlujoUsuario, (pfu) => pfu.cargo)
+    usuariosFlujo: PasoFlujoUsuario[];
 }

@@ -1,6 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Flujo } from './flujo.entity';
 import { RutaPaso } from './ruta-paso.entity';
+import { FlujoTransicion } from './flujo-transicion.entity';
 
 @Entity('tm_ruta')
 export class Ruta {
@@ -22,4 +23,7 @@ export class Ruta {
 
     @OneToMany(() => RutaPaso, (rp) => rp.ruta)
     rutaPasos: RutaPaso[];
+
+    @OneToMany(() => FlujoTransicion, (ft) => ft.ruta)
+    transiciones: FlujoTransicion[];
 }
