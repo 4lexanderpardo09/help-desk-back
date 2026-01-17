@@ -33,20 +33,17 @@ export class UsersController {
      * 
      * Soporta filtrado avanzado mediante "Scopes" dinámicos (ApiQueryHelper).
      * 
-     * @param zona Nombre de la zona (Lógica compleja de JOINs).
      * @param limit Limitar resultados.
      * @param included Relaciones a incluir (ej: 'regional,cargo').
      * @param filter Filtros dinámicos (ej: filter[email]=x).
      */
     @Get()
     async findAllUnified(
-        @Query('zona') zona?: string,
         @Query('limit') limitStr?: string,
         @Query('included') includedStr?: string,
         @Query('filter') filter?: Record<string, any>,
     ): Promise<User[] | Record<string, unknown>[]> {
         return this.usersService.findAllUnified({
-            zona,
             limit: limitStr ? parseInt(limitStr, 10) : undefined,
             included: includedStr,
             filter: filter,

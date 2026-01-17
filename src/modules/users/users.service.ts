@@ -129,21 +129,9 @@ export class UsersService {
      * 
      * Reemplaza múltiples consultas legacy fragmentadas.
      * Permite buscar usuarios aplicando cualquier combinación de filtros.
-     * 
-     * Lógica especial:
-     * - Si se provee `zona`, realiza JOINs con tm_regional y tm_zona.
-     * - Si se provee `regionalId` y `includeNacional`, aplica lógica OR (regional = X OR esNacional = 1).
-     * - Si `includeDepartamento` es true, realiza un raw query para incluir nombre del departamento (compatibilidad legacy).
-     * 
-     * @param options Opciones de filtrado y paginación (limit).
-     */
-    /**
-     * **Búsqueda Maestra Unificada**
-     * 
      * @param options Opciones de filtrado y paginación (limit).
      */
     async findAllUnified(options?: {
-        zona?: string;       // Nombre de zona
         limit?: number;      // Para findOne legacy
         included?: string; // ej: 'regional,cargo'
         filter?: Record<string, any>; // ej: { nombre: 'Juan' }
@@ -158,16 +146,6 @@ export class UsersService {
 
         // Filtros base
         qb.where('user.estado = :estado', { estado: 1 });
-
-        // JOINs necesarios (Lógica de negocio específica que ApiQueryHelper no cubre solo)
-        if (options?.zona) {
-            // Validar si ApiQueryHelper ya incluyó esto para no duplicar
-            if (!options.included?.includes('regional.zona')) {
-                qb.innerJoin('user.regional', 'regional');
-                qb.innerJoin('regional.zona', 'zona');
-            }
-            qb.andWhere('zona.nombre = :zona', { zona: options.zona });
-        }
 
         // Ordenamiento default
         qb.orderBy('user.nombre', 'ASC');

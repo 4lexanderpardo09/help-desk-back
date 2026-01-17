@@ -155,7 +155,6 @@ Este endpoint unificado reemplaza múltiples rutas legacy. Se recomienda usar si
 
 #### Parámetros soportados:
 - **`limit`**: Limitar la cantidad de resultados (útil para buscar uno solo con limit=1).
-- **`zona`**: Filtra por nombre de zona (ej: "Norte", "Sur") -> *Aplica JOINs complejos*.
 - **`included`**: **Scope de Relaciones**. Lista separada por comas (ej: `regional,cargo`).
 - **`filter`**: **Scope de Filtros**. Objeto de filtros dinámicos (ej: `filter[email]=x`).
 
@@ -166,8 +165,8 @@ Este endpoint unificado reemplaza múltiples rutas legacy. Se recomienda usar si
 - **Obtener agentes:** `GET /users?filter[rolId]=2`
 - **Obtener usuarios de un cargo en una regional (incluyendo relaciones):**
   `GET /users?filter[cargoId]=1&included=regional,cargo`
-- **Obtener usuarios de un cargo en una zona (JOIN especial):**
-  `GET /users?filter[cargoId]=1&zona=Norte`
+- **Obtener usuarios de un cargo en una zona (vía Included):**
+  `GET /users?filter[cargoId]=1&included=regional,regional.zona&filter[regional.zona.nombre]=Norte`
 - **Obtener usuario por email:** `GET /users?filter[email]=juan.perez@example.com`
 
 ### Endpoints Unificados (todos requieren autenticación)

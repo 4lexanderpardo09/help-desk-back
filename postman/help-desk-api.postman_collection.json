@@ -231,12 +231,6 @@
                                     "disabled": true
                                 },
                                 {
-                                    "key": "zona",
-                                    "value": "Norte",
-                                    "description": "Filtrar por nombre de zona (Complex JOIN)",
-                                    "disabled": true
-                                },
-                                {
                                     "key": "included",
                                     "value": "regional,regional.zona,cargo,departamento",
                                     "description": "Scopes: Incluir relaciones (separadas por coma)",
