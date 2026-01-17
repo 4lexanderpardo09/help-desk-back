@@ -1,19 +1,16 @@
-import { Entity, PrimaryColumn } from 'typeorm';
+import { Cargo } from 'src/modules/positions/entities/cargo.entity';
+import { Entity, JoinColumn, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { ReglaMapeo } from './regla-mapeo.entity';
 
 @Entity('regla_asignados')
 export class ReglaAsignados {
-    @PrimaryColumn({ name: 'regla_id', type: 'int' })
+    @PrimaryGeneratedColumn({ name: 'regla_id', type: 'int' })
     reglaId: number;
 
     @PrimaryColumn({ name: 'asignado_car_id', type: 'int' })
     asignadoCargoId: number;
 
-    // TODO: Agregar relaciones ManyToOne
-    // @ManyToOne(() => Regla)
-    // @JoinColumn({ name: 'regla_id' })
-    // regla: Regla;
-
-    // @ManyToOne(() => Cargo)
-    // @JoinColumn({ name: 'asignado_car_id' })
-    // cargo: Cargo;
+    @ManyToOne(() => Cargo)
+    @JoinColumn({ name: 'asignado_car_id' })
+    cargo: Cargo;
 }

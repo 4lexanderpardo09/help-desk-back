@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { User } from '../../users/entities/user.entity';
+import { Perfil } from './perfil.entity';
 
 @Entity('tm_usuario_perfiles')
 export class UsuarioPerfil {
@@ -17,12 +19,11 @@ export class UsuarioPerfil {
     @Column({ name: 'est', type: 'int', default: 1, nullable: true })
     estado: number | null;
 
-    // TODO: Agregar relaciones ManyToOne
-    // @ManyToOne(() => User)
-    // @JoinColumn({ name: 'usu_id' })
-    // usuario: User;
+    @ManyToOne(() => User, (user) => user.usuarioPerfiles)
+    @JoinColumn({ name: 'usu_id' })
+    usuario: User;
 
-    // @ManyToOne(() => Perfil)
-    // @JoinColumn({ name: 'per_id' })
-    // perfil: Perfil;
+    @ManyToOne(() => Perfil, (perfil) => perfil.usuarioPerfiles)
+    @JoinColumn({ name: 'per_id' })
+    perfil: Perfil;
 }

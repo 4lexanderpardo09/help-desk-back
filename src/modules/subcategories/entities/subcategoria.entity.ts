@@ -1,4 +1,7 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Categoria } from 'src/modules/categories/entities/categoria.entity';
+import { Prioridad } from 'src/modules/priorities/entities/prioridad.entity';
+import { ReglaMapeo } from 'src/modules/rules/entities/regla-mapeo.entity';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('tm_subcategoria')
 export class Subcategoria {
@@ -20,12 +23,14 @@ export class Subcategoria {
     @Column({ name: 'est', type: 'int', nullable: true })
     estado: number | null;
 
-    // TODO: Agregar relaciones ManyToOne
-    // @ManyToOne(() => Categoria)
-    // @JoinColumn({ name: 'cat_id' })
-    // categoria: Categoria;
+    @OneToMany(() => ReglaMapeo, (rm) => rm.subcategoria)
+    reglaMapeo: ReglaMapeo[];
 
-    // @ManyToOne(() => Prioridad)
-    // @JoinColumn({ name: 'pd_id' })
-    // prioridad: Prioridad;
+    @ManyToOne(() => Categoria, (c) => c.subcategorias)
+    @JoinColumn({ name: 'cat_id' })
+    categoria: Categoria;
+
+    @ManyToOne(() => Prioridad, (p) => p.subcategoria)
+    @JoinColumn({ name: 'pd_id' })
+    prioridad: Prioridad;
 }

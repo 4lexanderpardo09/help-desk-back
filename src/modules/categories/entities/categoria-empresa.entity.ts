@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Categoria } from './categoria.entity';
+import { Empresa } from 'src/modules/companies/entities/empresa.entity';
 
 @Entity('categoria_empresa')
 export class CategoriaEmpresa {
@@ -20,5 +22,9 @@ export class CategoriaEmpresa {
     @Column({ name: 'est', type: 'int', nullable: true })
     estado: number | null;
 
-    // TODO: Agregar relaciones cuando existan Entidades Categoria y Empresa
+    @ManyToOne(() => Categoria, (c) => c.categoriaEmpresa)
+    categoria: Categoria[];
+
+    @ManyToOne(() => Empresa, (e) => e.categoriaEmpresa)
+    empresa: Empresa[];
 }

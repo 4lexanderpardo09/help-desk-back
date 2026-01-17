@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Cargo } from './cargo.entity';
 
 @Entity('tm_organigrama')
 export class Organigrama {
@@ -14,12 +15,11 @@ export class Organigrama {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
-    // TODO: Agregar relaciones ManyToOne
-    // @ManyToOne(() => Cargo)
-    // @JoinColumn({ name: 'car_id' })
-    // cargo: Cargo;
+    @ManyToOne(() => Cargo, (c) => c.organigrama)
+    @JoinColumn({ name: 'car_id' })
+    cargo: Cargo;
 
-    // @ManyToOne(() => Cargo)
-    // @JoinColumn({ name: 'jefe_car_id' })
-    // jefeCargo: Cargo;
+    @ManyToOne(() => Cargo, (c) => c.organigramaJefe)
+    @JoinColumn({ name: 'jefe_car_id' })
+    jefeCargo: Cargo;
 }

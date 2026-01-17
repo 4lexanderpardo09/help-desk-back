@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { EmpresaUsuario } from './empresa-usuario.entity';
+import { CategoriaEmpresa } from 'src/modules/categories/entities/categoria-empresa.entity';
 
 @Entity('td_empresa')
 export class Empresa {
@@ -17,10 +19,9 @@ export class Empresa {
     @Column({ name: 'est', type: 'int', nullable: true })
     estado: number | null;
 
-    // TODO: Agregar relaciones OneToMany
-    // @OneToMany(() => EmpresaUsuario, (eu) => eu.empresa)
-    // usuarios: EmpresaUsuario[];
+    @OneToMany(() => EmpresaUsuario, (eu) => eu.empresa)
+    empresaUsuarios: EmpresaUsuario[];
 
-    // @OneToMany(() => CategoriaEmpresa, (ce) => ce.empresa)
-    // categorias: CategoriaEmpresa[];
+    @OneToMany(() => CategoriaEmpresa, (ce) => ce.empresa)
+    categoriaEmpresa: CategoriaEmpresa[];
 }

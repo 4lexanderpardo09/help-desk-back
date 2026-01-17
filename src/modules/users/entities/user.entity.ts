@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import { Regional } from '../../regions/entities/regional.entity';
+import { Cargo } from '../../positions/entities/cargo.entity';
+import { Departamento } from '../../departments/entities/departamento.entity';
+import { Perfil } from '../../profiles/entities/perfil.entity';
+import { UsuarioPerfil } from '../../profiles/entities/usuario-perfil.entity';
+import { EmpresaUsuario } from 'src/modules/companies/entities/empresa-usuario.entity';
+import { Notificacion } from 'src/modules/notifications/entities/notificacion.entity';
+import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
 
 @Entity('tm_usuario')
 export class User {
@@ -60,6 +68,30 @@ export class User {
 
     @Column({ name: 'usu_firma', type: 'varchar', length: 255, nullable: true })
     firma: string | null;
+
+    @ManyToOne(() => Regional)
+    @JoinColumn({ name: 'reg_id' })
+    regional: Regional;
+
+    @ManyToOne(() => Cargo)
+    @JoinColumn({ name: 'car_id' })
+    cargo: Cargo;
+
+    @ManyToOne(() => Departamento)
+    @JoinColumn({ name: 'dp_id' })
+    departamento: Departamento;
+    
+    @OneToMany(() => EmpresaUsuario, (eu) => eu.usuario)
+    empresaUsuarios: EmpresaUsuario[];
+
+    @OneToMany(() => UsuarioPerfil, (up) => up.usuario)
+    usuarioPerfiles: UsuarioPerfil[];
+
+    @OneToMany(() => Notificacion, (n) => n.usuario)
+    notificacion: Notificacion[];
+
+    @OneToMany(() => Ticket, (t) => t.usuario)
+    ticket: Ticket[];
 
     /**
      * Nombre completo del usuario

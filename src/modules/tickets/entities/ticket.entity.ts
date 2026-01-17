@@ -1,4 +1,13 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Categoria } from 'src/modules/categories/entities/categoria.entity';
+import { Empresa } from 'src/modules/companies/entities/empresa.entity';
+import { Departamento } from 'src/modules/departments/entities/departamento.entity';
+import { Prioridad } from 'src/modules/priorities/entities/prioridad.entity';
+import { Regional } from 'src/modules/regions/entities/regional.entity';
+import { Subcategoria } from 'src/modules/subcategories/entities/subcategoria.entity';
+import { User } from 'src/modules/users/entities/user.entity';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { TicketDetalle } from './ticket-detalle.entity';
+import { Notificacion } from 'src/modules/notifications/entities/notificacion.entity';
 
 @Entity('tm_ticket')
 export class Ticket {
@@ -65,35 +74,37 @@ export class Ticket {
     @Column({ name: 'usu_id_jefe_aprobador', type: 'int', nullable: true })
     usuarioJefeAprobadorId: number | null;
 
-    // TODO: Agregar relaciones ManyToOne
-    // @ManyToOne(() => User)
-    // @JoinColumn({ name: 'usu_id' })
-    // usuario: User;
+    @ManyToOne(() => User, (u) => u.ticket)
+    @JoinColumn({ name: 'usu_id' })
+    usuario: User;
 
-    // @ManyToOne(() => Categoria)
-    // @JoinColumn({ name: 'cat_id' })
-    // categoria: Categoria;
+    @ManyToOne(() => Categoria)
+    @JoinColumn({ name: 'cat_id' })
+    categoria: Categoria;
 
-    // @ManyToOne(() => Subcategoria)
-    // @JoinColumn({ name: 'cats_id' })
-    // subcategoria: Subcategoria;
+    @ManyToOne(() => Subcategoria)
+    @JoinColumn({ name: 'cats_id' })
+    subcategoria: Subcategoria;
 
-    // @ManyToOne(() => Prioridad)
-    // @JoinColumn({ name: 'pd_id' })
-    // prioridad: Prioridad;
+    @ManyToOne(() => Prioridad)
+    @JoinColumn({ name: 'pd_id' })
+    prioridad: Prioridad;
 
-    // @ManyToOne(() => Empresa)
-    // @JoinColumn({ name: 'emp_id' })
-    // empresa: Empresa;
+    @ManyToOne(() => Empresa)
+    @JoinColumn({ name: 'emp_id' })
+    empresa: Empresa;
 
-    // @ManyToOne(() => Departamento)
-    // @JoinColumn({ name: 'dp_id' })
-    // departamento: Departamento;
+    @ManyToOne(() => Departamento)
+    @JoinColumn({ name: 'dp_id' })
+    departamento: Departamento;
 
-    // @ManyToOne(() => Regional)
-    // @JoinColumn({ name: 'reg_id' })
-    // regional: Regional;
+    @ManyToOne(() => Regional)
+    @JoinColumn({ name: 'reg_id' })
+    regional: Regional;
 
-    // @OneToMany(() => TicketDetalle, (td) => td.ticket)
-    // detalles: TicketDetalle[];
+    @OneToMany(() => TicketDetalle, (td) => td.ticket)
+    detalles: TicketDetalle[];
+
+    @OneToMany(() => Notificacion, (n) => n.ticket)
+    notificacion: Notificacion[];
 }

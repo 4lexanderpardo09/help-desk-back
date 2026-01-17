@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Empresa } from './empresa.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('empresa_usuario')
 export class EmpresaUsuario {
@@ -20,12 +22,12 @@ export class EmpresaUsuario {
     @Column({ name: 'est', type: 'int', nullable: true })
     estado: number | null;
 
-    // TODO: Agregar relaciones cuando existan Entidades Usuario y Empresa
-    // @ManyToOne(() => User)
-    // @JoinColumn({ name: 'usu_id' })
-    // usuario: User;
+    @ManyToOne(() => User, (user) => user.empresaUsuarios)
+    @JoinColumn({ name: 'usu_id' })
+    usuario: User;
+    
+    @ManyToOne(() => Empresa, (empresa) => empresa.empresaUsuarios)
+    @JoinColumn({ name: 'emp_id' })
+    empresa: Empresa;
 
-    // @ManyToOne(() => Empresa)
-    // @JoinColumn({ name: 'emp_id' })
-    // empresa: Empresa;
 }

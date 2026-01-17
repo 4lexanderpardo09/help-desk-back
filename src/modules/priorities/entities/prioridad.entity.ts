@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Subcategoria } from 'src/modules/subcategories/entities/subcategoria.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('td_prioridad')
 export class Prioridad {
@@ -10,4 +11,7 @@ export class Prioridad {
 
     @Column({ name: 'est', type: 'int', nullable: true })
     estado: number | null;
+
+    @OneToMany(() => Subcategoria, (s) => s.prioridad)
+    subcategoria: Subcategoria[];
 }

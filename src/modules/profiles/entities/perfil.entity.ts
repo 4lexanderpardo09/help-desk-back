@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { User } from '../../users/entities/user.entity';
+import { UsuarioPerfil } from './usuario-perfil.entity';
 
 @Entity('tm_perfil')
 export class Perfil {
@@ -20,7 +22,6 @@ export class Perfil {
     @Column({ name: 'est', type: 'int' })
     estado: number;
 
-    // TODO: Agregar relaciones OneToMany
-    // @OneToMany(() => User, (user) => user.perfil)
-    // usuarios: User[];
+    @OneToMany(() => UsuarioPerfil, (up) => up.perfil)
+    usuarioPerfiles: UsuarioPerfil[];
 }

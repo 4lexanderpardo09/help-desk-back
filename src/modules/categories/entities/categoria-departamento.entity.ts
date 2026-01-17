@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Categoria } from './categoria.entity';
+import { Departamento } from 'src/modules/departments/entities/departamento.entity';
 
 @Entity('categoria_departamento')
 export class CategoriaDepartamento {
@@ -20,12 +22,11 @@ export class CategoriaDepartamento {
     @Column({ name: 'est', type: 'int', nullable: true })
     estado: number | null;
 
-    // TODO: Agregar relaciones cuando existan las entidades Categoria y Departamento
-    // @ManyToOne(() => Categoria)
-    // @JoinColumn({ name: 'cat_id' })
-    // categoria: Categoria;
+    @ManyToOne(() => Categoria, (c) => c.categoriaDepartamentos)
+    @JoinColumn({ name: 'cat_id' })
+    categoria: Categoria;
 
-    // @ManyToOne(() => Departamento)
-    // @JoinColumn({ name: 'dp_id' })
-    // departamento: Departamento;
+    @ManyToOne(() => Departamento, (d) => d.categoriaDepartamento)
+    @JoinColumn({ name: 'dp_id' })
+    departamento: Departamento;
 }

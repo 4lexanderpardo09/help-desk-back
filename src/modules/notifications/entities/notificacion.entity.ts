@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
+import { User } from 'src/modules/users/entities/user.entity';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('tm_notificacion')
 export class Notificacion {
@@ -20,12 +22,11 @@ export class Notificacion {
     @Column({ name: 'est', type: 'int', nullable: true })
     estado: number | null;
 
-    // TODO: Agregar relaciones ManyToOne
-    // @ManyToOne(() => User)
-    // @JoinColumn({ name: 'usu_id' })
-    // usuario: User;
+    @ManyToOne(() => User, (u) => u.notificacion)
+    @JoinColumn({ name: 'usu_id' })
+    usuario: User;
 
-    // @ManyToOne(() => Ticket)
-    // @JoinColumn({ name: 'tick_id' })
-    // ticket: Ticket;
+    @ManyToOne(() => Ticket, (t) => t.notificacion)
+    @JoinColumn({ name: 'tick_id' })
+    ticket: Ticket;
 }

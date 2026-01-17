@@ -1,4 +1,8 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { User } from '../../users/entities/user.entity';
+import { ReglaAsignados } from 'src/modules/rules/entities/regla-asignados.entity';
+import { ReglaCreadores } from 'src/modules/rules/entities/regla-creadores.entity';
+import { Organigrama } from './organigrama.entity';
 
 @Entity('tm_cargo')
 export class Cargo {
@@ -11,13 +15,18 @@ export class Cargo {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
-    // TODO: Agregar relaciones OneToMany
-    // @OneToMany(() => User, (user) => user.cargo)
-    // usuarios: User[];
+    @OneToMany(() => User, (user) => user.cargo)
+    usuarios: User[];
 
-    // @OneToMany(() => ReglaAsignados, (ra) => ra.cargo)
-    // reglasAsignados: ReglaAsignados[];
+    @OneToMany(() => ReglaAsignados, (ra) => ra.cargo)
+    reglasAsignados: ReglaAsignados[];
 
-    // @OneToMany(() => ReglaCreadores, (rc) => rc.cargo)
-    // reglasCreadores: ReglaCreadores[];
+    @OneToMany(() => ReglaCreadores, (rc) => rc.cargo)
+    reglasCreadores: ReglaCreadores[];
+
+    @OneToMany(() => Organigrama, (o) => o.cargo)
+    organigrama: Organigrama[];
+
+    @OneToMany(() => Organigrama, (o) => o.jefeCargo)
+    organigramaJefe: Organigrama[];
 }
