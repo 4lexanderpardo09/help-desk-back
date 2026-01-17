@@ -90,7 +90,7 @@ export class UsersService {
     }
 
     // Listas permitidas para "Scopes" dinámicos (estilo Laravel)
-    private readonly allowedIncludes = ['regional', 'regional.zona', 'cargo', 'departamento', 'empresaUsuarios', 'usuarioPerfiles', 'etiquetasPropias', 'etiquetasAsignadas', 'rol'];
+    private readonly allowedIncludes = ['regional', 'regional.zona', 'cargo', 'departamento', 'empresaUsuarios', 'usuarioPerfiles', 'etiquetasPropias', 'etiquetasAsignadas', 'role'];
     private readonly allowedFilters = ['nombre', 'apellido', 'email', 'cedula', 'estado', 'rolId', 'cargoId', 'regionalId', 'departamentoId'];
 
     /**
@@ -130,14 +130,14 @@ export class UsersService {
     }): Promise<User[] | Record<string, unknown>[] | User | null> {
         const qb = this.userRepository.createQueryBuilder('user');
 
+        // Filtros base (Primero, para que applyFilters use andWhere sobre esto)
+        qb.where('user.estado = :estado', { estado: 1 });
+
         // 1. Scopes Dinámicos (Estilo Laravel)
         // Aplica relaciones (joins) automáticamente si están permitidas
         ApiQueryHelper.applyIncludes(qb, options?.included, this.allowedIncludes, 'user');
         // Aplica filtros (where like) automáticamente si están permitidos
         ApiQueryHelper.applyFilters(qb, options?.filter, this.allowedFilters, 'user');
-
-        // Filtros base
-        qb.where('user.estado = :estado', { estado: 1 });
 
         // Ordenamiento default
         qb.orderBy('user.nombre', 'ASC');

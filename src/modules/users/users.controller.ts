@@ -15,6 +15,7 @@ import { JwtAuthGuard } from '../auth/jwt.guard';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ApiQueryDto } from '../../common/dto/api-query.dto';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -39,14 +40,12 @@ export class UsersController {
      */
     @Get()
     async findAllUnified(
-        @Query('limit') limitStr?: string,
-        @Query('included') includedStr?: string,
-        @Query('filter') filter?: Record<string, any>,
+        @Query() query: ApiQueryDto,
     ): Promise<User[] | Record<string, unknown>[]> {
         return this.usersService.findAllUnified({
-            limit: limitStr ? parseInt(limitStr, 10) : undefined,
-            included: includedStr,
-            filter: filter,
+            limit: query.limit,
+            included: query.included,
+            filter: query.filter,
         }) as Promise<User[] | Record<string, unknown>[]>;
     }
 
