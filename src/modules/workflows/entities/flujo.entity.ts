@@ -21,7 +21,15 @@ export class Flujo {
         name: 'usu_id_observador',
         type: 'text',
         nullable: true,
-        comment: 'IDs de usuarios observadores',
+        comment: 'IDs de usuarios observadores. LEGACY: Se almacena como string separado por comas "1,2,3".',
+        /**
+         * Transformer para manejar compatibilidad con sistema Legacy (PHP).
+         * - En DB: String de IDs separados por coma ("1,2,3")
+         * - En App: Array de n\u00fameros ([1, 2, 3])
+         * 
+         * Esto permite manipular observadores como array sin romper la estructura
+         * que espera el frontend/backend anterior.
+         */
         transformer: {
             to: (value: number[] | null) => value?.join(',') || null,
             from: (value: string | null) => value?.split(',').map(Number).filter((n) => !isNaN(n)) || [],
