@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Ticket } from './ticket.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('td_ticketdetalle')
 export class TicketDetalle {
@@ -20,15 +22,11 @@ export class TicketDetalle {
     @Column({ name: 'est', type: 'int' })
     estado: number;
 
-    // TODO: Agregar relaciones
-    // @ManyToOne(() => Ticket)
-    // @JoinColumn({ name: 'tick_id' })
-    // ticket: Ticket;
+    @ManyToOne(() => Ticket, (t) => t.detalles)
+    @JoinColumn({ name: 'tick_id' })
+    ticket: Ticket;
 
-    // @ManyToOne(() => User)
-    // @JoinColumn({ name: 'usu_id' })
-    // usuario: User;
-
-    // @OneToMany(() => DocumentoDetalle, (doc) => doc.ticketDetalle)
-    // documentos: DocumentoDetalle[];
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'usu_id' })
+    usuario: User;
 }

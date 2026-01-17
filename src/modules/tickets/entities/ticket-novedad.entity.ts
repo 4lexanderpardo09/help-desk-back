@@ -1,4 +1,7 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Ticket } from './ticket.entity';
+import { PasoFlujo } from '../../workflows/entities/paso-flujo.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('th_ticket_novedad')
 export class TicketNovedad {
@@ -29,20 +32,19 @@ export class TicketNovedad {
     @Column({ name: 'estado_novedad', type: 'enum', enum: ['Abierta', 'Resuelta'], default: 'Abierta' })
     estado: 'Abierta' | 'Resuelta';
 
-    // TODO: Agregar relaciones
-    // @ManyToOne(() => Ticket)
-    // @JoinColumn({ name: 'tick_id' })
-    // ticket: Ticket;
+    @ManyToOne(() => Ticket)
+    @JoinColumn({ name: 'tick_id' })
+    ticket: Ticket;
 
-    // @ManyToOne(() => PasoFlujo)
-    // @JoinColumn({ name: 'paso_id_pausado' })
-    // pasoPausado: PasoFlujo;
+    @ManyToOne(() => PasoFlujo)
+    @JoinColumn({ name: 'paso_id_pausado' })
+    pasoPausado: PasoFlujo;
 
-    // @ManyToOne(() => User)
-    // @JoinColumn({ name: 'usu_asig_novedad' })
-    // usuarioAsignado: User;
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'usu_asig_novedad' })
+    usuarioAsignado: User;
 
-    // @ManyToOne(() => User)
-    // @JoinColumn({ name: 'usu_crea_novedad' })
-    // usuarioCreador: User;
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'usu_crea_novedad' })
+    usuarioCreador: User;
 }

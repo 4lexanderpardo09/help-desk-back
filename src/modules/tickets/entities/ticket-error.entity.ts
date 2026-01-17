@@ -1,4 +1,7 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Ticket } from './ticket.entity';
+import { User } from '../../users/entities/user.entity';
+import { FastAnswer } from './fast-answer.entity';
 
 @Entity('tm_ticket_error')
 export class TicketError {
@@ -29,20 +32,19 @@ export class TicketError {
     @Column({ name: 'est', type: 'int', default: 1, nullable: true })
     estado: number | null;
 
-    // TODO: Agregar relaciones
-    // @ManyToOne(() => Ticket)
-    // @JoinColumn({ name: 'tick_id' })
-    // ticket: Ticket;
+    @ManyToOne(() => Ticket)
+    @JoinColumn({ name: 'tick_id' })
+    ticket: Ticket;
 
-    // @ManyToOne(() => User)
-    // @JoinColumn({ name: 'usu_id_reporta' })
-    // usuarioReporta: User;
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'usu_id_reporta' })
+    usuarioReporta: User;
 
-    // @ManyToOne(() => User)
-    // @JoinColumn({ name: 'usu_id_responsable' })
-    // usuarioResponsable: User;
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'usu_id_responsable' })
+    usuarioResponsable: User;
 
-    // @ManyToOne(() => FastAnswer)
-    // @JoinColumn({ name: 'answer_id' })
-    // answer: FastAnswer;
+    @ManyToOne(() => FastAnswer)
+    @JoinColumn({ name: 'answer_id' })
+    answer: FastAnswer;
 }

@@ -1,4 +1,8 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Ticket } from './ticket.entity';
+import { User } from '../../users/entities/user.entity';
+import { PasoFlujo } from '../../workflows/entities/paso-flujo.entity';
+import { FastAnswer } from './fast-answer.entity';
 
 @Entity('th_ticket_asignacion')
 export class TicketAsignacionHistorico {
@@ -35,24 +39,23 @@ export class TicketAsignacionHistorico {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
-    // TODO: Agregar relaciones ManyToOne
-    // @ManyToOne(() => Ticket)
-    // @JoinColumn({ name: 'tick_id' })
-    // ticket: Ticket;
+    @ManyToOne(() => Ticket)
+    @JoinColumn({ name: 'tick_id' })
+    ticket: Ticket;
 
-    // @ManyToOne(() => User)
-    // @JoinColumn({ name: 'usu_asig' })
-    // usuarioAsignado: User;
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'usu_asig' })
+    usuarioAsignado: User;
 
-    // @ManyToOne(() => User)
-    // @JoinColumn({ name: 'how_asig' })
-    // usuarioAsignador: User;
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'how_asig' })
+    usuarioAsignador: User;
 
-    // @ManyToOne(() => PasoFlujo)
-    // @JoinColumn({ name: 'paso_id' })
-    // paso: PasoFlujo;
+    @ManyToOne(() => PasoFlujo)
+    @JoinColumn({ name: 'paso_id' })
+    paso: PasoFlujo;
 
-    // @ManyToOne(() => ErrorCode)
-    // @JoinColumn({ name: 'error_code_id' })
-    // errorCode: ErrorCode;
+    @ManyToOne(() => FastAnswer)
+    @JoinColumn({ name: 'error_code_id' })
+    errorCode: FastAnswer;
 }

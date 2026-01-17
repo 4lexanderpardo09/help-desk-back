@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Ticket } from './ticket.entity';
+import { CampoPlantilla } from '../../templates/entities/campo-plantilla.entity';
 
 @Entity('td_ticket_campo_valor')
 export class TicketCampoValor {
@@ -20,12 +22,11 @@ export class TicketCampoValor {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
-    // TODO: Agregar relaciones ManyToOne
-    // @ManyToOne(() => Ticket)
-    // @JoinColumn({ name: 'tick_id' })
-    // ticket: Ticket;
+    @ManyToOne(() => Ticket)
+    @JoinColumn({ name: 'tick_id' })
+    ticket: Ticket;
 
-    // @ManyToOne(() => Campo)
-    // @JoinColumn({ name: 'campo_id' })
-    // campo: Campo;
+    @ManyToOne(() => CampoPlantilla)
+    @JoinColumn({ name: 'campo_id' })
+    campo: CampoPlantilla;
 }

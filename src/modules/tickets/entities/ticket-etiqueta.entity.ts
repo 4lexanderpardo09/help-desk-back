@@ -1,4 +1,7 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Ticket } from './ticket.entity';
+import { Etiqueta } from '../../tags/entities/etiqueta.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('td_ticket_etiqueta')
 export class TicketEtiqueta {
@@ -20,16 +23,15 @@ export class TicketEtiqueta {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
-    // TODO: Agregar relaciones ManyToOne
-    // @ManyToOne(() => Ticket)
-    // @JoinColumn({ name: 'tick_id' })
-    // ticket: Ticket;
+    @ManyToOne(() => Ticket)
+    @JoinColumn({ name: 'tick_id' })
+    ticket: Ticket;
 
-    // @ManyToOne(() => Etiqueta)
-    // @JoinColumn({ name: 'eti_id' })
-    // etiqueta: Etiqueta;
+    @ManyToOne(() => Etiqueta)
+    @JoinColumn({ name: 'eti_id' })
+    etiqueta: Etiqueta;
 
-    // @ManyToOne(() => User)
-    // @JoinColumn({ name: 'usu_id' })
-    // asignadoPor: User;
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'usu_id' })
+    asignadoPor: User;
 }

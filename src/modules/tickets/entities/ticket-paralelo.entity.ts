@@ -1,4 +1,7 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Ticket } from './ticket.entity';
+import { PasoFlujo } from '../../workflows/entities/paso-flujo.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('tm_ticket_paralelo')
 export class TicketParalelo {
@@ -32,16 +35,15 @@ export class TicketParalelo {
     @Column({ name: 'est', type: 'int', default: 1, nullable: true })
     activo: number | null;
 
-    // TODO: Agregar relaciones
-    // @ManyToOne(() => Ticket)
-    // @JoinColumn({ name: 'tick_id' })
-    // ticket: Ticket;
+    @ManyToOne(() => Ticket)
+    @JoinColumn({ name: 'tick_id' })
+    ticket: Ticket;
 
-    // @ManyToOne(() => PasoFlujo)
-    // @JoinColumn({ name: 'paso_id' })
-    // paso: PasoFlujo;
+    @ManyToOne(() => PasoFlujo)
+    @JoinColumn({ name: 'paso_id' })
+    paso: PasoFlujo;
 
-    // @ManyToOne(() => User)
-    // @JoinColumn({ name: 'usu_id' })
-    // usuario: User;
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'usu_id' })
+    usuario: User;
 }
