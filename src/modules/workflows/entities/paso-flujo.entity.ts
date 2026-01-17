@@ -4,6 +4,7 @@ import { Cargo } from '../../positions/entities/cargo.entity';
 import { TicketParalelo } from '../../tickets/entities/ticket-paralelo.entity';
 import { TicketNovedad } from '../../tickets/entities/ticket-novedad.entity';
 import { TicketAsignacionHistorico } from '../../tickets/entities/ticket-asignacion-historico.entity';
+import { CampoPlantilla } from '../../templates/entities/campo-plantilla.entity';
 
 @Entity('tm_flujo_paso')
 export class PasoFlujo {
@@ -86,4 +87,7 @@ export class PasoFlujo {
 
     @OneToMany(() => TicketAsignacionHistorico, (th) => th.paso)
     historiales: TicketAsignacionHistorico[];
+
+    @OneToMany(() => CampoPlantilla, (cp) => cp.paso)
+    campos: CampoPlantilla[];
 }

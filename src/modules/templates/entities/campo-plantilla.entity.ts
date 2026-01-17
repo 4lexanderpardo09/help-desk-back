@@ -1,5 +1,6 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { PasoFlujo } from '../../workflows/entities/paso-flujo.entity';
+import { TicketCampoValor } from '../../tickets/entities/ticket-campo-valor.entity';
 
 @Entity('tm_campo_plantilla')
 export class CampoPlantilla {
@@ -45,7 +46,10 @@ export class CampoPlantilla {
     @Column({ name: 'mostrar_dias_transcurridos', type: 'tinyint', default: 0 })
     mostrarDiasTranscurridos: boolean;
 
-    @ManyToOne(() => PasoFlujo)
+    @ManyToOne(() => PasoFlujo, (p) => p.campos)
     @JoinColumn({ name: 'paso_id' })
     paso: PasoFlujo;
+
+    @OneToMany(() => TicketCampoValor, (cv) => cv.campo)
+    ticketCampoValores: TicketCampoValor[];
 }

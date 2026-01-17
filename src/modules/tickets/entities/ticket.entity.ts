@@ -12,6 +12,8 @@ import { TicketParalelo } from './ticket-paralelo.entity';
 import { TicketError } from './ticket-error.entity';
 import { TicketNovedad } from './ticket-novedad.entity';
 import { TicketAsignacionHistorico } from './ticket-asignacion-historico.entity';
+import { TicketEtiqueta } from './ticket-etiqueta.entity';
+import { TicketCampoValor } from './ticket-campo-valor.entity';
 
 @Entity('tm_ticket')
 export class Ticket {
@@ -123,4 +125,10 @@ export class Ticket {
 
     @OneToMany(() => TicketAsignacionHistorico, (th) => th.ticket)
     historiales: TicketAsignacionHistorico[];
+
+    @OneToMany(() => TicketEtiqueta, (te) => te.ticket)
+    ticketEtiquetas: TicketEtiqueta[];
+
+    @OneToMany(() => TicketCampoValor, (cv) => cv.ticket)
+    campoValores: TicketCampoValor[];
 }

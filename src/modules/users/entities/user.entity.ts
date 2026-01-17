@@ -11,6 +11,9 @@ import { TicketParalelo } from 'src/modules/tickets/entities/ticket-paralelo.ent
 import { TicketError } from 'src/modules/tickets/entities/ticket-error.entity';
 import { TicketNovedad } from 'src/modules/tickets/entities/ticket-novedad.entity';
 import { TicketAsignacionHistorico } from 'src/modules/tickets/entities/ticket-asignacion-historico.entity';
+import { TicketDetalle } from 'src/modules/tickets/entities/ticket-detalle.entity';
+import { TicketEtiqueta } from 'src/modules/tickets/entities/ticket-etiqueta.entity';
+import { Etiqueta } from 'src/modules/tags/entities/etiqueta.entity';
 
 @Entity('tm_usuario')
 export class User {
@@ -117,6 +120,15 @@ export class User {
 
     @OneToMany(() => TicketAsignacionHistorico, (th) => th.usuarioAsignador)
     historialesAsignador: TicketAsignacionHistorico[];
+
+    @OneToMany(() => TicketDetalle, (td) => td.usuario)
+    detallesCreados: TicketDetalle[];
+
+    @OneToMany(() => Etiqueta, (e) => e.usuario)
+    etiquetasPropias: Etiqueta[];
+
+    @OneToMany(() => TicketEtiqueta, (te) => te.asignadoPor)
+    etiquetasAsignadas: TicketEtiqueta[];
 
     /**
      * Nombre completo del usuario

@@ -26,7 +26,7 @@ export class TicketDetalle {
     @JoinColumn({ name: 'tick_id' })
     ticket: Ticket;
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, (u) => u.detallesCreados)
     @JoinColumn({ name: 'usu_id' })
     usuario: User;
 }

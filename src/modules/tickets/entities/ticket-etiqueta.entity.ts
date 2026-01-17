@@ -23,15 +23,15 @@ export class TicketEtiqueta {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
-    @ManyToOne(() => Ticket)
+    @ManyToOne(() => Ticket, (t) => t.ticketEtiquetas)
     @JoinColumn({ name: 'tick_id' })
     ticket: Ticket;
 
-    @ManyToOne(() => Etiqueta)
+    @ManyToOne(() => Etiqueta, (e) => e.ticketEtiquetas)
     @JoinColumn({ name: 'eti_id' })
     etiqueta: Etiqueta;
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, (u) => u.etiquetasAsignadas)
     @JoinColumn({ name: 'usu_id' })
     asignadoPor: User;
 }
