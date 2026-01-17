@@ -237,12 +237,6 @@
                                     "disabled": true
                                 },
                                 {
-                                    "key": "includeNacional",
-                                    "value": "true",
-                                    "description": "Incluir nacionales al filtrar por regional",
-                                    "disabled": true
-                                },
-                                {
                                     "key": "included",
                                     "value": "regional,regional.zona,cargo,departamento",
                                     "description": "Scopes: Incluir relaciones (separadas por coma)",

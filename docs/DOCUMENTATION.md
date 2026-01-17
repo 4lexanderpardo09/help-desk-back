@@ -156,7 +156,6 @@ Este endpoint unificado reemplaza múltiples rutas legacy. Se recomienda usar si
 #### Parámetros soportados:
 - **`limit`**: Limitar la cantidad de resultados (útil para buscar uno solo con limit=1).
 - **`zona`**: Filtra por nombre de zona (ej: "Norte", "Sur") -> *Aplica JOINs complejos*.
-- **`includeNacional`**: `true` para incluir usuarios con `esNacional=1` al filtrar por regional.
 - **`included`**: **Scope de Relaciones**. Lista separada por comas (ej: `regional,cargo`).
 - **`filter`**: **Scope de Filtros**. Objeto de filtros dinámicos (ej: `filter[email]=x`).
 

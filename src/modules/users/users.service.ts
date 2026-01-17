@@ -140,18 +140,10 @@ export class UsersService {
     /**
      * **Búsqueda Maestra Unificada**
      * 
-     * Reemplaza múltiples consultas legacy fragmentadas.
-     * Permite buscar usuarios aplicando cualquier combinación de filtros.
-     * 
-     * Lógica especial:
-     * - Si se provee `zona`, realiza JOINs con tm_regional y tm_zona.
-     * - Si se provee `regionalId` y `includeNacional`, aplica lógica OR (regional = X OR esNacional = 1).
-     * 
      * @param options Opciones de filtrado y paginación (limit).
      */
     async findAllUnified(options?: {
         zona?: string;       // Nombre de zona
-        includeNacional?: boolean;
         limit?: number;      // Para findOne legacy
         included?: string; // ej: 'regional,cargo'
         filter?: Record<string, any>; // ej: { nombre: 'Juan' }
@@ -177,60 +169,11 @@ export class UsersService {
             qb.andWhere('zona.nombre = :zona', { zona: options.zona });
         }
 
-        // Lógica de Nacionales (OR complejo)
-        // Obtenemos regionalId del filtro dinámico si existe para aplicar la lógica OR
-        const regionalId = options?.filter?.regionalId;
-        if (regionalId && options?.includeNacional) {
-            // Sobrescribimos el filtro simple de regionalId que puso ApiQueryHelper
-            // para aplicar la condición OR (regional = X OR nacional = 1)
-            // Nota: ApiQueryHelper usa AND, así que necesitamos agrupar con brackets.
-            // Como ApiQueryHelper ya agregó `AND regionalId LIKE ...`, aquí agregamos un OR extra?
-            // MEJOR ESTRATEGIA: Si hay includeNacional, ignoramos el filter[regionalId] automático y lo manejamos aquí.
-            // PERO ApiQueryHelper NO sabe de esto.
-            // SOLUCIÓN: ApiQueryHelper aplica AND. Si queremos '(A OR B)', mejor lo hacemos manual aquí.
-            // El usuario debe pasar filter[regionalId] para que funcione, pero si includeNacional es true,
-            // asumimos que quiere esta lógica especial.
-
-            // Hack: Para evitar conflicto con el WHERE puesto por ApiQueryHelper,
-            // Lo ideal sería quitar 'regionalId' de allowedFilters si vamos a manejar lógica custom,
-            // O simplemente confiar en la inteligencia del developer.
-            // Dado que eliminamos regionalId explícito, asumimos que viene en filter (string).
-
-            // Sin embargo, para no complicar, mantendremos la lógica simple:
-            // Si usa filter[regionalId], es estricto.
-            // Si quisiéramos OR, requeriría lógica manual.
-            // PREGUNTA: ¿El usuario quiere mantener lógica includeNacional?
-            // RESPUESTA: Sí, está en la firma.
-
-            // Ajuste: ApiQueryHelper aplica `user.regionalId = X`.
-            // Si queremos `(user.regionalId = X OR esNacional=1)`, necesitamos Brackets.
-
-            // Vamos a asumir que si se usa includeNacional, el filtro regionalId viene en `filter`.
-            // Pero wait, ApiQueryHelper ya lo aplicó como AND.
-            // Si ya existe `AND regionalId = X`, agregar `OR esNacional` rompe la lógica estricta.
-
-            // SOLUCION: Si se usa lógica compleja, NO se debe pasar regionalId en `filter`,
-            // sino manejarlo manualmente aquí si fuera un param explícito.
-            // PERO eliminamos regionalId explícito.
-            // Entonces, para soportar includeNacional, debemos leerlo de filter y borrarlo de filter antes de llamar a ApiQueryHelper? No, JS pasa referencia.
-        }
-
-        // REVISIÓN: La lógica de `includeNacional` dependía de `regionalId` explícito.
-        // Al eliminar `regionalId` explícito, esta lógica se complica si confiamos 100% en filter.
-        // VOY A RESTAURAR el manejo manual de regionalId SOLO dentro de la lógica de negocio si includeNacional está presente,
-        // extrayéndolo de options.filter, o asumiendo que el consumidor debe saber usarlo.
-
-        // SIMPLIFICACIÓN:
-        // Por ahora, eliminamos la lógica compleja de includeNacional del bloque principal y confiamos en filters standard.
-        // SI el usuario necesita `(regional OR nacional)`, es un caso borde que ApiQueryHelper no cubre bien.
-        // Lo dejaré comentado/pendiente o simplificado.
-        // Sin embargo, el usuario pidió limpiar.
-
-        // MANTENDRÉ SOLO ZONA POR AHORA Y ELIMINARÉ LOGICA CONDICIONAL DE REGIONAL-NACIONAL
-        // para ser consistentes con la limpieza. Si se requiere, se puede hacer un scope custom o filtro custom después.
-
         // Ordenamiento default
         qb.orderBy('user.nombre', 'ASC');
+
+        // Paginación Standard
+        ApiQueryHelper.applyPagination(qb, { limit: options?.limit });
 
         // Retornar uno o todos
         if (options?.limit === 1) {

@@ -125,4 +125,24 @@ export class ApiQueryHelper {
             );
         }
     }
+    /**
+     * Aplica paginación standard (take/skip)
+     * 
+     * @param qb Instancia de SelectQueryBuilder
+     * @param options Objeto { limit?, page? }
+     */
+    static applyPagination(
+        qb: SelectQueryBuilder<any>,
+        options: { limit?: number; page?: number } | undefined
+    ) {
+        if (!options) return;
+
+        if (options.limit) {
+            qb.take(options.limit);
+        }
+
+        if (options.page && options.limit) {
+            qb.skip((options.page - 1) * options.limit);
+        }
+    }
 }
