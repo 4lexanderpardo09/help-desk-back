@@ -67,7 +67,14 @@ export class Ticket {
         type: 'varchar',
         length: 255,
         nullable: true,
-        comment: 'IDs de usuarios asignados (legacy)',
+        comment: 'IDs de usuarios asignados (legacy). Se almacena como string "1,2,3"',
+        /**
+         * Transformer para manejar compatibilidad con sistema Legacy (PHP).
+         * - En DB: String de IDs separados por coma ("1,2,3")
+         * - En App: Array de n\u00fameros ([1, 2, 3])
+         * 
+         * Maneja la asignaci\u00f3n m\u00faltiple sin alterar el esquema de base de datos actual.
+         */
         transformer: {
             to: (value: number[] | null) => value?.join(',') || null,
             from: (value: string | null) => value?.split(',').map(Number).filter((n) => !isNaN(n)) || [],
