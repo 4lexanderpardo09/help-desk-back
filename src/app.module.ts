@@ -25,7 +25,7 @@ import jwtConfig from './config/jwt.config';
         username: configService.get<string>('database.username'),
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.database'),
-        entities: [User],
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: false, // IMPORTANTE: No sincronizar con DB legacy
       }),
     }),
