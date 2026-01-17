@@ -79,7 +79,7 @@ export class UsersController {
 
     /**
      * Endpoint unificado para obtener usuario por ID
-     * Query param: includeEmpresas=true para incluir empresas asociadas
+     * Incluye relaciones 'empresaUsuarios' por defecto.
      */
     @Get(':id/search')
     async getByIdWithOptions(@Param('id') id: string) {

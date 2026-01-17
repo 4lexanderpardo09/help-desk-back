@@ -175,7 +175,7 @@ Este endpoint unificado reemplaza múltiples rutas legacy. Se recomienda usar si
 |--------|------|-------------|-------------------|
 | GET | `/users` | **MASTER ENDPOINT** - Lista y filtra usuarios. Soporta `filter[...]` y `included`. | `findAll()` / `get_usuario()` |
 | GET | `/users/:id` | Obtener usuario por ID (usa `findAllUnified` internamente). | `findById()` |
-| GET | `/users/:id/search` | Por ID con opciones (reemplaza `withEmpresas`). | Reemplaza `findById` complex |
+| GET | `/users/:id/search` | Por ID con opciones (Preconfigurado: `included=empresaUsuarios`). | Reemplaza `findById` complex |
 | POST | `/users` | Crear usuario | `insert_usuario()` |
 | POST | `/users/by-ids` | Por lista de IDs (para selects masivos). | `get_usuarios_por_ids()` |
 | PUT | `/users/:id` | Actualizar usuario | `update_usuario()` |
