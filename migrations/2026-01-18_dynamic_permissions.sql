@@ -1,7 +1,7 @@
 -- ============================================
--- Migración: Sistema de Permisos Dinámicos
+-- Migración: Sistema de Permisos Dinámicos (Base + Admin)
 -- Fecha: 2026-01-18
--- Descripción: Tablas para gestión granular de permisos
+-- Descripción: Tablas, catálogo de permisos y asignación a Admin
 -- ============================================
 
 -- Tabla de Permisos (catálogo de acciones disponibles)
@@ -250,7 +250,7 @@ VALUES
     'Gestión completa de empresas'
 ),
 
--- Permission (meta-permiso para gestionar permisos)
+-- Permission
 (
     'read',
     'Permission',
@@ -268,68 +268,13 @@ VALUES
 );
 
 -- ============================================
--- Asignación inicial de permisos a roles
+-- Asignación inicial: SOLO ADMIN
 -- ============================================
 
--- Admin (rol_id = 1): Acceso total
+-- Admin (rol_id = 3): Acceso total
 INSERT INTO
     `tm_rol_permiso` (`rol_id`, `per_id`)
-SELECT 1, per_id
+SELECT 3, per_id
 FROM `tm_permiso`
 WHERE
     per_action = 'manage';
-
--- Supervisor (rol_id = 4): Lectura total + actualización de Users y Tickets
-INSERT INTO
-    `tm_rol_permiso` (`rol_id`, `per_id`)
-SELECT 4, per_id
-FROM `tm_permiso`
-WHERE
-    per_action = 'read';
-
-INSERT INTO
-    `tm_rol_permiso` (`rol_id`, `per_id`)
-SELECT 4, per_id
-FROM `tm_permiso`
-WHERE
-    per_action = 'update'
-    AND per_subject IN ('User', 'Ticket');
-
--- Agente (rol_id = 2): Lectura de Users/Tickets/Categories/Departments + update Tickets
-INSERT INTO
-    `tm_rol_permiso` (`rol_id`, `per_id`)
-SELECT 2, per_id
-FROM `tm_permiso`
-WHERE
-    per_action = 'read'
-    AND per_subject IN (
-        'User',
-        'Ticket',
-        'Category',
-        'Department'
-    );
-
-INSERT INTO
-    `tm_rol_permiso` (`rol_id`, `per_id`)
-SELECT 2, per_id
-FROM `tm_permiso`
-WHERE
-    per_action = 'update'
-    AND per_subject = 'Ticket';
-
--- Cliente (rol_id = 3): Lectura de Tickets/Categories + crear Tickets
-INSERT INTO
-    `tm_rol_permiso` (`rol_id`, `per_id`)
-SELECT 3, per_id
-FROM `tm_permiso`
-WHERE
-    per_action = 'read'
-    AND per_subject IN ('Ticket', 'Category');
-
-INSERT INTO
-    `tm_rol_permiso` (`rol_id`, `per_id`)
-SELECT 3, per_id
-FROM `tm_permiso`
-WHERE
-    per_action = 'create'
-    AND per_subject = 'Ticket';

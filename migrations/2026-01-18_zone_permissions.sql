@@ -34,10 +34,10 @@ VALUES ('read', 'Zone', 'Ver zonas'),
 
 -- 2. Asignar permisos a roles
 
--- Admin (1): Gestión total
+-- Admin (3): Gestión total
 INSERT INTO
     `tm_rol_permiso` (`rol_id`, `per_id`)
-SELECT 1, per_id
+SELECT 3, per_id
 FROM `tm_permiso`
 WHERE
     per_subject = 'Zone'
