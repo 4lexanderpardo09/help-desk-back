@@ -171,7 +171,7 @@
             "description": "Gestión de usuarios (requiere autenticación)",
             "item": [
                 {
-                    "name": "Get All Users / Filter",
+                    "name": "List Users",
                     "event": [
                         {
                             "listen": "test",
@@ -255,7 +255,37 @@
                     "response": []
                 },
                 {
-                    "name": "Get User by ID",
+                    "name": "List Users / Array Filter",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/users?filter[id]=1,2",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users"
+                            ],
+                            "query": [
+                                {
+                                    "key": "filter[id]",
+                                    "value": "1,2",
+                                    "description": "Filtro por IDs múltiples (soporta arrays o CSV)"
+                                }
+                            ]
+                        },
+                        "description": "Ejemplo de filtrado por múltiples IDs usando el Smart Filter. Reemplaza a /by-ids."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Show User",
                     "event": [
                         {
                             "listen": "test",
@@ -464,38 +494,6 @@
                             ]
                         },
                         "description": "Actualiza la firma de un usuario."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Get Users by IDs",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"ids\": [1, 2, 3]\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/users/by-ids",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "users",
-                                "by-ids"
-                            ]
-                        },
-                        "description": "Obtiene usuarios por lista de IDs con datos de regional."
                     },
                     "response": []
                 },

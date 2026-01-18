@@ -116,10 +116,19 @@ export class ApiQueryHelper {
                     // Generamos un nombre de parámetro único para evitar colisiones
                     const paramName = `filter_${key}`;
 
-                    // Lógica inteligente: ID y Estado o claves que terminan en Id usan IGUALDAD estricta
+                    // Lógica inteligente: ID y Estado o claves que terminan en Id usan IGUALDAD estricta o IN
                     // Texto usa LIKE
                     if (key === 'id' || key.endsWith('Id') || key === 'estado' || key === 'est') {
-                        qb.andWhere(`${mainAlias}.${key} = :${paramName}`, { [paramName]: value });
+                        if (Array.isArray(value)) {
+                            // Caso: filter[id][]=1&filter[id][]=2
+                            qb.andWhere(`${mainAlias}.${key} IN (:...${paramName})`, { [paramName]: value });
+                        } else if (typeof value === 'string' && value.includes(',')) {
+                            // Caso: filter[id]=1,2
+                            const values = value.split(',').map(v => v.trim());
+                            qb.andWhere(`${mainAlias}.${key} IN (:...${paramName})`, { [paramName]: values });
+                        } else {
+                            qb.andWhere(`${mainAlias}.${key} = :${paramName}`, { [paramName]: value });
+                        }
                     } else {
                         qb.andWhere(`${mainAlias}.${key} LIKE :${paramName}`, { [paramName]: `%${value}%` });
                     }

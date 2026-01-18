@@ -57,7 +57,7 @@ export class UsersService {
      * Actualiza un usuario existente
      */
     async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-        const user = await this.findByIdUnified(id) as User;
+        const user = await this.show(id);
 
         if (!user) {
             throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
@@ -86,48 +86,41 @@ export class UsersService {
 
         await this.userRepository.update(id, updateData);
 
-        return this.findByIdUnified(id) as Promise<User>;
+        return this.show(id) as Promise<User>;
     }
 
     // Listas permitidas para "Scopes" dinámicos (estilo Laravel)
     private readonly allowedIncludes = ['regional', 'regional.zona', 'cargo', 'departamento', 'empresaUsuarios', 'usuarioPerfiles', 'etiquetasPropias', 'etiquetasAsignadas', 'role'];
-    private readonly allowedFilters = ['nombre', 'apellido', 'email', 'cedula', 'estado', 'rolId', 'cargoId', 'regionalId', 'departamentoId'];
+    private readonly allowedFilters = ['id', 'nombre', 'apellido', 'email', 'cedula', 'estado', 'rolId', 'cargoId', 'regionalId', 'departamentoId'];
 
     /**
-     * Búsqueda unificada de usuario por ID con opciones
-     * Ahora reutiliza la lógica Maestra de findAllUnified para consistencia.
+     * Busca un usuario por ID
+     * Permite incluir relaciones dinámicamente.
      */
-    async findByIdUnified(id: number, options?: {
+    async show(id: number, options?: { 
         included?: string;
-    }): Promise<User | Record<string, unknown> | null> {
-        // Reutilizamos findAllUnified filtrando por ID y aplicando includes
-        const result = await this.findAllUnified({
-            filter: { id }, // Filtro por ID
-            limit: 1,
-            included: options?.included,
-        });
+    }): Promise<User | null> {
+        const qb = this.userRepository.createQueryBuilder('user');
 
-        const user = result as User;
+        qb.where('user.id = :id', { id });
+        qb.andWhere('user.estado = :estado', { estado: 1 });
 
-        if (!user) {
-            return null;
-        }
+        ApiQueryHelper.applyIncludes(qb, options?.included, this.allowedIncludes, 'user');
 
-        return user;
+        return qb.getOne();
     }
 
     /**
      * **Búsqueda Maestra Unificada**
      * 
-     * Reemplaza múltiples consultas legacy fragmentadas.
-     * Permite buscar usuarios aplicando cualquier combinación de filtros.
-     * @param options Opciones de filtrado y paginación (limit).
+     * Método único para listar usuarios.
+     * Soporta filtros y paginación.
      */
-    async findAllUnified(options?: {
-        limit?: number;      // Para findOne legacy
-        included?: string; // ej: 'regional,cargo'
-        filter?: Record<string, any>; // ej: { nombre: 'Juan' }
-    }): Promise<User[] | Record<string, unknown>[] | User | null> {
+    async list(options?: {
+        limit?: number;
+        included?: string;
+        filter?: Record<string, any>;
+    }): Promise<User[] | Record<string, unknown>[]> {
         const qb = this.userRepository.createQueryBuilder('user');
 
         // Filtros base (Primero, para que applyFilters use andWhere sobre esto)
@@ -145,35 +138,8 @@ export class UsersService {
         // Paginación Standard
         ApiQueryHelper.applyPagination(qb, { limit: options?.limit });
 
-        // Retornar uno o todos
-        if (options?.limit === 1) {
-            return qb.getOne();
-        }
-
         return qb.getMany();
     }
-
-
-
-    /**
-     * Obtiene usuarios por lista de IDs con datos de regional
-     * Basado en: get_usuarios_por_ids del modelo legacy PHP
-     */
-    async findByIds(userIds: number[]): Promise<Record<string, unknown>[]> {
-        if (userIds.length === 0) {
-            return [];
-        }
-
-        return this.userRepository.query(
-            `SELECT u.usu_id, u.usu_nom, u.usu_ape, u.usu_correo, r.reg_nom
-             FROM tm_usuario u
-             LEFT JOIN tm_regional r ON u.reg_id = r.reg_id
-             WHERE u.usu_id IN (?) AND u.est = 1`,
-            [userIds],
-        );
-    }
-
-
 
     /**
      * Elimina un usuario (soft delete)
@@ -181,7 +147,7 @@ export class UsersService {
      * No elimina físicamente, solo marca est=0 y fech_elim=NOW()
      */
     async delete(id: number): Promise<{ deleted: boolean; id: number }> {
-        const user = await this.findByIdUnified(id);
+        const user = await this.show(id);
 
         if (!user) {
             throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
@@ -195,14 +161,12 @@ export class UsersService {
         return { deleted: true, id };
     }
 
-
-
     /**
      * Actualiza la firma de un usuario
      * Basado en: update_firma del modelo legacy PHP
      */
     async updateFirma(id: number, firma: string): Promise<{ updated: boolean; id: number }> {
-        const user = await this.findByIdUnified(id);
+        const user = await this.show(id);
 
         if (!user) {
             throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
@@ -220,7 +184,7 @@ export class UsersService {
      * 2. Inserta los nuevos perfiles
      */
     async syncPerfiles(userId: number, perfilIds: number[]): Promise<{ synced: boolean; userId: number; perfilCount: number }> {
-        const user = await this.findByIdUnified(userId);
+        const user = await this.show(userId);
 
         if (!user) {
             throw new NotFoundException(`Usuario con ID ${userId} no encontrado`);
