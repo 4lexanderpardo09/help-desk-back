@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn, ManyToMany } from 'typeorm';
 import { Regional } from '../../regions/entities/regional.entity';
 import { Role } from '../../roles/entities/role.entity';
 import { Cargo } from '../../positions/entities/cargo.entity';
@@ -18,6 +18,7 @@ import { Etiqueta } from 'src/modules/tags/entities/etiqueta.entity';
 import { DocumentoFlujo } from 'src/modules/documents/entities/documento-flujo.entity';
 import { PasoFlujoFirma } from 'src/modules/workflows/entities/paso-flujo-firma.entity';
 import { PasoFlujoUsuario } from 'src/modules/workflows/entities/paso-flujo-usuario.entity';
+import { Flujo } from '../../workflows/entities/flujo.entity';
 
 @Entity('tm_usuario')
 export class User {
@@ -146,6 +147,9 @@ export class User {
 
     @OneToMany(() => PasoFlujoUsuario, (pfu) => pfu.usuario)
     pasosFlujoAsignados: PasoFlujoUsuario[];
+
+    @ManyToMany(() => Flujo, (flujo) => flujo.usuariosObservadores)
+    flujosObservados: Flujo[];
 
     /**
      * Nombre completo del usuario

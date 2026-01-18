@@ -1,4 +1,5 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, ManyToMany, JoinTable } from 'typeorm';
+import { User } from '../../users/entities/user.entity';
 import { Subcategoria } from '../../subcategories/entities/subcategoria.entity';
 import { PasoFlujo } from './paso-flujo.entity';
 import { DocumentoFlujo } from '../../documents/entities/documento-flujo.entity';
@@ -17,25 +18,19 @@ export class Flujo {
     @Column({ name: 'cats_id', type: 'int', unique: true })
     subcategoriaId: number;
 
-    @Column({
-        name: 'usu_id_observador',
-        type: 'text',
-        nullable: true,
-        comment: 'IDs de usuarios observadores. LEGACY: Se almacena como string separado por comas "1,2,3".',
-        /**
-         * Transformer para manejar compatibilidad con sistema Legacy (PHP).
-         * - En DB: String de IDs separados por coma ("1,2,3")
-         * - En App: Array de n\u00fameros ([1, 2, 3])
-         * 
-         * Esto permite manipular observadores como array sin romper la estructura
-         * que espera el frontend/backend anterior.
-         */
-        transformer: {
-            to: (value: number[] | null) => value?.join(',') || null,
-            from: (value: string | null) => value?.split(',').map(Number).filter((n) => !isNaN(n)) || [],
+    @ManyToMany(() => User, (user) => user.flujosObservados)
+    @JoinTable({
+        name: 'flujo_usuario', // Nombre tabla pivot
+        joinColumn: {
+            name: 'flujo_id',
+            referencedColumnName: 'id',
+        },
+        inverseJoinColumn: {
+            name: 'usu_id',
+            referencedColumnName: 'id',
         },
     })
-    usuarioObservadorIds: number[];
+    usuariosObservadores: User[];
 
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
