@@ -7,17 +7,17 @@ MCP Backend — Arquitectura y Convenciones
 
 Este backend es una API REST + WebSockets diseñada para:
 
-Migrar progresivamente un sistema PHP legacy monolítico
+Exponer datos de forma limpia y consistente a un frontend moderno (React)
 
-Reemplazar controladores que devuelven HTML
+Servir como base escalable para futuros módulos
 
-Exponer datos de forma limpia a un frontend moderno (React)
+Mantener una arquitectura clara desde el inicio
 
-Convivir con el sistema legacy hasta que sea reemplazado por completo
+Facilitar mantenimiento, testing y evolución
 
-Mantener producción estable durante toda la migración
+Evitar deuda técnica desde la primera versión
 
-La migración es incremental, por módulos, sin romper la aplicación existente.
+El sistema se construye correctamente desde el día uno, sin parches ni compromisos técnicos.
 
 2. Stack tecnológico
 
@@ -43,21 +43,22 @@ Package manager: pnpm
 
 Estilo de módulos: feature-based
 
-No se introducen dependencias hasta que sean necesarias.
+No se introducen dependencias sin una necesidad clara y justificada.
 
 3. Arquitectura general
 
-El backend sigue un MVC claro, sin sobre-ingeniería ni abstracciones prematuras.
+El backend sigue un MVC claro, sin sobre-ingeniería ni abstracciones innecesarias.
 
 Capas permitidas
-Controller  → Service  → Model
+
+Controller → Service → Model
 
 Responsabilidades
 Controller
 
-Recibe requests HTTP / WS
+Recibe requests HTTP / WebSocket
 
-Valida datos de entrada (DTOs)
+Valida datos de entrada mediante DTOs
 
 Aplica guards
 
@@ -73,7 +74,9 @@ Service
 
 Contiene la lógica de negocio
 
-Orquesta reglas y validaciones
+Aplica reglas del dominio
+
+Orquesta operaciones
 
 Coordina múltiples models si es necesario
 
@@ -118,13 +121,13 @@ Cada módulo es autosuficiente y no accede directamente a otros módulos.
 
 5. Base de datos
 
-La base de datos existente NO se modifica inicialmente
+Esquema bien definido desde el inicio
 
-La API se adapta al esquema legacy
+Cambios estructurales mediante migraciones
 
-Migraciones estructurales se hacen solo cuando un módulo esté 100% migrado
+Separación clara entre modelo de datos y lógica de negocio
 
-El backend puede iniciar en modo read-only
+Ningún acceso directo a la base de datos fuera de los models
 
 6. Autenticación (JWT)
 Decisiones
@@ -155,33 +158,19 @@ El mismo token se reutiliza para WebSockets
 
 Guards protegen rutas y gateways
 
-El backend nunca maneja sesiones
+El backend no maneja sesiones
 
 7. WebSockets
 
-Se usan para eventos en tiempo real
+Usados solo para eventos en tiempo real
 
 Autenticación mediante JWT
 
 No se duplica lógica con REST
 
-Los eventos solo notifican, no reemplazan flujos críticos
+Los eventos notifican, no reemplazan flujos críticos
 
-8. Convivencia con el sistema legacy
-
-El sistema PHP sigue siendo el source of truth inicial
-
-El backend nuevo:
-
-Empieza con endpoints de lectura
-
-Migra escrituras progresivamente
-
-No se reescriben modelos legacy
-
-Cada módulo se migra de forma independiente
-
-9. Reglas estrictas de TypeScript
+8. Reglas estrictas de TypeScript
 
 strict: true
 
@@ -189,15 +178,15 @@ Prohibido any
 
 Prohibido unknown
 
-Se confía en inferencia siempre que sea posible
+Se confía en inferencia cuando es correcta
 
 DTOs explícitos para entrada de datos
 
-Tipos claros en servicios y models
+Tipos claros en services y models
 
 Si un tipo no está claro, se detiene el desarrollo hasta definirlo.
 
-10. Testing y calidad
+9. Testing y calidad
 
 No se acepta código sin:
 
@@ -207,15 +196,15 @@ Lint limpio
 
 Tests relevantes
 
-Los tests se escriben en:
+Se testea principalmente:
 
-Services (lógica)
+Services (lógica de negocio)
 
-Guards (auth)
+Guards (autenticación y autorización)
 
-No se testea infraestructura innecesaria
+No se testea infraestructura innecesaria.
 
-11. Qué NO se permite
+10. Qué NO se permite
 
 HTML en controllers
 
@@ -231,126 +220,164 @@ Abstracciones innecesarias
 
 Refactors masivos sin pruebas
 
-12. Evolución futura (cuando el legacy muera)
+11. Evolución futura
+
+Solo cuando exista una necesidad real:
 
 Models → Repositories
 
 Services → Use cases
 
-Introducción progresiva de arquitectura hexagonal
+Arquitectura hexagonal
 
-Posible monorepo
+Refresh tokens
 
-Posible refresh tokens
+Monorepo
 
-Nada de esto se implementa sin una necesidad real.
+Nada se implementa por moda.
 
-13. Principios clave del proyecto
+12. Principios clave del proyecto
 
-Producción primero
+Producción estable desde el inicio
 
-Migración progresiva
-
-Código entendible > código “perfecto”
-
-Medir antes de optimizar
+Código claro > código “clever”
 
 Una responsabilidad por archivo
 
+Medir antes de optimizar
+
 Cada decisión debe poder explicarse
 
-14. Rol del asistente (este MCP)
+13. Rol del asistente (este MCP)
 
-Este documento define cómo el asistente debe ayudar:
+El asistente debe:
 
 Generar código alineado a este MCP
 
-No introducir nuevas capas sin justificar
+No introducir capas nuevas sin justificar
 
-No sugerir cambios de arquitectura sin medir
-
-Priorizar compatibilidad con legacy
+No sugerir cambios arquitectónicos innecesarios
 
 Mantener consistencia entre módulos
 
 Corregir desviaciones de estas reglas
 
-15. Cierre
-
-Este backend es una plataforma de transición:
-
-De monolito a API
-
-De jQuery a React
-
-De código acoplado a arquitectura limpia
-
-La meta no es rehacer todo rápido, sino hacerlo bien sin romper nada.
-
-16. Documentación y testing automatizado (regla obligatoria)
+14. Documentación y testing automatizado (regla obligatoria)
 
 Cada vez que el asistente:
 
-- Cree código
+Cree código
 
-- Modifique lógica
+Modifique lógica
 
-- Añada endpoints
+Añada endpoints
 
-- Cambie comportamiento existente
+Cambie comportamiento existente
 
 DEBE:
 
-1. Crear o actualizar `docs/DOCUMENTATION.md`
+Crear o actualizar docs/DOCUMENTATION.md
 
-   - No sobrescribir
+No sobrescribir
 
-   - Usar formato por fecha
+Usar formato por fecha
 
-   - Explicar contexto, cambios y decisiones
+Explicar contexto, cambios y decisiones
 
-2. Crear o actualizar la colección Postman
+Crear o actualizar la colección Postman
 
-   - Archivo: `postman/help-desk-api.postman_collection.json`
+Archivo: postman/help-desk-api.postman_collection.json
 
-   - Usar variables `base_url` y `token`
+Usar variables base_url y token
 
-   - Añadir tests básicos por request
+Añadir tests básicos por request
 
-   - Mantener compatibilidad con JWT
+Mantener compatibilidad con JWT
 
-Si no es posible documentar o testear algo, debe explicarse el motivo.
+Si algo no puede documentarse o testearse, debe explicarse el motivo.
 
-18. Documentación de código (regla obligatoria)
+15. Documentación de código (regla obligatoria)
 
 El código debe documentarse de forma clara y consistente.
 
-Reglas:
+Reglas
 
-- Se usan comentarios JSDoc / TSDoc
+Uso obligatorio de JSDoc / TSDoc
 
-- Se documenta el "por qué", no lo obvio
+Se documenta el por qué, no lo obvio
 
-- Se documentan decisiones relacionadas con legacy
+Se documentan decisiones técnicas
 
-- Se documentan limitaciones temporales
+Se documentan limitaciones reales
 
-- Se documentan puntos de migración futura
+Se documentan puntos de evolución futura
 
-Dónde documentar:
+Dónde documentar
 
-- Services: lógica de negocio y reglas
+Services: reglas y lógica de negocio
 
-- Models: particularidades del esquema legacy
+Models: estructura y decisiones de datos
 
-- Guards / Auth: decisiones de seguridad
+Guards / Auth: decisiones de seguridad
 
-- Controllers: solo si hay comportamiento no trivial
+Controllers: solo comportamiento no trivial
 
-No se permiten:
+No se permiten comentarios redundantes o vacíos.
 
-- Comentarios redundantes
+16. Estándar de documentación (criterio profesional 2026)
 
-- Comentarios que repitan el nombre de la función
+La documentación se divide en cuatro niveles complementarios.
+Elegir solo uno se considera una mala práctica.
 
-- Código sin explicación cuando rompe reglas ideales por compatibilidad legacy
+Estándar obligatorio
+
+Swagger (OpenAPI)
+
+Endpoints
+
+DTOs
+
+Códigos de respuesta
+
+Contrato con frontend y QA
+
+JSDoc / TSDoc
+
+Decisiones de negocio
+
+Reglas internas
+
+Limitaciones técnicas
+
+Evolución futura
+
+Compodoc
+
+Arquitectura
+
+Módulos
+
+Servicios
+
+Dependencias
+
+Flujo del sistema
+
+DOCUMENTATION.md
+
+Qué se hizo
+
+Por qué se hizo
+
+Qué decisiones se tomaron
+
+Qué queda pendiente
+
+Principio clave
+
+Swagger documenta qué expone la API
+JSDoc documenta por qué el código existe
+Compodoc documenta cómo está construido el sistema
+DOCUMENTATION.md documenta la historia del proyecto
+
+Este es el estándar profesional obligatorio del backend.
