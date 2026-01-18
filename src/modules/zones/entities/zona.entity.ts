@@ -1,5 +1,5 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { Regional } from './regional.entity';
+import { Regional } from '../../regions/entities/regional.entity';
 
 @Entity('tm_zona')
 export class Zona {
@@ -9,8 +9,8 @@ export class Zona {
     @Column({ name: 'zona_nom', type: 'varchar', length: 150 })
     nombre: string;
 
-    @Column({ name: 'est', type: 'int', default: 1, nullable: true })
-    estado: number | null;
+    @Column({ name: 'est', type: 'int', default: 1 })
+    estado: number;
 
     @OneToMany(() => Regional, (regional) => regional.zona)
     regionales: Regional[];

@@ -745,6 +745,152 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Zones",
+            "description": "Gestión de Zonas (requiere autenticación + permiso Zone)",
+            "item": [
+                {
+                    "name": "List Zones",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/zones",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "zones"
+                            ]
+                        },
+                        "description": "Lista zonas con filtros dinámicos.\n\n**Params:**\n- `included`: `regionales`\n- `filter[nombre]`: Filtro por nombre\n\n**Permiso:** `read Zone`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Zone",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/zones/1?included=regionales",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "zones",
+                                "1"
+                            ],
+                            "query": [
+                                {
+                                    "key": "included",
+                                    "value": "regionales"
+                                }
+                            ]
+                        },
+                        "description": "Obtiene una zona por ID.\n\n**Permiso:** `read Zone`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Zone",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Zona Norte\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/zones",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "zones"
+                            ]
+                        },
+                        "description": "Crea una nueva zona.\n\n**Permiso:** `create Zone`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Zone",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Zona Norte Modificada\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/zones/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "zones",
+                                "1"
+                            ]
+                        },
+                        "description": "Actualiza una zona.\n\n**Permiso:** `update Zone`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Zone",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/zones/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "zones",
+                                "1"
+                            ]
+                        },
+                        "description": "Soft delete de una zona.\n\n**Permiso:** `delete Zone`"
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }

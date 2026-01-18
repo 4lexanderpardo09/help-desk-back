@@ -243,6 +243,28 @@ No elimina físicamente. Marca `est=0` y `fech_elim=NOW()`.
 
 ---
 
+## 3.1 Módulo de Zonas (`src/modules/zones/`)
+
+### Archivos
+| Archivo | Descripción |
+|---------|-------------|
+| `zones.module.ts` | Módulo de zonas |
+| `zones.controller.ts` | Endpoints `/zones/*` |
+| `zones.service.ts` | Lógica de negocio (CRUD) |
+| `entities/zona.entity.ts` | Entidad `tm_zona` |
+| `dto/create-zone.dto.ts` | DTO creación |
+| `dto/update-zone.dto.ts` | DTO actualización |
+
+### Endpoints (requieren permiso `Zone`)
+
+| Método | Ruta | Descripción | Service Method | Permiso CASL |
+|--------|------|-------------|----------------|---------------|
+| GET | `/zones` | Listar zonas con filtros | `list()` | `read Zone` |
+| GET | `/zones/:id` | Mostrar zona por ID | `show()` | `read Zone` |
+| POST | `/zones` | Crear zona | `create()` | `create Zone` |
+| PUT | `/zones/:id` | Actualizar zona | `update()` | `update Zone` |
+| DELETE | `/zones/:id` | Soft delete | `delete()` | `delete Zone` |
+
 ## 4. Testing con Postman
 
 ### Colección
