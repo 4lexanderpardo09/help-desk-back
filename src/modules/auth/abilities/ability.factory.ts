@@ -1,6 +1,7 @@
-import { Ability, AbilityBuilder, AbilityClass, ExtractSubjectType, InferSubjects } from '@casl/ability';
-import { Injectable } from '@nestjs/common';
+import { Ability, AbilityBuilder, AbilityClass } from '@casl/ability';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { PermissionsService, CachedPermission } from '../../permissions/permissions.service';
 
 /**
  * Acciones estándar del sistema (convención MCP punto 17.4)
@@ -13,6 +14,7 @@ export type Actions = 'manage' | 'create' | 'read' | 'update' | 'delete';
 /**
  * Subjects (recursos) del sistema
  * Corresponden a entidades del dominio, no a rutas HTTP.
+ * Ahora incluye 'Permission' para gestionar permisos dinámicos.
  */
 export type Subjects =
     | 'User'
@@ -23,72 +25,56 @@ export type Subjects =
     | 'Profile'
     | 'Regional'
     | 'Company'
+    | 'Permission'
     | 'all';
 
 export type AppAbility = Ability<[Actions, Subjects]>;
 
 /**
- * AbilityFactory - Punto central de definición de permisos (MCP 17.6)
+ * AbilityFactory - Permisos dinámicos desde Base de Datos
  * 
- * Construye las "abilities" (habilidades) de un usuario basándose en su rol.
- * El JWT solo identifica al usuario; los permisos se calculan aquí en runtime.
+ * Los permisos se cargan desde `tm_rol_permiso` a través de `PermissionsService`,
+ * que mantiene un caché en memoria para rendimiento.
  * 
  * @example
- * const ability = abilityFactory.createForUser(jwtPayload);
- * ability.can('read', 'Ticket'); // true/false
+ * const ability = await abilityFactory.createForUser(jwtPayload);
+ * ability.can('read', 'Ticket'); // true/false basado en BD
  */
 @Injectable()
 export class AbilityFactory {
+    constructor(
+        @Inject(forwardRef(() => PermissionsService))
+        private readonly permissionsService: PermissionsService,
+    ) { }
+
     /**
      * Crea una instancia de Ability para el usuario autenticado.
+     * Carga permisos dinámicamente desde el caché (respaldado por BD).
      * 
      * @param user - Payload del JWT con información del usuario
-     * @returns AppAbility - Instancia de Ability con reglas aplicadas
+     * @returns Promise<AppAbility> - Instancia de Ability con reglas del rol
      */
-    createForUser(user: JwtPayload): AppAbility {
-        const { can, cannot, build } = new AbilityBuilder<AppAbility>(
+    async createForUser(user: JwtPayload): Promise<AppAbility> {
+        const { can, build } = new AbilityBuilder<AppAbility>(
             Ability as AbilityClass<AppAbility>,
         );
 
-        /**
-         * Reglas basadas en rol
-         * 
-         * Roles conocidos del sistema legacy:
-         * - 1: Admin (manage all)
-         * - 2: Agente
-         * - 3: Cliente
-         * - 4: Supervisor
-         */
-        switch (user.rol_id) {
-            case 1: // Admin
-                can('manage', 'all');
-                break;
+        // Si no hay rol, permisos mínimos
+        if (!user.rol_id) {
+            return build({
+                detectSubjectType: (subject) => subject as Subjects,
+            });
+        }
 
-            case 4: // Supervisor
-                can('read', 'all');
-                can('update', 'Ticket');
-                can('update', 'User');
-                cannot('delete', 'User');
-                break;
+        // Cargar permisos desde caché/BD
+        const permissions = await this.permissionsService.getPermissionsForRole(user.rol_id);
 
-            case 2: // Agente
-                can('read', 'Ticket');
-                can('update', 'Ticket');
-                can('read', 'User');
-                can('read', 'Category');
-                can('read', 'Department');
-                break;
-
-            case 3: // Cliente
-                can('read', 'Ticket');
-                can('create', 'Ticket');
-                can('read', 'Category');
-                break;
-
-            default:
-                // Usuario sin rol definido: solo lectura básica
-                can('read', 'Ticket');
-                break;
+        // Aplicar cada permiso
+        for (const permission of permissions) {
+            can(
+                permission.action as Actions,
+                permission.subject as Subjects,
+            );
         }
 
         return build({

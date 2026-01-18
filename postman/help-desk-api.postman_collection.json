@@ -556,6 +556,195 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Permissions",
+            "description": "Gestión de permisos dinámicos (requiere autenticación + permiso Permission)",
+            "item": [
+                {
+                    "name": "List All Permissions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/permissions",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "permissions"
+                            ]
+                        },
+                        "description": "Lista todos los permisos disponibles en el catálogo.\n\n**Permiso requerido:** `read Permission`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Role Permissions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/permissions/role/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "permissions",
+                                "role",
+                                "1"
+                            ]
+                        },
+                        "description": "Obtiene los permisos asignados a un rol específico.\n\n**Permiso requerido:** `read Permission`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Sync Role Permissions",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"permisoIds\": [1, 2, 3, 4, 5]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/permissions/role/2",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "permissions",
+                                "role",
+                                "2"
+                            ]
+                        },
+                        "description": "Reemplaza TODOS los permisos de un rol con los nuevos IDs.\n\n**Permiso requerido:** `update Permission`\n\n**Body:**\n- `permisoIds`: Array de IDs de permisos a asignar"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Add Permission to Role",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/permissions/role/2/5",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "permissions",
+                                "role",
+                                "2",
+                                "5"
+                            ]
+                        },
+                        "description": "Agrega un permiso específico a un rol.\n\n**Params:**\n- `:rolId` - ID del rol\n- `:permisoId` - ID del permiso\n\n**Permiso requerido:** `update Permission`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Remove Permission from Role",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/permissions/role/2/5",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "permissions",
+                                "role",
+                                "2",
+                                "5"
+                            ]
+                        },
+                        "description": "Remueve un permiso de un rol.\n\n**Params:**\n- `:rolId` - ID del rol\n- `:permisoId` - ID del permiso\n\n**Permiso requerido:** `update Permission`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Cache Status",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/permissions/cache/status",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "permissions",
+                                "cache",
+                                "status"
+                            ]
+                        },
+                        "description": "Obtiene el estado del caché de permisos.\n\n**Permiso requerido:** `manage Permission`\n\n**Response:**\n- `rolesInCache`: Número de roles en caché\n- `lastRefresh`: Fecha del último refresh"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Refresh Cache",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/permissions/cache/refresh",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "permissions",
+                                "cache",
+                                "refresh"
+                            ]
+                        },
+                        "description": "Fuerza un refresh completo del caché de permisos.\n\n**Permiso requerido:** `manage Permission`\n\n**Usar cuando:** Se modificaron permisos directamente en BD"
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }

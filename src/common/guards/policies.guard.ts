@@ -48,7 +48,8 @@ export class PoliciesGuard implements CanActivate {
             return false;
         }
 
-        const ability = this.abilityFactory.createForUser(user);
+        // Ahora es async (carga permisos desde caché/BD)
+        const ability = await this.abilityFactory.createForUser(user);
 
         // Todas las políticas deben pasar (AND lógico)
         return policyHandlers.every((handler) =>

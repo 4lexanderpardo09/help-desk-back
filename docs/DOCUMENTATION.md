@@ -444,6 +444,61 @@ case 2: // Agente
 
 ---
 
+## 8. Permisos Dinámicos (Admin API)
+
+### Concepto
+
+Los permisos ya no están hardcodeados en el código. Se almacenan en base de datos y se cargan en caché al iniciar la aplicación.
+
+### Caché
+
+- Se carga automáticamente al iniciar la app
+- Se invalida automáticamente al modificar permisos de un rol
+- Puede refrescarse manualmente via API
+
+### Endpoints (requieren permiso `Permission`)
+
+| Método | Ruta | Descripción | Permiso |
+|--------|------|-------------|---------|
+| GET | `/permissions` | Listar todos los permisos | `read Permission` |
+| GET | `/permissions/role/:rolId` | Permisos de un rol | `read Permission` |
+| PUT | `/permissions/role/:rolId` | Sincronizar permisos de rol | `update Permission` |
+| POST | `/permissions/role/:rolId/:permisoId` | Agregar permiso a rol | `update Permission` |
+| DELETE | `/permissions/role/:rolId/:permisoId` | Remover permiso de rol | `update Permission` |
+| GET | `/permissions/cache/status` | Estado del caché | `manage Permission` |
+| POST | `/permissions/cache/refresh` | Refrescar caché | `manage Permission` |
+
+### Ejemplo: Sincronizar permisos de un rol
+
+```http
+PUT /permissions/role/2
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "permisoIds": [1, 2, 5, 8, 12]
+}
+```
+
+**Response:**
+```json
+{
+  "synced": true,
+  "rolId": 2,
+  "count": 5
+}
+```
+
+### Migración SQL
+
+Archivo: `migrations/2026-01-18_dynamic_permissions.sql`
+
+```bash
+mysql -u root -p mesa_de_ayuda < migrations/2026-01-18_dynamic_permissions.sql
+```
+
+---
+
 ## Decisiones Técnicas
 
 1. **`synchronize: false`** - No se modifica el esquema de la DB legacy
@@ -451,3 +506,4 @@ case 2: // Agente
 3. **JWT stateless** - Sin refresh token por ahora (fase 1)
 4. **Payload JWT legacy-compatible** - Replica variables de sesión PHP
 5. **CASL para autorización** - Permisos declarativos y centralizados
+6. **Permisos dinámicos** - Almacenados en BD con caché en memoria
