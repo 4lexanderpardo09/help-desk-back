@@ -1,8 +1,10 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { EmpresaUsuario } from './empresa-usuario.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn, ManyToMany, JoinTable } from 'typeorm';
+// import { EmpresaUsuario } from './empresa-usuario.entity';
 import { Ticket } from '../../tickets/entities/ticket.entity';
-import { CategoriaEmpresa } from 'src/modules/categories/entities/categoria-empresa.entity';
+// import { CategoriaEmpresa } from 'src/modules/categories/entities/categoria-empresa.entity';
 import { FlujoPlantilla } from 'src/modules/workflows/entities/flujo-plantilla.entity';
+import { User } from 'src/modules/users/entities/user.entity';
+import { Categoria } from 'src/modules/categories/entities/categoria.entity';
 
 @Entity('td_empresa')
 export class Empresa {
@@ -21,11 +23,21 @@ export class Empresa {
     @Column({ name: 'est', type: 'int', nullable: true })
     estado: number | null;
 
-    @OneToMany(() => EmpresaUsuario, (eu) => eu.empresa)
-    empresaUsuarios: EmpresaUsuario[];
+    @ManyToMany(() => User, (user) => user.empresas)
+    @JoinTable({
+        name: 'empresa_usuario',
+        joinColumn: { name: 'emp_id', referencedColumnName: 'id' },
+        inverseJoinColumn: { name: 'usu_id', referencedColumnName: 'id' },
+    })
+    usuarios: User[];
 
-    @OneToMany(() => CategoriaEmpresa, (ce) => ce.empresa)
-    categoriaEmpresa: CategoriaEmpresa[];
+    @ManyToMany(() => Categoria, (categoria) => categoria.empresas)
+    @JoinTable({
+        name: 'categoria_empresa',
+        joinColumn: { name: 'emp_id', referencedColumnName: 'id' },
+        inverseJoinColumn: { name: 'cat_id', referencedColumnName: 'id' },
+    })
+    categorias: Categoria[];
 
     @OneToMany(() => Ticket, (t) => t.empresa)
     tickets: Ticket[];

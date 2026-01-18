@@ -5,7 +5,8 @@ import { Cargo } from '../../positions/entities/cargo.entity';
 import { Departamento } from '../../departments/entities/departamento.entity';
 import { Perfil } from '../../profiles/entities/perfil.entity';
 import { UsuarioPerfil } from '../../profiles/entities/usuario-perfil.entity';
-import { EmpresaUsuario } from 'src/modules/companies/entities/empresa-usuario.entity';
+// import { EmpresaUsuario } from 'src/modules/companies/entities/empresa-usuario.entity';
+import { Empresa } from 'src/modules/companies/entities/empresa.entity';
 import { Notificacion } from 'src/modules/notifications/entities/notificacion.entity';
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
 import { TicketParalelo } from 'src/modules/tickets/entities/ticket-paralelo.entity';
@@ -97,8 +98,8 @@ export class User {
     @JoinColumn({ name: 'rol_id' })
     role: Role;
 
-    @OneToMany(() => EmpresaUsuario, (eu) => eu.usuario)
-    empresaUsuarios: EmpresaUsuario[];
+    @ManyToMany(() => Empresa, (empresa) => empresa.usuarios)
+    empresas: Empresa[];
 
     @OneToMany(() => UsuarioPerfil, (up) => up.usuario)
     usuarioPerfiles: UsuarioPerfil[];
