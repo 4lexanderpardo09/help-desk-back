@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
+import { AbilityFactory } from './abilities/ability.factory';
 import { UsersModule } from '../users/users.module';
 import jwtConfig from '../../config/jwt.config';
 
@@ -28,7 +29,7 @@ import jwtConfig from '../../config/jwt.config';
         }),
     ],
     controllers: [AuthController],
-    providers: [AuthService, JwtStrategy],
-    exports: [AuthService, JwtModule],
+    providers: [AuthService, JwtStrategy, AbilityFactory],
+    exports: [AuthService, JwtModule, AbilityFactory],
 })
 export class AuthModule { }

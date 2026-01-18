@@ -27,16 +27,20 @@ Migración progresiva del sistema PHP legacy a una API REST moderna con NestJS. 
 typeorm                 # ORM
 mysql2                  # Driver MySQL
 
-# Auth
+# Auth & Authorization
 @nestjs/passport        # Passport integration
 @nestjs/jwt             # JWT utilities
 passport                # Auth framework
 passport-jwt            # JWT strategy
 bcrypt                  # Hash de passwords
+@casl/ability           # Autorización basada en habilidades
 
 # Validation
 class-validator         # DTOs
 class-transformer       # Transformación
+
+# Documentation
+@nestjs/swagger         # OpenAPI / Swagger UI
 ```
 
 ### Archivos de Configuración
@@ -59,6 +63,8 @@ class-transformer       # Transformación
 | `decorators/user.decorator.ts` | Decorador `@User()` |
 | `dto/login.dto.ts` | Validación de login |
 | `interfaces/jwt-payload.interface.ts` | Tipo del payload JWT |
+| `abilities/ability.factory.ts` | Factory de permisos CASL |
+| `decorators/check-policies.decorator.ts` | Decorador `@CheckPolicies()` |
 
 ### Endpoints
 
@@ -128,6 +134,7 @@ interface JwtPayload {
 | `users.service.ts` | Lógica de negocio |
 | `entities/user.entity.ts` | Entidad mapeada a `tm_usuario` |
 | `dto/create-user.dto.ts` | Validación para crear usuario |
+| `dto/update-user.dto.ts` | Validación para actualizar usuario |
 
 ### ⚡ Filtrado Inteligente (Smart Filters)
 
@@ -180,18 +187,18 @@ Este endpoint unificado reemplaza múltiples rutas legacy. Se recomienda usar si
   `GET /users?filter[cargoId]=1&included=regional,regional.zona&filter[regional.zona.nombre]=Norte`
 - **Obtener usuario por email:** `GET /users?filter[email]=juan.perez@example.com`
 
-### Endpoints Unificados (todos requieren autenticación)
+### Endpoints (todos requieren autenticación + autorización CASL)
 
-| Método | Ruta | Descripción | Función PHP Legacy |
-|--------|------|-------------|-------------------|
-| GET | `/users` | **MASTER ENDPOINT** - Lista y filtra usuarios. Soporta `filter[...]` y `included`. | `findAll()` / `get_usuario()` |
-| GET | `/users/:id` | Obtener usuario por ID (usa `findAllUnified` internamente). | `findById()` |
-| POST | `/users` | Crear usuario | `insert_usuario()` |
-| PUT | `/users/:id` | Actualizar usuario | `update_usuario()` |
-| PUT | `/users/:id/firma` | Actualizar firma | `update_firma()` |
-| PUT | `/users/:id/perfiles` | Sincronizar perfiles | `insert_usuario_perfil()` |
-| GET | `/users/:id/perfiles` | Obtener perfiles | `get_perfiles_por_usuario()` |
-| DELETE | `/users/:id` | Soft delete | `delete_usuario()` |
+| Método | Ruta | Descripción | Service Method | Permiso CASL |
+|--------|------|-------------|----------------|---------------|
+| GET | `/users` | Listar usuarios con filtros | `list()` | `read User` |
+| GET | `/users/:id` | Mostrar usuario por ID | `show()` | `read User` |
+| POST | `/users` | Crear usuario | `create()` | `create User` |
+| PUT | `/users/:id` | Actualizar usuario | `update()` | `update User` |
+| DELETE | `/users/:id` | Soft delete | `delete()` | `delete User` |
+| PUT | `/users/:id/firma` | Actualizar firma | `updateFirma()` | `update User` |
+| PUT | `/users/:id/perfiles` | Sincronizar perfiles | `syncPerfiles()` | `update User` |
+| GET | `/users/:id/perfiles` | Obtener perfiles | `getPerfiles()` | `read User` |
 
 #### Ejemplos de Scopes Dinámicos (`GET /users`)
 El nuevo endpoint maestro soporta una API fluida para filtrar y cargar relaciones:
@@ -251,6 +258,37 @@ Archivo: `postman/help-desk-api.postman_collection.json`
 - Validación de status codes
 - Verificación de estructura de respuesta
 - Guardado automático del token después del login
+
+---
+
+## 4.1 Swagger UI (OpenAPI)
+
+### Acceso
+**URL:** `http://localhost:3000/api/docs`
+
+### Configuración
+Archivo: `src/main.ts`
+
+```typescript
+const config = new DocumentBuilder()
+    .setTitle('Help Desk API')
+    .setDescription('API REST del sistema Help Desk - Backend NestJS')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+const document = SwaggerModule.createDocument(app, config);
+SwaggerModule.setup('api/docs', app, document);
+```
+
+### Decoradores Usados en Controllers
+| Decorador | Propósito |
+|-----------|-----------|
+| `@ApiTags('Users')` | Agrupa endpoints por módulo |
+| `@ApiBearerAuth()` | Indica autenticación JWT requerida |
+| `@ApiOperation()` | Descripción de cada endpoint |
+| `@ApiResponse()` | Códigos de respuesta esperados |
+| `@ApiParam()` | Documentación de parámetros de ruta |
+| `@ApiQuery()` | Documentación de query params |
 
 ---
 
@@ -318,9 +356,98 @@ pnpm run test
 
 ---
 
+## 7. Autorización con CASL (Punto 17 MCP)
+
+### Concepto
+
+CASL implementa **autorización basada en habilidades** (Capability-based). A diferencia de un simple check de rol, CASL responde:
+
+> **¿Puede este usuario hacer *esta acción* sobre *este recurso*?**
+
+### Arquitectura
+
+```
+Request → JwtAuthGuard (¿Quién eres?) → PoliciesGuard (¿Qué puedes hacer?) → Controller
+```
+
+### Archivos
+
+| Archivo | Descripción |
+|---------|-------------|
+| `src/modules/auth/abilities/ability.factory.ts` | Define Actions, Subjects y reglas por rol |
+| `src/modules/auth/decorators/check-policies.decorator.ts` | Decorador `@CheckPolicies()` |
+| `src/common/guards/policies.guard.ts` | Guard que evalúa policies |
+
+### Actions y Subjects
+
+```typescript
+// Acciones disponibles
+type Actions = 'manage' | 'create' | 'read' | 'update' | 'delete';
+
+// Recursos del sistema
+type Subjects = 'User' | 'Ticket' | 'Category' | 'Department' | 'Role' | 'Profile' | 'Regional' | 'Company' | 'all';
+```
+
+### Permisos por Rol
+
+| Rol | rol_id | Permisos |
+|-----|--------|----------|
+| **Admin** | 1 | `manage all` (acceso total) |
+| **Supervisor** | 4 | `read all`, `update User`, `update Ticket` |
+| **Agente** | 2 | `read User/Ticket/Category/Department`, `update Ticket` |
+| **Cliente** | 3 | `read Ticket/Category`, `create Ticket` |
+
+### Uso en Controllers
+
+```typescript
+@Controller('users')
+@UseGuards(JwtAuthGuard, PoliciesGuard)  // Ambos guards
+export class UsersController {
+
+    @Get()
+    @CheckPolicies((ability) => ability.can('read', 'User'))
+    async list() { ... }
+
+    @Delete(':id')
+    @CheckPolicies((ability) => ability.can('delete', 'User'))
+    async delete() { ... }
+}
+```
+
+### Respuestas de Error
+
+| Código | Causa |
+|--------|-------|
+| 401 | Token JWT inválido o ausente |
+| 403 | Usuario autenticado pero sin permisos |
+
+### Modificar Permisos
+
+Para cambiar los permisos de un rol, editar **solo** `ability.factory.ts`:
+
+```typescript
+case 2: // Agente
+    can('read', 'Ticket');
+    can('update', 'Ticket');
+    can('read', 'User');
+    // Agregar nuevos permisos aquí
+    can('create', 'User');  // ← Nuevo permiso
+    break;
+```
+
+### Principios Clave
+
+1. **JWT solo identifica**, no define permisos
+2. **Permisos centralizados** en `AbilityFactory`
+3. **Controllers no tienen lógica de permisos** (usan decoradores)
+4. **Services asumen autorización previa** (no verifican permisos)
+
+---
+
 ## Decisiones Técnicas
 
 1. **`synchronize: false`** - No se modifica el esquema de la DB legacy
 2. **Passwords con bcrypt** - Compatibles con `password_hash()` de PHP
 3. **JWT stateless** - Sin refresh token por ahora (fase 1)
 4. **Payload JWT legacy-compatible** - Replica variables de sesión PHP
+5. **CASL para autorización** - Permisos declarativos y centralizados

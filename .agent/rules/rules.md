@@ -380,4 +380,245 @@ JSDoc documenta por qué el código existe
 Compodoc documenta cómo está construido el sistema
 DOCUMENTATION.md documenta la historia del proyecto
 
+17. Autorización (Roles y Permisos con CASL)
+17.1 Objetivo
+
+El sistema de autorización define qué puede hacer un usuario, más allá de si está autenticado.
+
+Se utiliza CASL como motor de permisos para:
+
+Centralizar reglas de acceso
+
+Soportar roles y permisos dinámicos
+
+Autorizar tanto REST como WebSockets
+
+Evitar lógica de permisos en controllers y services
+
+Mantener reglas claras, testeables y escalables
+
+17.2 Librería oficial
+
+Se adopta CASL como estándar del proyecto.
+
+Dependencias:
+
+pnpm add @casl/ability @casl/nestjs
+
+
+No se introducen otras librerías de permisos sin justificación técnica.
+
+17.3 Modelo conceptual
+
+CASL se basa en habilidades (Abilities):
+
+usuario + contexto → ability.can(acción, recurso)
+
+Conceptos clave
+Concepto	Significado
+Action	Qué se quiere hacer (read, create, update, delete, manage)
+Subject	Sobre qué recurso (User, Ticket, Auth, etc.)
+Ability	Conjunto de reglas evaluables
+Policy	Regla que se valida antes de ejecutar una acción
+17.4 Acciones estándar (convención obligatoria)
+
+Se definen acciones comunes para todo el sistema:
+
+export type Actions =
+  | 'manage'
+  | 'create'
+  | 'read'
+  | 'update'
+  | 'delete';
+
+
+Regla:
+
+manage implica todas las acciones
+
+No se crean acciones arbitrarias sin documentarlas
+
+17.5 Subjects (recursos)
+
+Los subjects corresponden a entidades del dominio, no a rutas HTTP.
+
+Ejemplos:
+
+export type Subjects =
+  | 'User'
+  | 'Ticket'
+  | 'Auth'
+  | 'all';
+
+
+No se usan nombres de controllers ni endpoints como subjects.
+
+17.6 Definición de Ability
+
+Las reglas de autorización se definen en un solo lugar.
+
+Archivo recomendado:
+
+src/modules/auth/abilities/ability.factory.ts
+
+
+Ejemplo:
+
+import { AbilityBuilder, AbilityClass, Ability } from '@casl/ability';
+
+export type AppAbility = Ability<[Actions, Subjects]>;
+
+export function defineAbilityFor(user: AuthUser): AppAbility {
+  const { can, cannot, build } = new AbilityBuilder<
+    Ability<[Actions, Subjects]>
+  >(Ability as AbilityClass<AppAbility>);
+
+  if (user.role === 'admin') {
+    can('manage', 'all');
+  }
+
+  if (user.role === 'user') {
+    can('read', 'Ticket');
+    can('update', 'User');
+  }
+
+  return build({
+    detectSubjectType: (item) =>
+      item.constructor as unknown as Subjects,
+  });
+}
+
+17.7 Integración con JWT
+
+El JWT solo identifica al usuario, no define permisos.
+
+El payload mínimo permitido:
+
+{
+  sub: user.id,
+  email: user.email,
+  role: user.role
+}
+
+
+Las abilities se construyen en runtime a partir del usuario autenticado.
+
+17.8 Guards de autorización
+
+La autorización se aplica mediante guards, nunca dentro del controller o service.
+
+Archivo recomendado:
+
+src/common/guards/policies.guard.ts
+
+
+Responsabilidad del guard:
+
+Obtener el usuario autenticado
+
+Construir su ability
+
+Evaluar las policies
+
+Bloquear acceso si no cumple
+
+17.9 Policies (decoradores)
+
+Se utilizan policies declarativas, no condicionales manuales.
+
+Ejemplo:
+
+@UseGuards(JwtAuthGuard, PoliciesGuard)
+@CheckPolicies((ability: AppAbility) =>
+  ability.can('read', 'Ticket'),
+)
+@Get()
+findAll() {
+  return this.service.findAll();
+}
+
+
+Reglas:
+
+Las policies se declaran en controllers
+
+La lógica vive en CASL
+
+No se usan if (user.role === ...) en controllers
+
+17.10 Servicios y CASL
+
+Los services no conocen CASL.
+
+Regla estricta:
+
+❌ ability.can() dentro de services
+❌ Validar permisos en lógica de negocio
+✅ Los services asumen que el usuario ya fue autorizado
+
+Esto mantiene los services:
+
+Testeables
+
+Reutilizables
+
+Independientes del framework
+
+17.11 WebSockets
+
+Las mismas abilities se reutilizan en gateways.
+
+Flujo:
+
+Cliente envía JWT
+
+Gateway valida token
+
+Se construye ability
+
+Se valida policy antes de emitir o recibir eventos
+
+No se duplican reglas entre REST y WS.
+
+17.12 Testing
+
+Se testea:
+
+defineAbilityFor() (reglas)
+
+PoliciesGuard
+
+Casos positivos y negativos por rol
+
+No se testean decorators ni infraestructura.
+
+17.13 Qué NO se permite
+
+❌ Autorización basada solo en roles
+❌ if (user.role === 'admin') en controllers
+❌ Lógica de permisos en services
+❌ Permisos definidos en múltiples archivos
+❌ Hardcodear permisos en rutas
+
+17.14 Evolución futura
+
+CASL permite escalar a:
+
+Permisos por ownership
+
+Permisos por estado
+
+Permisos por relación
+
+Integración con ABAC
+
+Sin reescribir el sistema.
+
+17.15 Principio clave
+
+Autenticación dice quién eres
+Autorización dice qué puedes hacer
+
+CASL es el único punto donde se responde esa pregunta.
+
 Este es el estándar profesional obligatorio del backend.
