@@ -30,6 +30,7 @@ export type Subjects =
     | 'Zone'
     | 'Priority'
     | 'Position'
+    | 'Rule'
     | 'all';
 
 export type AppAbility = Ability<[Actions, Subjects]>;

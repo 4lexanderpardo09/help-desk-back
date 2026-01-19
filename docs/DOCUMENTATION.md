@@ -320,6 +320,55 @@ Implementa `ApiQueryDto` con soporte para:
 
 ---
 
+## 6. Módulo de Reglas de Mapeo (`src/modules/rules/`)
+
+Gestión de reglas de asignación automática de tickets basadas en subcategoría.
+
+### Entidad ReglaMapeo (mapeada a `tm_regla_mapeo`)
+```typescript
+@Entity('tm_regla_mapeo')
+export class ReglaMapeo {
+  id: number;              // regla_id
+  subcategoriaId: number;  // cats_id (FK)
+  estado: number;          // est
+  // Relaciones: creadores, asignados, creadoresPerfil
+}
+```
+
+### Tablas Pivot
+- `regla_creadores`: regla ↔ cargo creador
+- `regla_asignados`: regla ↔ cargo asignado
+- `regla_creadores_perfil`: regla ↔ perfil creador
+
+### Endpoints (`ReglasMapeoController`)
+
+| Método | Ruta | Descripción | Permiso Requ |
+|--------|------|-------------|--------------|
+| `GET` | `/reglas-mapeo` | Listar reglas | `read Rule` |
+| `GET` | `/reglas-mapeo/:id` | Obtener regla | `read Rule` |
+| `GET` | `/reglas-mapeo/subcategoria/:subcategoriaId` | Buscar por subcategoría | `read Rule` |
+| `POST` | `/reglas-mapeo` | Crear regla | `create Rule` |
+| `PUT` | `/reglas-mapeo/:id` | Actualizar regla | `update Rule` |
+| `DELETE` | `/reglas-mapeo/:id` | Soft delete | `delete Rule` |
+
+#### Body de Ejemplo (POST/PUT)
+```json
+{
+  "subcategoriaId": 1,
+  "creadorCargoIds": [1, 2],
+  "creadorPerfilIds": [1],
+  "asignadoCargoIds": [3, 4]
+}
+```
+
+#### Relaciones disponibles (`?included=`)
+- `subcategoria`
+- `creadores.cargo`
+- `asignados.cargo`
+- `creadoresPerfil.perfil`
+
+---
+
 #### Ejemplos de Scopes Dinámicos (`GET /users`)
 El nuevo endpoint maestro soporta una API fluida para filtrar y cargar relaciones:
 

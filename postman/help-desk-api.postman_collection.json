@@ -1329,6 +1329,185 @@
             ]
         },
         {
+            "name": "Reglas de Mapeo",
+            "description": "Gestión de Reglas de Asignación (requiere autenticación + permiso Rule)",
+            "item": [
+                {
+                    "name": "List Reglas",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/reglas-mapeo",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reglas-mapeo"
+                            ],
+                            "query": [
+                                {
+                                    "key": "included",
+                                    "value": "subcategoria,creadores.cargo,asignados.cargo",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Lista reglas de mapeo con filtros.\n\n**Permiso:** `read Rule`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Regla",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/reglas-mapeo/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reglas-mapeo",
+                                "1"
+                            ],
+                            "query": [
+                                {
+                                    "key": "included",
+                                    "value": "subcategoria,creadores.cargo",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Obtiene una regla por ID.\n\n**Permiso:** `read Rule`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Regla by Subcategoria",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/reglas-mapeo/subcategoria/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reglas-mapeo",
+                                "subcategoria",
+                                "1"
+                            ]
+                        },
+                        "description": "Busca regla por subcategoría.\n\n**Permiso:** `read Rule`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Regla",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"subcategoriaId\": 1,\n    \"creadorCargoIds\": [1, 2],\n    \"creadorPerfilIds\": [1],\n    \"asignadoCargoIds\": [3]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/reglas-mapeo",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reglas-mapeo"
+                            ]
+                        },
+                        "description": "Crea una regla de mapeo.\n\n**Permiso:** `create Rule`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Regla",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"subcategoriaId\": 2,\n    \"creadorCargoIds\": [1],\n    \"asignadoCargoIds\": [2, 3]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/reglas-mapeo/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reglas-mapeo",
+                                "1"
+                            ]
+                        },
+                        "description": "Actualiza regla (delete + insert para relaciones).\n\n**Permiso:** `update Rule`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Regla",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/reglas-mapeo/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reglas-mapeo",
+                                "1"
+                            ]
+                        },
+                        "description": "Soft delete de una regla.\n\n**Permiso:** `delete Rule`"
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
             "name": "Companies",
             "description": "Gestión de Empresas (requiere autenticación + permiso Company)",
             "item": [

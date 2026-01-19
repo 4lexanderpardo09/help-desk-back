@@ -1,10 +1,10 @@
 import { Cargo } from 'src/modules/positions/entities/cargo.entity';
-import { Entity, JoinColumn, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, JoinColumn, ManyToOne, PrimaryColumn} from 'typeorm';
 import { ReglaMapeo } from './regla-mapeo.entity';
 
 @Entity('regla_creadores')
 export class ReglaCreadores {
-    @PrimaryGeneratedColumn({ name: 'regla_id', type: 'int' })
+    @PrimaryColumn({ name: 'regla_id', type: 'int' })
     reglaId: number;
 
     @PrimaryColumn({ name: 'creador_car_id', type: 'int' })
