@@ -1394,31 +1394,6 @@
                     "response": []
                 },
                 {
-                    "name": "Get Regla by Subcategoria",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/reglas-mapeo/subcategoria/1",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "reglas-mapeo",
-                                "subcategoria",
-                                "1"
-                            ]
-                        },
-                        "description": "Busca regla por subcategoría.\n\n**Permiso:** `read Rule`"
-                    },
-                    "response": []
-                },
-                {
                     "name": "Create Regla",
                     "request": {
                         "method": "POST",

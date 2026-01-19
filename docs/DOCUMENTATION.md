@@ -346,7 +346,6 @@ export class ReglaMapeo {
 |--------|------|-------------|--------------|
 | `GET` | `/reglas-mapeo` | Listar reglas | `read Rule` |
 | `GET` | `/reglas-mapeo/:id` | Obtener regla | `read Rule` |
-| `GET` | `/reglas-mapeo/subcategoria/:subcategoriaId` | Buscar por subcategoría | `read Rule` |
 | `POST` | `/reglas-mapeo` | Crear regla | `create Rule` |
 | `PUT` | `/reglas-mapeo/:id` | Actualizar regla | `update Rule` |
 | `DELETE` | `/reglas-mapeo/:id` | Soft delete | `delete Rule` |
