@@ -665,3 +665,36 @@ Soporta parámetros unificados para filtrado y carga de relaciones:
 - Buscar por nombre: `GET /priorities?filter[nombre]=Alta`
 - Incluir tickets relacionados: `GET /priorities?included=tickets`
 
+---
+
+## 3.6 Módulo de Cargos (`src/modules/positions/`)
+
+### Archivos
+| Archivo | Descripción |
+|---------|-------------|
+| `positions.module.ts` | Módulo de cargos |
+| `positions.controller.ts` | Endpoints `/positions/*` |
+| `positions.service.ts` | Lógica de negocio (CRUD) |
+| `entities/cargo.entity.ts` | Entidad `tm_cargo` |
+| `dto/create-position.dto.ts` | DTO creación |
+| `dto/update-position.dto.ts` | DTO actualización |
+
+### Endpoints (requieren permiso `Position`)
+
+| Método | Ruta | Descripción | Service Method | Body (Ejemplo) |
+|--------|------|-------------|----------------|---------------|
+| GET | `/positions` | Listar cargos | `list()` | - |
+| GET | `/positions/:id` | Mostrar cargo | `show()` | - |
+| POST | `/positions` | Crear cargo | `create()` | `{"nombre": "Administrador", "estado": 1}` |
+| PUT | `/positions/:id` | Actualizar cargo | `update()` | `{"nombre": "Super Admin"}` |
+| DELETE | `/positions/:id` | Soft delete | `delete()` | - |
+
+#### Filtros y Paginación (`GET /positions`)
+Soporta parámetros unificados:
+
+- **`page`**: Número de página.
+- **`limit`**: Resultados por página.
+- **`included`**: Relaciones (`usuarios`, `organigrama`).
+- **`filter[nombre]`**: Filtrar por nombre (LIKE).
+- **`filter[estado]`**: Filtrar por estado (1=Activo, 0=Inactivo).
+

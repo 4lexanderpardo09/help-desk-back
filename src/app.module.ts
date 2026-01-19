@@ -12,6 +12,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { CompaniesModule } from './modules/companies/companies.module';
 import { DepartmentsModule } from './modules/departments/departments.module';
 import { PrioritiesModule } from './modules/priorities/priorities.module';
+import { PositionsModule } from './modules/positions/positions.module';
 import { User } from './modules/users/entities/user.entity';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
@@ -41,10 +42,10 @@ import jwtConfig from './config/jwt.config';
     RolesModule,
     ZonesModule,
     CategoriesModule,
-    CategoriesModule,
     CompaniesModule,
     DepartmentsModule,
     PrioritiesModule,
+    PositionsModule,
     AuthModule,
   ],
   controllers: [AppController],

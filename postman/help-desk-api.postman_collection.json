@@ -1560,6 +1560,159 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Positions",
+            "description": "Gestión de Cargos (requiere autenticación + permiso Position)",
+            "item": [
+                {
+                    "name": "List Positions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/positions",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "positions"
+                            ],
+                            "query": [
+                                {
+                                    "key": "included",
+                                    "value": "usuarios",
+                                    "description": "Incluir usuarios asociados",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "filter[estado]",
+                                    "value": "1",
+                                    "description": "Filtrar por estado activo"
+                                }
+                            ]
+                        },
+                        "description": "Lista cargos con filtros dinámicos.\n\n**Permiso:** `read Position`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Position",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/positions/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "positions",
+                                "1"
+                            ]
+                        },
+                        "description": "Obtiene un cargo por ID.\n\n**Permiso:** `read Position`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Position",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Director\",\n    \"estado\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/positions",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "positions"
+                            ]
+                        },
+                        "description": "Crea un nuevo cargo.\n\n**Permiso:** `create Position`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Position",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Director Regional\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/positions/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "positions",
+                                "1"
+                            ]
+                        },
+                        "description": "Actualiza un cargo.\n\n**Permiso:** `update Position`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Position",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/positions/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "positions",
+                                "1"
+                            ]
+                        },
+                        "description": "Elimina (soft delete) un cargo.\n\n**Permiso:** `delete Position`"
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }

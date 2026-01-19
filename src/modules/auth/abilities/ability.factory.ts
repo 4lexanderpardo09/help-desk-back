@@ -28,6 +28,7 @@ export type Subjects =
     | 'Permission'
     | 'Zone'
     | 'Priority'
+    | 'Position'
     | 'all';
 
 export type AppAbility = Ability<[Actions, Subjects]>;
