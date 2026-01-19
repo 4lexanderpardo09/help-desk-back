@@ -1167,6 +1167,168 @@
             ]
         },
         {
+            "name": "Subcategorias",
+            "description": "Gestión de Subcategorías (requiere autenticación + permiso Subcategoria)",
+            "item": [
+                {
+                    "name": "List Subcategorias",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/subcategorias",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "subcategorias"
+                            ],
+                            "query": [
+                                {
+                                    "key": "included",
+                                    "value": "categoria,prioridad",
+                                    "description": "Incluye relaciones",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "filter[categoriaId]",
+                                    "value": "1",
+                                    "description": "Filtrar por categoría",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Lista subcategorías con filtros dinámicos.\n\n**Permiso:** `read Subcategoria`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Subcategoria",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/subcategorias/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "subcategorias",
+                                "1"
+                            ],
+                            "query": [
+                                {
+                                    "key": "included",
+                                    "value": "categoria,prioridad",
+                                    "description": "Incluye relaciones",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Obtiene una subcategoría por ID.\n\n**Permiso:** `read Subcategoria`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Subcategoria",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Software\",\n    \"categoriaId\": 1,\n    \"prioridadId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/subcategorias",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "subcategorias"
+                            ]
+                        },
+                        "description": "Crea una nueva subcategoría.\n\n**Permiso:** `create Subcategoria`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Subcategoria",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Hardware\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/subcategorias/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "subcategorias",
+                                "1"
+                            ]
+                        },
+                        "description": "Actualiza una subcategoría.\n\n**Permiso:** `update Subcategoria`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Subcategoria",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/subcategorias/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "subcategorias",
+                                "1"
+                            ]
+                        },
+                        "description": "Soft delete de una subcategoría.\n\n**Permiso:** `delete Subcategoria`"
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
             "name": "Companies",
             "description": "Gestión de Empresas (requiere autenticación + permiso Company)",
             "item": [

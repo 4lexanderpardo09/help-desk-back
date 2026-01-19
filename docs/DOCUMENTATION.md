@@ -283,6 +283,43 @@ Implementa `ApiQueryDto` con soporte para:
 
 ---
 
+## 5. Módulo de Subcategorías (`src/modules/subcategories/`)
+
+Gestión de subcategorías de tickets, asociadas a una categoría padre.
+
+### Entidad Subcategoria (mapeada a `tm_subcategoria`)
+```typescript
+@Entity('tm_subcategoria')
+export class Subcategoria {
+  id: number;           // cats_id
+  nombre: string;       // cats_nom
+  descripcion: string;  // cats_descrip
+  categoriaId: number;  // cat_id (FK)
+  prioridadId: number;  // pd_id (FK - prioridad por defecto)
+  estado: number;       // est (1=Activo, 0=Inactivo)
+}
+```
+
+### Endpoints (`SubcategoriasController`)
+
+| Método | Ruta | Descripción | Permiso Requ | Body (Ejemplo) |
+|--------|------|-------------|--------------|----------------|
+| `GET` | `/subcategorias` | Listar subcategorías | `read Subcategoria` | - |
+| `GET` | `/subcategorias/:id` | Obtener subcategoría (soporta `?included=categoria,prioridad`) | `read Subcategoria` | - |
+| `POST` | `/subcategorias` | Crear subcategoría | `create Subcategoria` | `{"nombre": "Software", "categoriaId": 1}` |
+| `PUT` | `/subcategorias/:id` | Actualizar subcategoría | `update Subcategoria` | `{"nombre": "Hardware"}` |
+| `DELETE` | `/subcategorias/:id` | Soft delete | `delete Subcategoria` | - |
+
+#### Filtros y Paginación (`GET /subcategorias`)
+Implementa `ApiQueryDto` con soporte para:
+- `limit`: Paginación
+- `page`: Número de página
+- `filter[nombre]`: Filtro por nombre
+- `filter[categoriaId]`: Filtro por categoría padre
+- `included`: `categoria`, `prioridad`
+
+---
+
 #### Ejemplos de Scopes Dinámicos (`GET /users`)
 El nuevo endpoint maestro soporta una API fluida para filtrar y cargar relaciones:
 

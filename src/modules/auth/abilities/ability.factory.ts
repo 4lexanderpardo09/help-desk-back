@@ -20,6 +20,7 @@ export type Subjects =
     | 'User'
     | 'Ticket'
     | 'Category'
+    | 'Subcategoria'
     | 'Department'
     | 'Role'
     | 'Profile'

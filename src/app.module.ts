@@ -15,6 +15,7 @@ import { PrioritiesModule } from './modules/priorities/priorities.module';
 import { PositionsModule } from './modules/positions/positions.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
 import { RegionsModule } from './modules/regions/regions.module';
+import { SubcategoriasModule } from './modules/subcategories/subcategorias.module';
 import { User } from './modules/users/entities/user.entity';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
@@ -50,6 +51,7 @@ import jwtConfig from './config/jwt.config';
     PositionsModule,
     ProfilesModule,
     RegionsModule,
+    SubcategoriasModule,
     AuthModule,
   ],
   controllers: [AppController],
