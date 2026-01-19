@@ -157,42 +157,5 @@ export class UsersController {
     ): Promise<{ updated: boolean; id: number }> {
         return this.usersService.updateFirma(id, firma);
     }
-
-    /**
-     * PUT /users/:id/perfiles
-     * Sincroniza los perfiles asignados a un usuario.
-     * 
-     * @authorization Requiere `update` sobre `User`
-     */
-    @Put(':id/perfiles')
-    @CheckPolicies((ability) => ability.can('update', 'User'))
-    @ApiOperation({ summary: 'Sincronizar perfiles', description: 'Reemplaza los perfiles del usuario con los nuevos IDs proporcionados.' })
-    @ApiParam({ name: 'id', description: 'ID del usuario' })
-    @ApiResponse({ status: 200, description: 'Perfiles sincronizados.' })
-    @ApiResponse({ status: 403, description: 'Permisos insuficientes.' })
-    @ApiResponse({ status: 404, description: 'Usuario no encontrado.' })
-    async syncPerfiles(
-        @Param('id', ParseIntPipe) id: number,
-        @Body('perfilIds') perfilIds: number[],
-    ): Promise<{ synced: boolean; userId: number; perfilCount: number }> {
-        return this.usersService.syncPerfiles(id, perfilIds);
-    }
-
-    /**
-     * GET /users/:id/perfiles
-     * Obtiene los perfiles de un usuario.
-     * 
-     * @authorization Requiere `read` sobre `User`
-     */
-    @Get(':id/perfiles')
-    @CheckPolicies((ability) => ability.can('read', 'User'))
-    @ApiOperation({ summary: 'Listar perfiles del usuario', description: 'Devuelve los perfiles asignados a un usuario.' })
-    @ApiParam({ name: 'id', description: 'ID del usuario' })
-    @ApiResponse({ status: 200, description: 'Lista de perfiles.' })
-    @ApiResponse({ status: 403, description: 'Permisos insuficientes.' })
-    async getPerfiles(
-        @Param('id', ParseIntPipe) id: number,
-    ): Promise<Record<string, unknown>[]> {
-        return this.usersService.getPerfiles(id);
-    }
 }
+

@@ -8,10 +8,11 @@ import { AuthModule } from '../auth/auth.module';
 @Module({
     imports: [
         TypeOrmModule.forFeature([User]),
-        forwardRef(() => AuthModule), // Para AbilityFactory (PoliciesGuard)
+        forwardRef(() => AuthModule),
     ],
     controllers: [UsersController],
     providers: [UsersService],
     exports: [UsersService],
 })
 export class UsersModule { }
+

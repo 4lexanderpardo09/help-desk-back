@@ -496,64 +496,6 @@
                         "description": "Actualiza la firma de un usuario."
                     },
                     "response": []
-                },
-                {
-                    "name": "Sync User Perfiles",
-                    "request": {
-                        "method": "PUT",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"perfilIds\": [1, 2, 3]\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/users/1/perfiles",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "users",
-                                "1",
-                                "perfiles"
-                            ]
-                        },
-                        "description": "Sincroniza perfiles de un usuario. Elimina los existentes e inserta los nuevos."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Get User Perfiles",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/users/1/perfiles",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "users",
-                                "1",
-                                "perfiles"
-                            ]
-                        },
-                        "description": "Obtiene los perfiles asignados a un usuario."
-                    },
-                    "response": []
                 }
             ]
         },
@@ -1709,6 +1651,211 @@
                             ]
                         },
                         "description": "Elimina (soft delete) un cargo.\n\n**Permiso:** `delete Position`"
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Profiles",
+            "description": "Gestión de Perfiles (requiere autenticación + permiso Profile)",
+            "item": [
+                {
+                    "name": "List Profiles",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/profiles",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profiles"
+                            ],
+                            "query": [
+                                {
+                                    "key": "filter[estado]",
+                                    "value": "1",
+                                    "description": "Filtrar por estado activo"
+                                }
+                            ]
+                        },
+                        "description": "Lista perfiles con filtros dinámicos.\n\n**Permiso:** `read Profile`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/profiles/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profiles",
+                                "1"
+                            ]
+                        },
+                        "description": "Obtiene un perfil por ID.\n\n**Permiso:** `read Profile`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Profile",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Analista\",\n    \"estado\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/profiles",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profiles"
+                            ]
+                        },
+                        "description": "Crea un nuevo perfil.\n\n**Permiso:** `create Profile`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Profile",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Director\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/profiles/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profiles",
+                                "1"
+                            ]
+                        },
+                        "description": "Actualiza un perfil.\n\n**Permiso:** `update Profile`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Profile",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/profiles/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profiles",
+                                "1"
+                            ]
+                        },
+                        "description": "Elimina (soft delete) un perfil.\n\n**Permiso:** `delete Profile`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "List User Profiles",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/profiles/user/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profiles",
+                                "user",
+                                "1"
+                            ]
+                        },
+                        "description": "Lista los perfiles asignados a un usuario usando filter[usuarioId].\n\nEquivalente a: `GET /profiles?filter[usuarioId]=1`\n\n**Permiso:** `read Profile`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Sync User Profiles",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"perfilIds\": [1, 2, 3]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/profiles/user/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profiles",
+                                "user",
+                                "1"
+                            ]
+                        },
+                        "description": "Sincroniza (reemplaza) los perfiles de un usuario.\n\n**Permiso:** `update Profile`"
                     },
                     "response": []
                 }

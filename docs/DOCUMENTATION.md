@@ -698,3 +698,47 @@ Soporta parámetros unificados:
 - **`filter[nombre]`**: Filtrar por nombre (LIKE).
 - **`filter[estado]`**: Filtrar por estado (1=Activo, 0=Inactivo).
 
+---
+
+## 3.7 Módulo de Perfiles (`src/modules/profiles/`)
+
+### Archivos
+| Archivo | Descripción |
+|---------|-------------|
+| `profiles.module.ts` | Módulo de perfiles |
+| `profiles.controller.ts` | Endpoints `/profiles/*` |
+| `profiles.service.ts` | Lógica de negocio (CRUD + User Profiles) |
+| `entities/perfil.entity.ts` | Entidad `tm_perfil` |
+| `entities/usuario-perfil.entity.ts` | Entidad pivot `tm_usuario_perfiles` |
+| `dto/create-profile.dto.ts` | DTO creación |
+| `dto/update-profile.dto.ts` | DTO actualización |
+
+### Endpoints (requieren permiso `Profile`)
+
+| Método | Ruta | Descripción | Service Method | Body (Ejemplo) |
+|--------|------|-------------|----------------|---------------|
+| GET | `/profiles` | Listar perfiles | `list()` | - |
+| GET | `/profiles/:id` | Mostrar perfil | `show()` | - |
+| POST | `/profiles` | Crear perfil | `create()` | `{"nombre": "Analista", "estado": 1}` |
+| PUT | `/profiles/:id` | Actualizar perfil | `update()` | `{"nombre": "Director"}` |
+| DELETE | `/profiles/:id` | Soft delete | `delete()` | - |
+
+#### Endpoints Usuario-Perfiles
+
+Los endpoints de gestión de perfiles de usuario fueron consolidados en `ProfilesController`:
+
+| Método | Ruta | Descripción | Implementación |
+|--------|------|-------------|----------------|
+| GET | `/profiles/user/:userId` | Listar perfiles de un usuario | `list({ filter: { usuarioId } })` |
+| PUT | `/profiles/user/:userId` | Sincronizar perfiles de un usuario | `syncUserProfiles()` |
+
+> **Nota:** Los endpoints `/users/:id/perfiles` fueron eliminados. Usar `/profiles/user/:userId` o `GET /profiles?filter[usuarioId]=1`
+
+#### Filtros y Paginación (`GET /profiles`)
+- **`page`**: Número de página.
+- **`limit`**: Resultados por página.
+- **`included`**: Relaciones (`usuarioPerfiles`, `usuarioPerfiles.usuario`).
+- **`filter[id]`**: Filtrar por ID(s).
+- **`filter[nombre]`**: Filtrar por nombre (LIKE).
+- **`filter[estado]`**: Filtrar por estado.
+- **`filter[usuarioId]`**: Listar perfiles asignados a un usuario específico.

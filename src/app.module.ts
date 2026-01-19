@@ -13,6 +13,7 @@ import { CompaniesModule } from './modules/companies/companies.module';
 import { DepartmentsModule } from './modules/departments/departments.module';
 import { PrioritiesModule } from './modules/priorities/priorities.module';
 import { PositionsModule } from './modules/positions/positions.module';
+import { ProfilesModule } from './modules/profiles/profiles.module';
 import { User } from './modules/users/entities/user.entity';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
@@ -46,6 +47,7 @@ import jwtConfig from './config/jwt.config';
     DepartmentsModule,
     PrioritiesModule,
     PositionsModule,
+    ProfilesModule,
     AuthModule,
   ],
   controllers: [AppController],
