@@ -44,7 +44,7 @@ export class PrioritiesService {
     /**
      * Obtiene una prioridad por ID
      */
-    async show(id: number, options?: { included?: string }): Promise<Prioridad | null> {
+    async show(id: number, options?: { included?: string }): Promise<Prioridad> {
         const qb = this.prioritiesRepository.createQueryBuilder('prioridad');
 
         qb.where('prioridad.id = :id', { id });
