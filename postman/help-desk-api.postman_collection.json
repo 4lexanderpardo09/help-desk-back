@@ -1237,6 +1237,176 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Departments",
+            "description": "Gestión de Departamentos (requiere autenticación + permiso Department)",
+            "item": [
+                {
+                    "name": "List Departments",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/departments?page=1&limit=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "departments"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Número de página"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10",
+                                    "description": "Resultados por página"
+                                },
+                                {
+                                    "key": "included",
+                                    "value": "usuarios,categorias",
+                                    "description": "Relaciones a incluir",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "filter[nombre]",
+                                    "value": "",
+                                    "description": "Filtrar por nombre",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "filter[estado]",
+                                    "value": "1",
+                                    "description": "Filtrar por estado",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Lista departamentos con filtros dinámicos.\n\n**Permiso:** `read Department`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Department",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/departments/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "departments",
+                                "1"
+                            ]
+                        },
+                        "description": "Obtiene un departamento por ID.\n\n**Permiso:** `read Department`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Department",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Nuevo Departamento\",\n    \"estado\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/departments",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "departments"
+                            ]
+                        },
+                        "description": "Crea un nuevo departamento.\n\n**Permiso:** `create Department`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Department",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Departamento Modificado\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/departments/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "departments",
+                                "1"
+                            ]
+                        },
+                        "description": "Actualiza un departamento.\n\n**Permiso:** `update Department`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Department",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/departments/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "departments",
+                                "1"
+                            ]
+                        },
+                        "description": "Soft delete de un departamento.\n\n**Permiso:** `delete Department`"
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }

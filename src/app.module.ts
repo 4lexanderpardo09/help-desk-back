@@ -10,6 +10,7 @@ import { PermissionsModule } from './modules/permissions/permissions.module';
 import { ZonesModule } from './modules/zones/zones.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { CompaniesModule } from './modules/companies/companies.module';
+import { DepartmentsModule } from './modules/departments/departments.module';
 import { User } from './modules/users/entities/user.entity';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
@@ -40,6 +41,7 @@ import jwtConfig from './config/jwt.config';
     ZonesModule,
     CategoriesModule,
     CompaniesModule,
+    DepartmentsModule,
     AuthModule,
   ],
   controllers: [AppController],

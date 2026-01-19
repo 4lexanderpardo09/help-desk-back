@@ -592,3 +592,35 @@ mysql -u root -p mesa_de_ayuda < migrations/2026-01-18_dynamic_permissions.sql
 - **`included`**: Relaciones: `usuarios`, `categorias`, `tickets`, `flujosPlantilla`.
 - **`filter[nombre]`**: Filtrar por nombre (LIKE).
 - **`filter[estado]`**: Filtrar por estado (1=Activo, 0=Inactivo).
+
+---
+
+## 3.4 Módulo de Departamentos (`src/modules/departments/`)
+
+### Archivos
+| Archivo | Descripción |
+|---------|-------------|
+| `departments.module.ts` | Módulo de departamentos |
+| `departments.controller.ts` | Endpoints `/departments/*` |
+| `departments.service.ts` | Lógica de negocio (CRUD) |
+| `entities/departamento.entity.ts` | Entidad `tm_departamento` |
+| `dto/create-department.dto.ts` | DTO creación |
+| `dto/update-department.dto.ts` | DTO actualización |
+
+### Endpoints (requieren permiso `Department`)
+
+| Método | Ruta | Descripción | Service Method | Permiso CASL |
+|--------|------|-------------|----------------|---------------|
+| GET | `/departments` | Listar departamentos | `list()` | `read Department` |
+| GET | `/departments/:id` | Mostrar departamento | `show()` | `read Department` |
+| POST | `/departments` | Crear departamento | `create()` | `create Department` |
+| PUT | `/departments/:id` | Actualizar departamento | `update()` | `update Department` |
+| DELETE | `/departments/:id` | Soft delete | `delete()` | `delete Department` |
+
+#### Filtros y Paginación (`GET /departments`)
+- **`page`**: Número de página (ej: `?page=1`).
+- **`limit`**: Resultados por página (ej: `?limit=10`).
+- **`included`**: Relaciones: `usuarios`, `categorias`, `tickets`.
+- **`filter[nombre]`**: Filtrar por nombre (LIKE).
+- **`filter[estado]`**: Filtrar por estado (1=Activo, 0=Inactivo).
+
