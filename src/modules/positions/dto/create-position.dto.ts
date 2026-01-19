@@ -1,11 +1,18 @@
-import { IsNotEmpty, IsString, IsInt, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsInt, IsOptional, Min } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
+/**
+ * DTO para crear un Cargo
+ */
 export class CreatePositionDto {
+    @ApiProperty({ description: 'Nombre del cargo', example: 'Gerente' })
+    @IsNotEmpty({ message: 'El nombre es requerido' })
     @IsString()
-    @IsNotEmpty()
     nombre: string;
 
-    @IsInt()
+    @ApiProperty({ description: 'Estado', default: 1, required: false })
     @IsOptional()
+    @IsInt()
+    @Min(0)
     estado?: number;
 }

@@ -7,52 +7,66 @@ import {
     MinLength,
     IsArray,
 } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
+/**
+ * DTO para actualizar un Usuario (todos los campos opcionales)
+ */
 export class UpdateUserDto {
-    @IsString()
+    @ApiProperty({ description: 'Nombre del usuario', required: false })
     @IsOptional()
+    @IsString()
     nombre?: string;
 
-    @IsString()
+    @ApiProperty({ description: 'Apellido del usuario', required: false })
     @IsOptional()
+    @IsString()
     apellido?: string;
 
-    @IsEmail()
+    @ApiProperty({ description: 'Correo electrónico', required: false })
     @IsOptional()
+    @IsEmail({}, { message: 'Formato de email inválido' })
     email?: string;
 
-    @IsString()
-    @MinLength(6)
+    @ApiProperty({ description: 'Contraseña (mínimo 6 caracteres)', required: false })
     @IsOptional()
+    @IsString()
+    @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
     password?: string;
 
-    @IsInt()
+    @ApiProperty({ description: 'ID del rol asignado', required: false })
     @IsOptional()
+    @IsInt()
     rolId?: number;
 
-    @IsInt()
+    @ApiProperty({ description: 'ID del departamento', required: false })
     @IsOptional()
+    @IsInt()
     departamentoId?: number | null;
 
-    @IsBoolean()
+    @ApiProperty({ description: 'Define si el usuario es de ámbito nacional', required: false })
     @IsOptional()
+    @IsBoolean()
     esNacional?: boolean;
 
-    @IsInt()
+    @ApiProperty({ description: 'ID de la regional', required: false })
     @IsOptional()
+    @IsInt()
     regionalId?: number | null;
 
-    @IsInt()
+    @ApiProperty({ description: 'ID del cargo', required: false })
     @IsOptional()
+    @IsInt()
     cargoId?: number | null;
 
-    @IsString()
-    @IsString()
+    @ApiProperty({ description: 'Cédula del usuario', required: false })
     @IsOptional()
+    @IsString()
     cedula?: string | null;
 
-    @IsInt({ each: true })
-    @IsArray()
+    @ApiProperty({ description: 'IDs de empresas asociadas', required: false, type: [Number] })
     @IsOptional()
+    @IsArray()
+    @IsInt({ each: true })
     empresasIds?: number[];
 }
