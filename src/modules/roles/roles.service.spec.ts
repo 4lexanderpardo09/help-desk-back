@@ -22,6 +22,7 @@ describe('RolesService', () => {
     const mockRepository = {
         createQueryBuilder: jest.fn(() => mockQueryBuilder),
         findOne: jest.fn().mockResolvedValue(mockRole),
+        exists: jest.fn(),
         create: jest.fn(),
         save: jest.fn(),
         merge: jest.fn(),
@@ -31,6 +32,7 @@ describe('RolesService', () => {
     beforeEach(async () => {
         mockQueryBuilder = {
             where: jest.fn().mockReturnThis(),
+            andWhere: jest.fn().mockReturnThis(),
             leftJoinAndSelect: jest.fn().mockReturnThis(),
             orderBy: jest.fn().mockReturnThis(),
             take: jest.fn().mockReturnThis(),
@@ -69,19 +71,20 @@ describe('RolesService', () => {
 
     describe('show', () => {
         it('should return a role by id', async () => {
+            mockQueryBuilder.getOne.mockResolvedValue(mockRole);
             const result = await service.show(1);
             expect(result).toEqual(mockRole);
         });
 
         it('should throw NotFoundException if role not found', async () => {
-            mockRepository.findOne.mockResolvedValueOnce(null);
+            mockQueryBuilder.getOne.mockResolvedValue(null);
             await expect(service.show(999)).rejects.toThrow(NotFoundException);
         });
     });
 
     describe('create', () => {
         it('should create a role successfully', async () => {
-            mockRepository.findOne.mockResolvedValue(null);
+            mockRepository.exists.mockResolvedValue(false);
             mockRepository.create.mockReturnValue(mockRole);
             mockRepository.save.mockResolvedValue(mockRole);
 
@@ -90,7 +93,7 @@ describe('RolesService', () => {
         });
 
         it('should throw ConflictException if name exists', async () => {
-            mockRepository.findOne.mockResolvedValue(mockRole);
+            mockRepository.exists.mockResolvedValue(true);
             await expect(service.create({ nombre: 'Administrador' })).rejects.toThrow(ConflictException);
         });
     });

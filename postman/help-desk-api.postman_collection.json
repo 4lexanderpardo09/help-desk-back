@@ -651,7 +651,7 @@
                                     }
                                 ],
                                 "url": {
-                                    "raw": "{{base_url}}/roles?sort=nombre",
+                                    "raw": "{{base_url}}/roles",
                                     "host": [
                                         "{{base_url}}"
                                     ],
@@ -659,11 +659,6 @@
                                         "roles"
                                     ],
                                     "query": [
-                                        {
-                                            "key": "sort",
-                                            "value": "nombre",
-                                            "description": "Ordena por nombre ascendente"
-                                        },
                                         {
                                             "key": "included",
                                             "value": "usuarios",
@@ -694,6 +689,14 @@
                                     "path": [
                                         "roles",
                                         "1"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "included",
+                                            "value": "usuarios",
+                                            "description": "Incluye relaciones (ej: usuarios)",
+                                            "disabled": true
+                                        }
                                     ]
                                 },
                                 "description": "Obtiene un rol específico por ID.\n\n**Permiso requerido:** `read Role`"

@@ -5,7 +5,6 @@ import { Role } from './entities/role.entity';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { ApiQueryHelper } from '../../common/utils/api-query-helper';
-import { ApiQueryDto } from '../../common/dto/api-query.dto';
 
 @Injectable()
 export class RolesService {
@@ -14,40 +13,63 @@ export class RolesService {
         private readonly roleRepository: Repository<Role>,
     ) { }
 
+    // Listas permitidas para "Scopes" dinámicos (estilo Laravel)
     private readonly allowedIncludes = ['usuarios'];
     private readonly allowedFilters = ['id', 'nombre', 'estado'];
 
-    async list(query?: ApiQueryDto): Promise<Role[]> {
+    /**
+     * Busca un rol por ID
+     * Permite incluir relaciones dinámicamente.
+     */
+    async show(id: number, options?: {
+        included?: string;
+    }): Promise<Role> {
         const qb = this.roleRepository.createQueryBuilder('rol');
 
-        qb.where('rol.estado = :estado', { estado: 1 });
+        qb.where('rol.id = :id', { id });
+        qb.andWhere('rol.estado = :estado', { estado: 1 });
 
-        if (query) {
-            ApiQueryHelper.applyIncludes(qb, query.included, this.allowedIncludes, 'rol');
-            ApiQueryHelper.applyFilters(qb, query.filter, this.allowedFilters, 'rol');
-            ApiQueryHelper.applyPagination(qb, { limit: query.limit, page: query.page });
-        }
+        ApiQueryHelper.applyIncludes(qb, options?.included, this.allowedIncludes, 'rol');
 
-        if (query?.sort) {
-            const [sortField, sortOrder] = query.sort.startsWith('-')
-                ? [query.sort.substring(1), 'DESC']
-                : [query.sort, 'ASC'];
-            qb.orderBy(`rol.${sortField}`, sortOrder as 'ASC' | 'DESC');
-        }
+        const role = await qb.getOne();
 
-        return qb.getMany();
-    }
-
-    async show(id: number): Promise<Role> {
-        const role = await this.roleRepository.findOne({ where: { id } });
         if (!role) {
             throw new NotFoundException(`Rol con ID ${id} no encontrado`);
         }
         return role;
     }
 
+    /**
+     * **Búsqueda Maestra Unificada**
+     * 
+     * Método único para listar roles.
+     * Soporta filtros y paginación.
+     */
+    async list(options?: {
+        limit?: number;
+        included?: string;
+        filter?: Record<string, any>;
+        page?: number;
+    }): Promise<Role[]> {
+        const qb = this.roleRepository.createQueryBuilder('rol');
+
+        qb.where('rol.estado = :estado', { estado: 1 });
+
+        ApiQueryHelper.applyIncludes(qb, options?.included, this.allowedIncludes, 'rol');
+        ApiQueryHelper.applyFilters(qb, options?.filter, this.allowedFilters, 'rol');
+        ApiQueryHelper.applyPagination(qb, { limit: options?.limit, page: options?.page });
+
+        // Ordenamiento por defecto
+        qb.orderBy('rol.nombre', 'ASC');
+
+        return qb.getMany();
+    }
+
+    /**
+     * Crea un nuevo rol
+     */
     async create(createRoleDto: CreateRoleDto): Promise<Role> {
-        const existing = await this.roleRepository.findOne({
+        const existing = await this.roleRepository.exists({
             where: { nombre: createRoleDto.nombre, estado: 1 }
         });
 
@@ -63,6 +85,9 @@ export class RolesService {
         return await this.roleRepository.save(role);
     }
 
+    /**
+     * Actualiza un rol existente
+     */
     async update(id: number, updateRoleDto: UpdateRoleDto): Promise<Role> {
         const role = await this.show(id);
 
@@ -71,6 +96,9 @@ export class RolesService {
         return await this.roleRepository.save(role);
     }
 
+    /**
+     * Elimina un rol (soft delete)
+     */
     async delete(id: number): Promise<{ deleted: boolean; id: number }> {
         const role = await this.show(id);
 

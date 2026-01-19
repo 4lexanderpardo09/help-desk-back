@@ -27,26 +27,23 @@ import { ApiQueryDto } from '../../common/dto/api-query.dto';
 export class RolesController {
     constructor(private readonly rolesService: RolesService) { }
 
+    // === RUTAS SIN PARÁMETROS ===
+
     @Get()
     @CheckPolicies((ability) => ability.can('read', 'Role'))
-    @ApiOperation({ summary: 'Listar roles', description: 'Obtiene una lista de roles con soporte para filtros y paginación.' })
+    @ApiOperation({ summary: 'Listar roles', description: 'Endpoint maestro para listar roles con filtros dinámicos y relaciones.' })
     @ApiResponse({ status: 200, description: 'Lista de roles retornada exitosamente.', type: [Role] })
     @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Número de resultados por página' })
     @ApiQuery({ name: 'page', required: false, type: Number, description: 'Número de página' })
     @ApiQuery({ name: 'filter', required: false, type: Object, description: 'Filtros dinámicos (eq, contains, etc.)' })
-    @ApiQuery({ name: 'sort', required: false, type: String, description: 'Ordenamiento (ej: nombre,-fechaCreacion)' })
     @ApiQuery({ name: 'included', required: false, type: String, description: 'Relaciones a incluir (separadas por coma)' })
-    findAll(@Query() query: ApiQueryDto) {
-        return this.rolesService.list(query);
-    }
-
-    @Get(':id')
-    @CheckPolicies((ability) => ability.can('read', 'Role'))
-    @ApiOperation({ summary: 'Obtener rol', description: 'Busca un rol por su ID.' })
-    @ApiResponse({ status: 200, description: 'Rol encontrado.', type: Role })
-    @ApiResponse({ status: 404, description: 'Rol no encontrado.' })
-    findOne(@Param('id', ParseIntPipe) id: number) {
-        return this.rolesService.show(id);
+    list(@Query() query: ApiQueryDto) {
+        return this.rolesService.list({
+            limit: query.limit,
+            page: query.page,
+            filter: query.filter,
+            included: query.included,
+        });
     }
 
     @Post()
@@ -57,6 +54,21 @@ export class RolesController {
     @ApiResponse({ status: 409, description: 'El rol ya existe.' })
     create(@Body() createRoleDto: CreateRoleDto) {
         return this.rolesService.create(createRoleDto);
+    }
+
+    // === RUTAS CON :id ===
+
+    @Get(':id')
+    @CheckPolicies((ability) => ability.can('read', 'Role'))
+    @ApiOperation({ summary: 'Mostrar rol', description: 'Obtiene los detalles de un rol específico por ID.' })
+    @ApiResponse({ status: 200, description: 'Rol encontrado.', type: Role })
+    @ApiResponse({ status: 404, description: 'Rol no encontrado.' })
+    @ApiQuery({ name: 'included', required: false, description: 'Relaciones a incluir (separadas por coma)' })
+    show(
+        @Param('id', ParseIntPipe) id: number,
+        @Query('included') included?: string,
+    ) {
+        return this.rolesService.show(id, { included });
     }
 
     @Put(':id')
@@ -73,7 +85,7 @@ export class RolesController {
     @ApiOperation({ summary: 'Eliminar rol', description: 'Realiza un borrado lógico del rol (estado = 0).' })
     @ApiResponse({ status: 200, description: 'Rol eliminado exitosamente.' })
     @ApiResponse({ status: 404, description: 'Rol no encontrado.' })
-    remove(@Param('id', ParseIntPipe) id: number) {
+    delete(@Param('id', ParseIntPipe) id: number) {
         return this.rolesService.delete(id);
     }
 }

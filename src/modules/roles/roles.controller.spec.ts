@@ -48,17 +48,24 @@ describe('RolesController', () => {
         expect(controller).toBeDefined();
     });
 
-    describe('findAll', () => {
+    describe('list', () => {
         it('should return a list of roles', async () => {
-            const result = await controller.findAll({});
+            const result = await controller.list({});
             expect(result).toEqual([mockRole]);
+            expect(service.list).toHaveBeenCalledWith({
+                limit: undefined,
+                page: undefined,
+                filter: undefined,
+                included: undefined,
+            });
         });
     });
 
-    describe('findOne', () => {
+    describe('show', () => {
         it('should return a role', async () => {
-            const result = await controller.findOne(1);
+            const result = await controller.show(1);
             expect(result).toEqual(mockRole);
+            expect(service.show).toHaveBeenCalledWith(1, { included: undefined });
         });
     });
 
@@ -78,9 +85,9 @@ describe('RolesController', () => {
         });
     });
 
-    describe('remove', () => {
+    describe('delete', () => {
         it('should remove a role', async () => {
-            const result = await controller.remove(1);
+            const result = await controller.delete(1);
             expect(result).toEqual({ deleted: true, id: 1 });
         });
     });

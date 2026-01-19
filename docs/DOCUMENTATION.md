@@ -269,7 +269,7 @@ export class Role {
 | Método | Ruta | Descripción | Permiso Requ | Body (Ejemplo) |
 |--------|------|-------------|--------------|----------------|
 | `GET` | `/roles` | Listar roles | `read Role` | - |
-| `GET` | `/roles/:id` | Obtener rol | `read Role` | - |
+| `GET` | `/roles/:id` | Obtener rol (soporta `?included=usuarios`) | `read Role` | - |
 | `POST` | `/roles` | Crear rol | `create Role` | `{"nombre": "Analista", "descripcion": "Soporte N1"}` |
 | `PUT` | `/roles/:id` | Actualizar rol | `update Role` | `{"nombre": "Analista Senior"}` |
 | `DELETE` | `/roles/:id` | Soft delete | `delete Role` | - |
@@ -279,7 +279,6 @@ Implementa `ApiQueryDto` con soporte para:
 - `limit`: Paginación
 - `page`: Número de página
 - `filter[nombre]`: Filtro por nombre
-- `sort`: Ordenamiento (ej: `nombre` ASC, `-nombre` DESC)
 - `included`: `usuarios` (para ver quién tiene el rol)
 
 ---
