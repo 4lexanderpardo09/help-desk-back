@@ -1483,6 +1483,146 @@
             ]
         },
         {
+            "name": "Reports",
+            "description": "Gestión de Reportes SQL (requiere autenticación + permiso Report)",
+            "item": [
+                {
+                    "name": "List Reports",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/reports",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reports"
+                            ]
+                        },
+                        "description": "Lista reportes guardados.\n\n**Permiso:** `read Report`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Report",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/reports/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reports",
+                                "1"
+                            ]
+                        },
+                        "description": "Obtiene un reporte por ID.\n\n**Permiso:** `read Report`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Report",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Conteo Tickets\",\n    \"sql\": \"SELECT COUNT(*) FROM tm_ticket\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/reports",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reports"
+                            ]
+                        },
+                        "description": "Crea un reporte.\n\n**Permiso:** `create Report`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Report",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"sql\": \"SELECT * FROM tm_ticket WHERE est=1\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/reports/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reports",
+                                "1"
+                            ]
+                        },
+                        "description": "Actualiza un reporte.\n\n**Permiso:** `update Report`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Report",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/reports/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reports",
+                                "1"
+                            ]
+                        },
+                        "description": "Soft delete.\n\n**Permiso:** `delete Report`"
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
             "name": "Companies",
             "description": "Gestión de Empresas (requiere autenticación + permiso Company)",
             "item": [

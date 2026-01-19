@@ -31,6 +31,7 @@ export type Subjects =
     | 'Priority'
     | 'Position'
     | 'Rule'
+    | 'Report'
     | 'all';
 
 export type AppAbility = Ability<[Actions, Subjects]>;

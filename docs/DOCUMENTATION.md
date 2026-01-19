@@ -368,6 +368,42 @@ export class ReglaMapeo {
 
 ---
 
+
+## 7. Módulo de Reportes SQL (`src/modules/reports/`)
+
+Gestión de consultas SQL personalizadas para generación de informes.
+
+### Entidad Consulta (mapeada a `tm_consulta`)
+```typescript
+@Entity('tm_consulta')
+export class Consulta {
+  id: number;          // cons_id
+  nombre: string;      // cons_nom
+  sql: string;         // cons_sql
+  estado: number;      // est (1: Activo, 0: Eliminado)
+}
+```
+
+### Endpoints (`ReportsController`)
+
+| Método | Ruta | Descripción | Permiso Requ |
+|--------|------|-------------|--------------|
+| `GET` | `/reports` | Listar reportes | `read Report` |
+| `GET` | `/reports/:id` | Ver reporte | `read Report` |
+| `POST` | `/reports` | Guardar SQL | `create Report` |
+| `PUT` | `/reports/:id` | Modificar SQL | `update Report` |
+| `DELETE` | `/reports/:id` | Soft delete | `delete Report` |
+
+#### Body de Ejemplo (POST/PUT)
+```json
+{
+  "nombre": "Conteo de Tickets",
+  "sql": "SELECT COUNT(*) FROM tm_ticket WHERE est = 1"
+}
+```
+
+---
+
 #### Ejemplos de Scopes Dinámicos (`GET /users`)
 El nuevo endpoint maestro soporta una API fluida para filtrar y cargar relaciones:
 
