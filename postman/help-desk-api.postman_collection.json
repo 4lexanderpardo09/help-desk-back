@@ -637,6 +637,159 @@
                     "response": []
                 },
                 {
+                    "name": "Roles",
+                    "description": "Gestión de roles del sistema (requiere autenticación + permiso Role)",
+                    "item": [
+                        {
+                            "name": "List Roles",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/roles?sort=nombre",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "roles"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "sort",
+                                            "value": "nombre",
+                                            "description": "Ordena por nombre ascendente"
+                                        },
+                                        {
+                                            "key": "included",
+                                            "value": "usuarios",
+                                            "description": "Incluye usuarios asignados (opcional)",
+                                            "disabled": true
+                                        }
+                                    ]
+                                },
+                                "description": "Lista todos los roles del sistema.\n\n**Permiso requerido:** `read Role`"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Role",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/roles/1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "roles",
+                                        "1"
+                                    ]
+                                },
+                                "description": "Obtiene un rol específico por ID.\n\n**Permiso requerido:** `read Role`"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Create Role",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"nombre\": \"Nuevo Rol\",\n    \"descripcion\": \"Descripción del nuevo rol\",\n    \"estado\": 1\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/roles",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "roles"
+                                    ]
+                                },
+                                "description": "Crea un nuevo rol.\n\n**Permiso requerido:** `create Role`"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Role",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"nombre\": \"Rol Editado\",\n    \"descripcion\": \"Descripción actualizada\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/roles/1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "roles",
+                                        "1"
+                                    ]
+                                },
+                                "description": "Actualiza un rol existente.\n\n**Permiso requerido:** `update Role`"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Role",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/roles/1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "roles",
+                                        "1"
+                                    ]
+                                },
+                                "description": "Borrado lógico (estado = 0).\n\n**Permiso requerido:** `delete Role`"
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
                     "name": "Get Cache Status",
                     "request": {
                         "method": "GET",

@@ -197,8 +197,92 @@ Este endpoint unificado reemplaza múltiples rutas legacy. Se recomienda usar si
 | `PUT` | `/users/:id` | Editar usuario | `update User` | `{"nombre": "John Updated", "empresasIds": [3]}` |
 | `DELETE` | `/users/:id` | Eliminar (soft) | `delete User` | - |
 | PUT | `/users/:id/firma` | Actualizar firma | `update User` | - |
-| PUT | `/users/:id/perfiles` | Sincronizar perfiles | `update User` | - |
-| GET | `/users/:id/perfiles` | Obtener perfiles | `read User` | - |
+| `GET` | `/users/:id/perfiles` | [DEPRECATED] Ver perfiles | `read User` | - |
+| `PUT` | `/users/:id/perfiles` | [DEPRECATED] Sync perfiles | `update User` | - |
+
+> **Nota:** Para gestión de perfiles de usuario, usar `POST /users` o `PUT /users/:id` con el campo `perfilIds`.
+
+---
+
+## 2. Autenticación y Seguridad (`src/modules/auth/`)
+
+El sistema utiliza **JWT Stateless** para la autenticación y **CASL** para la autorización.
+
+### Endpoints (`AuthController`)
+
+| Método | Ruta | Descripción | Body / Respuesta |
+|--------|------|-------------|------------------|
+| `POST` | `/auth/login` | Iniciar sesión | Body: `LoginDto`<br>Resp: `AuthResponseDto` |
+| `GET` | `/auth/profile` | Perfil del usuario actual | Resp: `ProfileResponseDto` |
+
+### DTOs Clave
+
+#### `LoginDto`
+```json
+{
+  "email": "usuario@example.com",
+  "password": "securePassword123"
+}
+```
+
+---
+
+## 3. Módulo de Permisos (`src/modules/permissions/`)
+
+Gestión de permisos dinámica (RBAC almacenado en BD y cacheado en memoria).
+
+### Endpoints (`PermissionsController`)
+
+| Método | Ruta | Descripción | Permiso Requ |
+|--------|------|-------------|--------------|
+| `GET`  | `/permissions` | Catálogo completo | `read Permission` |
+| `GET`  | `/permissions/role/:rolId` | Permisos de un rol | `read Permission` |
+| `PUT`  | `/permissions/role/:rolId` | Sincronizar permisos | `update Permission` |
+
+#### `SyncRolePermissionsDto` (para PUT)
+```json
+{
+  "permisoIds": [1, 2, 3]  // IDs de los permisos a asignar
+}
+```
+
+---
+
+## 4. Módulo de Roles (`src/modules/roles/`)
+
+Gestión de los roles del sistema (Admin, Agente, etc.).
+
+### Entidad Role (mapeada a `tm_rol`)
+```typescript
+@Entity('tm_rol')
+export class Role {
+  id: number;           // rol_id
+  nombre: string;       // rol_nom
+  descripcion: string;  // rol_desc
+  estado: number;       // est (1=Activo, 0=Inactivo)
+  // ...
+}
+```
+
+### Endpoints (`RolesController`)
+
+| Método | Ruta | Descripción | Permiso Requ | Body (Ejemplo) |
+|--------|------|-------------|--------------|----------------|
+| `GET` | `/roles` | Listar roles | `read Role` | - |
+| `GET` | `/roles/:id` | Obtener rol | `read Role` | - |
+| `POST` | `/roles` | Crear rol | `create Role` | `{"nombre": "Analista", "descripcion": "Soporte N1"}` |
+| `PUT` | `/roles/:id` | Actualizar rol | `update Role` | `{"nombre": "Analista Senior"}` |
+| `DELETE` | `/roles/:id` | Soft delete | `delete Role` | - |
+
+#### Filtros y Ordenamiento (`GET /roles`)
+Implementa `ApiQueryDto` con soporte para:
+- `limit`: Paginación
+- `page`: Número de página
+- `filter[nombre]`: Filtro por nombre
+- `sort`: Ordenamiento (ej: `nombre` ASC, `-nombre` DESC)
+- `included`: `usuarios` (para ver quién tiene el rol)
+
+---
 
 #### Ejemplos de Scopes Dinámicos (`GET /users`)
 El nuevo endpoint maestro soporta una API fluida para filtrar y cargar relaciones:
