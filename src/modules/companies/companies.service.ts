@@ -67,9 +67,10 @@ export class CompaniesService {
     /**
      * Crea una nueva empresa.
      * Valida duplicados por nombre.
+     * 
+     * Las asociaciones con usuarios y categorías se manejan desde esas entidades.
      */
     async create(createDto: CreateCompanyDto): Promise<Empresa> {
-        // Validación básica de duplicados
         const exists = await this.companyRepo.findOne({
             where: { nombre: createDto.nombre, estado: 1 }
         });
@@ -80,18 +81,9 @@ export class CompaniesService {
 
         const company = this.companyRepo.create({
             ...createDto,
-            estado: 1, // Default activo
+            estado: createDto.estado ?? 1,
             fechaCreacion: new Date(),
         });
-
-        // Manejo de relaciones ManyToMany
-        if (createDto.usuariosIds?.length) {
-            company.usuarios = createDto.usuariosIds.map(id => ({ id } as any));
-        }
-
-        if (createDto.categoriasIds?.length) {
-            company.categorias = createDto.categoriasIds.map(id => ({ id } as any));
-        }
 
         return await this.companyRepo.save(company);
     }
@@ -102,17 +94,7 @@ export class CompaniesService {
     async update(id: number, updateDto: UpdateCompanyDto): Promise<Empresa> {
         const company = await this.show(id);
 
-        // Actualizar datos básicos
         this.companyRepo.merge(company, updateDto);
-
-        // Actualizar relaciones si se envían (reemplazo completo)
-        if (updateDto.usuariosIds) {
-            company.usuarios = updateDto.usuariosIds.map(userId => ({ id: userId } as any));
-        }
-
-        if (updateDto.categoriasIds) {
-            company.categorias = updateDto.categoriasIds.map(catId => ({ id: catId } as any));
-        }
 
         return await this.companyRepo.save(company);
     }

@@ -1,27 +1,23 @@
-import { IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, IsArray } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
+/**
+ * DTO para crear una Empresa
+ * 
+ * Las asociaciones con usuarios y categorías se manejan desde esas entidades:
+ * - Usuario: empresasIds[] en CreateUserDto
+ * - Categoría: empresaIds[] en CreateCategoryDto
+ */
 export class CreateCompanyDto {
-    @ApiProperty({ example: 'Electrocréditos', description: 'Nombre de la empresa' })
+    @ApiProperty({ description: 'Nombre de la empresa', example: 'Electrocréditos' })
+    @IsNotEmpty({ message: 'El nombre es requerido' })
     @IsString()
-    @IsNotEmpty()
     @MaxLength(100)
     nombre: string;
 
-    @ApiProperty({ example: 1, description: 'Estado (1: Activo, 0: Inactivo)', required: false, default: 1 })
+    @ApiProperty({ description: 'Estado', default: 1, required: false })
+    @IsOptional()
     @IsInt()
-    @IsOptional()
+    @Min(0)
     estado?: number;
-
-    @ApiProperty({ example: [1, 2], description: 'IDs de usuarios asociados', required: false, type: [Number] })
-    @IsArray()
-    @IsInt({ each: true })
-    @IsOptional()
-    usuariosIds?: number[];
-
-    @ApiProperty({ example: [1, 3], description: 'IDs de categorías asociadas', required: false, type: [Number] })
-    @IsArray()
-    @IsInt({ each: true })
-    @IsOptional()
-    categoriasIds?: number[];
 }
