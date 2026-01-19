@@ -16,6 +16,7 @@ const mockCategoryRepository = () => ({
         getOne: jest.fn(),
         getMany: jest.fn(),
     })),
+    findOne: jest.fn(),
 });
 
 describe('CategoriesService', () => {
@@ -45,6 +46,7 @@ describe('CategoriesService', () => {
         it('should create a category', async () => {
             const createDto: CreateCategoryDto = { nombre: 'Test Cat', estado: 1 };
             const savedCategory = { id: 1, ...createDto };
+            (repository.findOne as jest.Mock).mockResolvedValue(null);
             (repository.create as jest.Mock).mockReturnValue(savedCategory);
             (repository.save as jest.Mock).mockResolvedValue(savedCategory);
 

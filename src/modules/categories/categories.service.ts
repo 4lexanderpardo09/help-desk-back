@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Categoria } from './entities/categoria.entity';
@@ -66,22 +66,23 @@ export class CategoriesService {
 
     /**
      * Crea una nueva categoría.
-     * Valida duplicados por nombre.
      */
     async create(createDto: CreateCategoryDto): Promise<Categoria> {
-        // Validación básica de duplicados
-        const exists = await this.categoryRepo.findOne({
-            where: { nombre: createDto.nombre, estado: 1 }
-        });
-
+        const exists = await this.categoryRepo.findOne({ where: { nombre: createDto.nombre } });
         if (exists) {
-            throw new NotFoundException(`La categoría ${createDto.nombre} ya existe`);
+            throw new ConflictException(`La categoría ${createDto.nombre} ya existe`);
         }
 
-        const category = this.categoryRepo.create({
-            ...createDto,
-            estado: 1, // Default activo
-        });
+        const category = this.categoryRepo.create(createDto);
+
+        // Relaciones
+        if (createDto.departamentoIds?.length) {
+            category.departamentos = createDto.departamentoIds.map(id => ({ id } as any));
+        }
+
+        if (createDto.empresaIds?.length) {
+            category.empresas = createDto.empresaIds.map(id => ({ id } as any));
+        }
 
         return await this.categoryRepo.save(category);
     }
@@ -92,23 +93,27 @@ export class CategoriesService {
     async update(id: number, updateDto: UpdateCategoryDto): Promise<Categoria> {
         const category = await this.show(id);
 
-        // merge es más limpio que Object.assign para TypeORM
         this.categoryRepo.merge(category, updateDto);
+
+        // Actualizar relaciones si existen en el DTO
+        if (updateDto.departamentoIds) {
+            category.departamentos = updateDto.departamentoIds.map(id => ({ id } as any));
+        }
+
+        if (updateDto.empresaIds) {
+            category.empresas = updateDto.empresaIds.map(id => ({ id } as any));
+        }
 
         return await this.categoryRepo.save(category);
     }
 
     /**
-     * Elimina lógicamente una categoría (Soft Delete).
+     * Elimina (soft delete) una categoría.
      */
     async delete(id: number): Promise<{ deleted: boolean; id: number }> {
         const category = await this.show(id);
-
         category.estado = 0;
-        // category.fechaEliminacion = new Date(); // No existe columna
-
         await this.categoryRepo.save(category);
-
         return { deleted: true, id };
     }
 }

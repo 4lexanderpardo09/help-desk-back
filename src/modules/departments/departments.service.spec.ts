@@ -46,12 +46,28 @@ describe('DepartmentsService', () => {
     });
 
     describe('create', () => {
-        it('should create a department', async () => {
-            const createDto: CreateDepartmentDto = { nombre: 'Test Dept', estado: 1 };
-            const savedDept = { id: 1, ...createDto, fechaCreacion: new Date(), fechaModificacion: null, fechaEliminacion: null, usuarios: [], categorias: [], tickets: [] };
+        it('should create a department with relations', async () => {
+            const createDto: CreateDepartmentDto = {
+                nombre: 'Test Dept',
+                estado: 1,
+                categoriaIds: [10]
+            };
+            const savedDept = {
+                id: 1,
+                ...createDto,
+                fechaCreacion: new Date(),
+                fechaModificacion: null,
+                fechaEliminacion: null,
+                usuarios: [],
+                categorias: [{ id: 10 }],
+                tickets: []
+            };
 
             (repository.findOne as jest.Mock).mockResolvedValue(null);
-            (repository.create as jest.Mock).mockReturnValue(savedDept);
+            (repository.create as jest.Mock).mockReturnValue({
+                ...createDto,
+                categorias: [{ id: 10 }]
+            } as any);
             (repository.save as jest.Mock).mockResolvedValue(savedDept);
 
             const result = await service.create(createDto);

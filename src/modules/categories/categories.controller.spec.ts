@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CategoriesController } from './categories.controller';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
+import { JwtAuthGuard } from '../auth/jwt.guard';
+import { PoliciesGuard } from '../../common/guards/policies.guard';
 import { Categoria } from './entities/categoria.entity';
 
 const mockCategoriesService = {
@@ -25,7 +27,12 @@ describe('CategoriesController', () => {
                     useValue: mockCategoriesService,
                 },
             ],
-        }).compile();
+        })
+            .overrideGuard(JwtAuthGuard)
+            .useValue({ canActivate: () => true })
+            .overrideGuard(PoliciesGuard)
+            .useValue({ canActivate: () => true })
+            .compile();
 
         controller = module.get<CategoriesController>(CategoriesController);
         service = module.get<CategoriesService>(CategoriesService);

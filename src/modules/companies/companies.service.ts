@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Empresa } from './entities/empresa.entity';
@@ -75,7 +75,7 @@ export class CompaniesService {
         });
 
         if (exists) {
-            throw new NotFoundException(`La empresa ${createDto.nombre} ya existe`);
+            throw new ConflictException(`La empresa ${createDto.nombre} ya existe`);
         }
 
         const company = this.companyRepo.create({
@@ -83,6 +83,15 @@ export class CompaniesService {
             estado: 1, // Default activo
             fechaCreacion: new Date(),
         });
+
+        // Manejo de relaciones ManyToMany
+        if (createDto.usuariosIds?.length) {
+            company.usuarios = createDto.usuariosIds.map(id => ({ id } as any));
+        }
+
+        if (createDto.categoriasIds?.length) {
+            company.categorias = createDto.categoriasIds.map(id => ({ id } as any));
+        }
 
         return await this.companyRepo.save(company);
     }
@@ -93,8 +102,17 @@ export class CompaniesService {
     async update(id: number, updateDto: UpdateCompanyDto): Promise<Empresa> {
         const company = await this.show(id);
 
-        // merge es más limpio que Object.assign para TypeORM
+        // Actualizar datos básicos
         this.companyRepo.merge(company, updateDto);
+
+        // Actualizar relaciones si se envían (reemplazo completo)
+        if (updateDto.usuariosIds) {
+            company.usuarios = updateDto.usuariosIds.map(userId => ({ id: userId } as any));
+        }
+
+        if (updateDto.categoriasIds) {
+            company.categorias = updateDto.categoriasIds.map(catId => ({ id: catId } as any));
+        }
 
         return await this.companyRepo.save(company);
     }

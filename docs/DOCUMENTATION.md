@@ -280,15 +280,15 @@ No elimina físicamente. Marca `est=0` y `fech_elim=NOW()`.
 | `dto/create-category.dto.ts` | DTO creación |
 | `dto/update-category.dto.ts` | DTO actualización |
 
-### Endpoints (requieren permiso `Category`)
+### Endpoints
 
-| Método | Ruta | Descripción | Service Method | Permiso CASL |
-|--------|------|-------------|----------------|---------------|
-| GET | `/categories` | Listar categorías | `list()` | `read Category` |
-| GET | `/categories/:id` | Mostrar categoría | `show()` | `read Category` |
-| POST | `/categories` | Crear categoría | `create()` | `create Category` |
-| PUT | `/categories/:id` | Actualizar categoría | `update()` | `update Category` |
-| DELETE | `/categories/:id` | Soft delete | `delete()` | `delete Category` |
+| Método | Ruta | Descripción | Params | Body (Ejemplo) |
+|--------|------|-------------|--------|----------------|
+| GET | `/categories` | Listar categorías | `?page=1&limit=10` | - |
+| GET | `/categories/:id` | Ver categoría | - | - |
+| POST | `/categories` | Crear categoría | - | `{"nombre": "Hardware", "estado": 1, "departamentoIds": [1, 2], "empresaIds": [1]}` |
+| PUT | `/categories/:id` | Actualizar categoría | - | `{"nombre": "Hardware Updated", "departamentoIds": [1]}` |
+| DELETE | `/categories/:id` | Soft Delete | - | - |
 
 #### Filtros y Paginación (`GET /categories`)
 - **`page`**: Número de página (ej: `?page=1`).
@@ -578,13 +578,13 @@ mysql -u root -p mesa_de_ayuda < migrations/2026-01-18_dynamic_permissions.sql
 
 ### Endpoints (requieren permiso `Company`)
 
-| Método | Ruta | Descripción | Service Method | Permiso CASL |
+| Método | Ruta | Descripción | Service Method | Body (Ejemplo) |
 |--------|------|-------------|----------------|---------------|
-| GET | `/companies` | Listar empresas | `list()` | `read Company` |
-| GET | `/companies/:id` | Mostrar empresa | `show()` | `read Company` |
-| POST | `/companies` | Crear empresa | `create()` | `create Company` |
-| PUT | `/companies/:id` | Actualizar empresa | `update()` | `update Company` |
-| DELETE | `/companies/:id` | Soft delete | `delete()` | `delete Company` |
+| GET | `/companies` | Listar empresas | `list()` | - |
+| GET | `/companies/:id` | Mostrar empresa | `show()` | - |
+| POST | `/companies` | Crear empresa | `create()` | `{"nombre": "Tech", "usuariosIds": [1,2], "categoriasIds": [3]}` |
+| PUT | `/companies/:id` | Actualizar empresa | `update()` | `{"nombre": "Tech Corp", "usuariosIds": [1]}` |
+| DELETE | `/companies/:id` | Soft delete | `delete()` | - |
 
 #### Filtros y Paginación (`GET /companies`)
 - **`page`**: Número de página (ej: `?page=1`).
@@ -609,13 +609,13 @@ mysql -u root -p mesa_de_ayuda < migrations/2026-01-18_dynamic_permissions.sql
 
 ### Endpoints (requieren permiso `Department`)
 
-| Método | Ruta | Descripción | Service Method | Permiso CASL |
+| Método | Ruta | Descripción | Service Method | Body (Ejemplo) |
 |--------|------|-------------|----------------|---------------|
-| GET | `/departments` | Listar departamentos | `list()` | `read Department` |
-| GET | `/departments/:id` | Mostrar departamento | `show()` | `read Department` |
-| POST | `/departments` | Crear departamento | `create()` | `create Department` |
-| PUT | `/departments/:id` | Actualizar departamento | `update()` | `update Department` |
-| DELETE | `/departments/:id` | Soft delete | `delete()` | `delete Department` |
+| GET | `/departments` | Listar departamentos | `list()` | - |
+| GET | `/departments/:id` | Mostrar departamento | `show()` | - |
+| POST | `/departments` | Crear departamento | `create()` | `{"nombre": "Soporte", "categoriaIds": [1,2]}` |
+| PUT | `/departments/:id` | Actualizar departamento | `update()` | `{"nombre": "Soporte N2", "categoriaIds": [3]}` |
+| DELETE | `/departments/:id` | Soft delete | `delete()` | - |
 
 #### Filtros y Paginación (`GET /departments`)
 - **`page`**: Número de página (ej: `?page=1`).

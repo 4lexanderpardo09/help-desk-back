@@ -83,6 +83,11 @@ export class DepartmentsService {
             fechaCreacion: new Date(),
         });
 
+        // Relaciones
+        if (createDto.categoriaIds?.length) {
+            department.categorias = createDto.categoriaIds.map(id => ({ id } as any));
+        }
+
         return await this.departmentRepo.save(department);
     }
 
@@ -99,6 +104,11 @@ export class DepartmentsService {
         };
 
         this.departmentRepo.merge(department, updatedData);
+
+        // Actualizar relaciones
+        if (updateDto.categoriaIds) {
+            department.categorias = updateDto.categoriaIds.map(id => ({ id } as any));
+        }
 
         return await this.departmentRepo.save(department);
     }

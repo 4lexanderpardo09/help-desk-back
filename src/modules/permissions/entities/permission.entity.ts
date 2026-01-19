@@ -19,21 +19,21 @@ export class Permission {
      * Acción del permiso
      * Valores válidos: read, create, update, delete, manage
      */
-    @Column({ name: 'per_action', length: 50 })
+    @Column({ name: 'per_action', type: 'varchar', length: 50 })
     action: string;
 
     /**
      * Recurso (Subject) sobre el que aplica la acción
      * Valores: User, Ticket, Category, Department, Role, etc.
      */
-    @Column({ name: 'per_subject', length: 50 })
+    @Column({ name: 'per_subject', type: 'varchar', length: 50 })
     subject: string;
 
     /**
      * Descripción legible del permiso
      * @example "Ver usuarios", "Crear tickets"
      */
-    @Column({ name: 'per_descripcion', length: 255, nullable: true })
+    @Column({ name: 'per_descripcion', type: 'varchar', length: 255, nullable: true })
     descripcion: string | null;
 
     @Column({ name: 'est', type: 'tinyint', default: 1 })

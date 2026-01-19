@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, IsArray } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateDepartmentDto {
@@ -12,4 +12,10 @@ export class CreateDepartmentDto {
     @IsInt()
     @IsOptional()
     estado?: number;
+
+    @ApiProperty({ example: [1, 2], description: 'IDs de categorías asociadas', required: false, type: [Number] })
+    @IsArray()
+    @IsInt({ each: true })
+    @IsOptional()
+    categoriaIds?: number[];
 }
