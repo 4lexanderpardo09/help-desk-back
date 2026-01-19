@@ -126,7 +126,7 @@ export class ProfilesController {
     }
 
     // ========================================
-    // ENDPOINTS PARA USUARIOS-PERFILES
+    // ENDPOINT PARA LISTAR PERFILES DE USUARIO
     // ========================================
 
     /**
@@ -134,32 +134,15 @@ export class ProfilesController {
      * 
      * Lista los perfiles asignados a un usuario usando filter[usuarioId].
      * 
+     * Nota: Para sincronizar perfiles, usar perfilIds en PUT /users/:id
+     * 
      * @authorization Requiere `read` sobre `Profile`
      */
     @Get('user/:userId')
-    @ApiOperation({ summary: 'Perfiles de usuario', description: 'Lista los perfiles asignados a un usuario.' })
+    @ApiOperation({ summary: 'Perfiles de usuario', description: 'Lista los perfiles asignados a un usuario. Para sincronizar, usar perfilIds en PUT /users/:id' })
     @ApiResponse({ status: 200, description: 'Lista de perfiles del usuario.' })
     @CheckPolicies((ability: AppAbility) => ability.can('read', 'Profile'))
     listByUser(@Param('userId', ParseIntPipe) userId: number) {
         return this.profilesService.list({ filter: { usuarioId: userId } });
     }
-
-    /**
-     * PUT /profiles/user/:userId
-     * 
-     * Sincroniza (reemplaza) los perfiles de un usuario.
-     * 
-     * @authorization Requiere `update` sobre `Profile`
-     */
-    @Put('user/:userId')
-    @ApiOperation({ summary: 'Sincronizar perfiles', description: 'Reemplaza todos los perfiles de un usuario.' })
-    @ApiResponse({ status: 200, description: 'Perfiles sincronizados.' })
-    @CheckPolicies((ability: AppAbility) => ability.can('update', 'Profile'))
-    syncUserProfiles(
-        @Param('userId', ParseIntPipe) userId: number,
-        @Body('perfilIds') perfilIds: number[],
-    ) {
-        return this.profilesService.syncUserProfiles(userId, perfilIds);
-    }
 }
-

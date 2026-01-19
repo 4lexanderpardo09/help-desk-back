@@ -1,8 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Perfil } from './entities/perfil.entity';
-import { UsuarioPerfil } from './entities/usuario-perfil.entity';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ApiQueryHelper } from '../../common/utils/api-query-helper';
@@ -21,9 +20,6 @@ export class ProfilesService {
     constructor(
         @InjectRepository(Perfil)
         private readonly profilesRepository: Repository<Perfil>,
-        @InjectRepository(UsuarioPerfil)
-        private readonly usuarioPerfilRepository: Repository<UsuarioPerfil>,
-        private readonly dataSource: DataSource,
     ) { }
 
     /**
@@ -125,42 +121,5 @@ export class ProfilesService {
 
         return { deleted: true, id };
     }
-
-    // ========================================
-    // SINCRONIZACIÓN USUARIO-PERFIL
-    // ========================================
-
-    /**
-     * Sincroniza (reemplaza) los perfiles de un usuario.
-     * Operación transaccional: elimina existentes e inserta nuevos.
-     * 
-     * @param userId ID del usuario
-     * @param perfilIds IDs de perfiles a asignar
-     */
-    async syncUserProfiles(userId: number, perfilIds: number[]): Promise<{ synced: boolean; userId: number; perfilCount: number }> {
-        await this.dataSource.transaction(async (manager) => {
-            // 1. Eliminar perfiles existentes
-            await manager.delete(UsuarioPerfil, { usuarioId: userId });
-
-            // 2. Insertar nuevos perfiles
-            if (perfilIds && perfilIds.length > 0) {
-                const nuevosPerfiles = perfilIds
-                    .filter(pid => pid)
-                    .map(perfilId => {
-                        return manager.create(UsuarioPerfil, {
-                            usuarioId: userId,
-                            perfilId: perfilId,
-                            estado: 1,
-                            fechaCreacion: new Date()
-                        });
-                    });
-
-                if (nuevosPerfiles.length > 0) {
-                    await manager.save(UsuarioPerfil, nuevosPerfiles);
-                }
-            }
-        });
-
-        return { synced: true, userId, perfilCount: perfilIds?.length || 0 };
-    }
 }
+

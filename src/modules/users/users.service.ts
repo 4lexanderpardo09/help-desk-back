@@ -33,16 +33,13 @@ export class UsersService {
      * Crea un nuevo usuario
      */
     async create(createUserDto: CreateUserDto): Promise<User> {
-        // Verificar si el email ya existe (Optimizado: usar count/findOne en lugar de findAllUnified)
         const emailExists = await this.userRepository.exists({ where: { email: createUserDto.email, estado: 1 } });
         if (emailExists) {
             throw new ConflictException('El correo electrónico ya está registrado');
         }
 
-        // Hash del password con bcrypt
         const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
-        // TypeORM maneja automáticamente los undefined como null para columnas nullable
         const user = this.userRepository.create({
             ...createUserDto,
             password: hashedPassword,
@@ -54,7 +51,14 @@ export class UsersService {
             user.empresas = createUserDto.empresasIds.map(id => ({ id } as any));
         }
 
-        return this.userRepository.save(user);
+        const savedUser = await this.userRepository.save(user);
+
+        // Sincronizar perfiles si se envían
+        if (createUserDto.perfilIds?.length) {
+            await this.syncUserProfiles(savedUser.id, createUserDto.perfilIds);
+        }
+
+        return savedUser;
     }
 
     /**
@@ -95,7 +99,14 @@ export class UsersService {
             user.empresas = updateUserDto.empresasIds.map(id => ({ id } as any));
         }
 
-        return this.userRepository.save(user);
+        const savedUser = await this.userRepository.save(user);
+
+        // Sincronizar perfiles si se envían
+        if (updateUserDto.perfilIds) {
+            await this.syncUserProfiles(savedUser.id, updateUserDto.perfilIds);
+        }
+
+        return savedUser;
     }
 
     // Listas permitidas para "Scopes" dinámicos (estilo Laravel)
@@ -185,4 +196,32 @@ export class UsersService {
 
         return { updated: true, id };
     }
+
+    /**
+     * Sincroniza (reemplaza) los perfiles de un usuario.
+     * Operación transaccional: elimina existentes e inserta nuevos.
+     */
+    private async syncUserProfiles(userId: number, perfilIds: number[]): Promise<void> {
+        await this.dataSource.transaction(async (manager) => {
+            // 1. Eliminar perfiles existentes
+            await manager.delete(UsuarioPerfil, { usuarioId: userId });
+
+            // 2. Insertar nuevos perfiles
+            if (perfilIds && perfilIds.length > 0) {
+                const nuevosPerfiles = perfilIds
+                    .filter(pid => pid)
+                    .map(perfilId => manager.create(UsuarioPerfil, {
+                        usuarioId: userId,
+                        perfilId: perfilId,
+                        estado: 1,
+                        fechaCreacion: new Date()
+                    }));
+
+                if (nuevosPerfiles.length > 0) {
+                    await manager.save(UsuarioPerfil, nuevosPerfiles);
+                }
+            }
+        });
+    }
 }
+

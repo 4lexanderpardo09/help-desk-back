@@ -2,8 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ProfilesService } from './profiles.service';
 import { Perfil } from './entities/perfil.entity';
-import { UsuarioPerfil } from './entities/usuario-perfil.entity';
-import { DataSource, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 
 describe('ProfilesService', () => {
@@ -32,22 +31,11 @@ describe('ProfilesService', () => {
         update: jest.fn(),
     };
 
-    const mockUsuarioPerfilRepository = {
-        find: jest.fn(),
-    };
-
-    const mockDataSource = {
-        transaction: jest.fn((cb) => cb({
-            delete: jest.fn().mockResolvedValue({}),
-            create: jest.fn().mockReturnValue({}),
-            save: jest.fn().mockResolvedValue([]),
-        })),
-    };
-
     beforeEach(async () => {
         mockQueryBuilder = {
             where: jest.fn().mockReturnThis(),
             leftJoinAndSelect: jest.fn().mockReturnThis(),
+            innerJoin: jest.fn().mockReturnThis(),
             orderBy: jest.fn().mockReturnThis(),
             take: jest.fn().mockReturnThis(),
             skip: jest.fn().mockReturnThis(),
@@ -61,14 +49,6 @@ describe('ProfilesService', () => {
                 {
                     provide: getRepositoryToken(Perfil),
                     useValue: mockRepository,
-                },
-                {
-                    provide: getRepositoryToken(UsuarioPerfil),
-                    useValue: mockUsuarioPerfilRepository,
-                },
-                {
-                    provide: DataSource,
-                    useValue: mockDataSource,
                 },
             ],
         }).compile();
@@ -136,13 +116,6 @@ describe('ProfilesService', () => {
 
             const result = await service.delete(1);
             expect(result).toEqual({ deleted: true, id: 1 });
-        });
-    });
-
-    describe('syncUserProfiles', () => {
-        it('should sync user profiles', async () => {
-            const result = await service.syncUserProfiles(1, [1, 2, 3]);
-            expect(result).toEqual({ synced: true, userId: 1, perfilCount: 3 });
         });
     });
 });

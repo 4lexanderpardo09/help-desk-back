@@ -1,27 +1,31 @@
-import { IsInt, IsString, MaxLength, IsOptional, IsArray, IsNotEmpty } from 'class-validator';
+import { IsInt, IsString, MaxLength, IsOptional, IsArray, IsNotEmpty, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
+/**
+ * DTO para crear una Categoría
+ */
 export class CreateCategoryDto {
-    @ApiProperty({ example: 'Hardware', description: 'Nombre de la categoría' })
+    @ApiProperty({ description: 'Nombre de la categoría', example: 'Hardware' })
+    @IsNotEmpty({ message: 'El nombre es requerido' })
     @IsString()
-    @IsNotEmpty()
     @MaxLength(150)
     nombre: string;
 
-    @ApiProperty({ example: 1, description: 'Estado (1: Activo, 0: Inactivo)', required: false, default: 1 })
-    @IsInt()
+    @ApiProperty({ description: 'Estado', default: 1, required: false })
     @IsOptional()
+    @IsInt()
+    @Min(0)
     estado?: number;
 
-    @ApiProperty({ example: [1, 2], description: 'IDs de departamentos asociados', required: false, type: [Number] })
+    @ApiProperty({ description: 'IDs de departamentos asociados', required: false, type: [Number] })
+    @IsOptional()
     @IsArray()
     @IsInt({ each: true })
-    @IsOptional()
     departamentoIds?: number[];
 
-    @ApiProperty({ example: [1, 3], description: 'IDs de empresas asociadas', required: false, type: [Number] })
+    @ApiProperty({ description: 'IDs de empresas asociadas', required: false, type: [Number] })
+    @IsOptional()
     @IsArray()
     @IsInt({ each: true })
-    @IsOptional()
     empresaIds?: number[];
 }

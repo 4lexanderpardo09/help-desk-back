@@ -22,7 +22,6 @@ describe('ProfilesController', () => {
         create: jest.fn().mockResolvedValue(mockProfile),
         update: jest.fn().mockResolvedValue({ ...mockProfile, nombre: 'Super Admin' }),
         delete: jest.fn().mockResolvedValue({ deleted: true, id: 1 }),
-        syncUserProfiles: jest.fn().mockResolvedValue({ synced: true, userId: 1, perfilCount: 3 }),
     };
 
     beforeEach(async () => {
@@ -92,11 +91,5 @@ describe('ProfilesController', () => {
             expect(mockService.list).toHaveBeenCalledWith({ filter: { usuarioId: 1 } });
         });
     });
-
-    describe('syncUserProfiles', () => {
-        it('should sync user profiles', async () => {
-            const result = await controller.syncUserProfiles(1, [1, 2, 3]);
-            expect(result).toEqual({ synced: true, userId: 1, perfilCount: 3 });
-        });
-    });
 });
+

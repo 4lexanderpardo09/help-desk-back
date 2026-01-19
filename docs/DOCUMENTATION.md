@@ -723,16 +723,13 @@ Soporta parámetros unificados:
 | PUT | `/profiles/:id` | Actualizar perfil | `update()` | `{"nombre": "Director"}` |
 | DELETE | `/profiles/:id` | Soft delete | `delete()` | - |
 
-#### Endpoints Usuario-Perfiles
-
-Los endpoints de gestión de perfiles de usuario fueron consolidados en `ProfilesController`:
+#### Endpoint Usuario-Perfiles
 
 | Método | Ruta | Descripción | Implementación |
 |--------|------|-------------|----------------|
 | GET | `/profiles/user/:userId` | Listar perfiles de un usuario | `list({ filter: { usuarioId } })` |
-| PUT | `/profiles/user/:userId` | Sincronizar perfiles de un usuario | `syncUserProfiles()` |
 
-> **Nota:** Los endpoints `/users/:id/perfiles` fueron eliminados. Usar `/profiles/user/:userId` o `GET /profiles?filter[usuarioId]=1`
+> **Nota:** Para sincronizar perfiles de un usuario, usar `perfilIds` en `POST /users` o `PUT /users/:id`
 
 #### Filtros y Paginación (`GET /profiles`)
 - **`page`**: Número de página.

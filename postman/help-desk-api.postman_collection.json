@@ -1822,40 +1822,7 @@
                                 "1"
                             ]
                         },
-                        "description": "Lista los perfiles asignados a un usuario usando filter[usuarioId].\n\nEquivalente a: `GET /profiles?filter[usuarioId]=1`\n\n**Permiso:** `read Profile`"
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Sync User Profiles",
-                    "request": {
-                        "method": "PUT",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"perfilIds\": [1, 2, 3]\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/profiles/user/1",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "profiles",
-                                "user",
-                                "1"
-                            ]
-                        },
-                        "description": "Sincroniza (reemplaza) los perfiles de un usuario.\n\n**Permiso:** `update Profile`"
+                        "description": "Lista los perfiles asignados a un usuario usando filter[usuarioId].\n\nEquivalente a: `GET /profiles?filter[usuarioId]=1`\n\nPara sincronizar perfiles, usar `perfilIds` en POST /users o PUT /users/:id\n\n**Permiso:** `read Profile`"
                     },
                     "response": []
                 }

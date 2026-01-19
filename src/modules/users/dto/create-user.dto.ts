@@ -67,4 +67,11 @@ export class CreateUserDto {
     @IsArray()
     @IsInt({ each: true })
     empresasIds?: number[];
+
+    @ApiProperty({ description: 'IDs de perfiles asignados', required: false, type: [Number] })
+    @IsOptional()
+    @IsArray()
+    @IsInt({ each: true })
+    perfilIds?: number[];
 }
+
