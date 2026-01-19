@@ -1407,6 +1407,159 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Priorities",
+            "description": "Gestión de Prioridades (requiere autenticación + permiso Priority)",
+            "item": [
+                {
+                    "name": "List Priorities",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/priorities",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "priorities"
+                            ],
+                            "query": [
+                                {
+                                    "key": "included",
+                                    "value": "subcategoria,tickets",
+                                    "description": "Relaciones opcionales",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "filter[estado]",
+                                    "value": "1",
+                                    "description": "Filtrar por estado activo"
+                                }
+                            ]
+                        },
+                        "description": "Lista prioridades con filtros dinámicos.\n\n**Permiso:** `read Priority`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Priority",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/priorities/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "priorities",
+                                "1"
+                            ]
+                        },
+                        "description": "Obtiene una prioridad por ID.\n\n**Permiso:** `read Priority`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Priority",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Super Alta\",\n    \"estado\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/priorities",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "priorities"
+                            ]
+                        },
+                        "description": "Crea una nueva prioridad.\n\n**Permiso:** `create Priority`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Priority",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Super Alta Updated\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/priorities/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "priorities",
+                                "1"
+                            ]
+                        },
+                        "description": "Actualiza una prioridad.\n\n**Permiso:** `update Priority`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Priority",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/priorities/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "priorities",
+                                "1"
+                            ]
+                        },
+                        "description": "Elimina (soft delete) una prioridad.\n\n**Permiso:** `delete Priority`"
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }

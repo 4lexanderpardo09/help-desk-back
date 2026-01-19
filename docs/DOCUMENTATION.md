@@ -624,3 +624,44 @@ mysql -u root -p mesa_de_ayuda < migrations/2026-01-18_dynamic_permissions.sql
 - **`filter[nombre]`**: Filtrar por nombre (LIKE).
 - **`filter[estado]`**: Filtrar por estado (1=Activo, 0=Inactivo).
 
+---
+
+## 3.5 Módulo de Prioridades (`src/modules/priorities/`)
+
+### Archivos
+| Archivo | Descripción |
+|---------|-------------|
+| `priorities.module.ts` | Módulo de prioridades |
+| `priorities.controller.ts` | Endpoints `/priorities/*` |
+| `priorities.service.ts` | Lógica de negocio (CRUD) |
+| `entities/prioridad.entity.ts` | Entidad `td_prioridad` |
+| `dto/create-priority.dto.ts` | DTO creación |
+| `dto/update-priority.dto.ts` | DTO actualización |
+
+### Endpoints (requieren permiso `Priority`)
+
+| Método | Ruta | Descripción | Service Method | Body (Ejemplo) |
+|--------|------|-------------|----------------|---------------|
+| GET | `/priorities` | Listar prioridades | `list()` | - |
+| GET | `/priorities/:id` | Mostrar prioridad | `show()` | - |
+| POST | `/priorities` | Crear prioridad | `create()` | `{"nombre": "Alta", "estado": 1}` |
+| PUT | `/priorities/:id` | Actualizar prioridad | `update()` | `{"nombre": "Crítica"}` |
+| DELETE | `/priorities/:id` | Soft delete | `delete()` | - |
+
+#### Filtros y Paginación (`GET /priorities`)
+Soporta parámetros unificados para filtrado y carga de relaciones:
+
+- **`page`**: Número de página (Default: 1).
+- **`limit`**: Resultados por página (Default: 10).
+- **`included`**: Relaciones a cargar (separadas por comas).
+    - Valores permitidos: `subcategoria`, `tickets`.
+- **`filter`**: Filtros dinámicos (clave-valor).
+    - `filter[id]`: ID único o lista CSV (`1,2,3`).
+    - `filter[nombre]`: Nombre de la prioridad (Búsqueda parcial `LIKE`).
+    - `filter[estado]`: Estado (1=Activo, 0=Inactivo).
+
+**Ejemplos:**
+- Listar todas las activas: `GET /priorities?filter[estado]=1`
+- Buscar por nombre: `GET /priorities?filter[nombre]=Alta`
+- Incluir tickets relacionados: `GET /priorities?included=tickets`
+
