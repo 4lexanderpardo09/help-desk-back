@@ -6,6 +6,7 @@ import {
     IsInt,
     IsBoolean,
     MinLength,
+    IsArray,
 } from 'class-validator';
 
 export class CreateUserDto {
@@ -46,4 +47,9 @@ export class CreateUserDto {
     @IsString()
     @IsOptional()
     cedula?: string | null;
+
+    @IsInt({ each: true })
+    @IsArray()
+    @IsOptional()
+    empresasIds?: number[];
 }

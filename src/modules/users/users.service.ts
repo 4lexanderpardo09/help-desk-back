@@ -50,6 +50,10 @@ export class UsersService {
             estado: 1,
         });
 
+        if (createUserDto.empresasIds?.length) {
+            user.empresas = createUserDto.empresasIds.map(id => ({ id } as any));
+        }
+
         return this.userRepository.save(user);
     }
 
@@ -75,29 +79,34 @@ export class UsersService {
 
         // Preparar datos: separar password para hashear y spread del resto
         const { password, ...restData } = updateUserDto;
-        const updateData: Partial<User> = {
+
+        // Actualizar datos básicos (merge)
+        this.userRepository.merge(user, {
             ...restData,
             fechaModificacion: new Date(),
-        };
+        });
 
         if (password) {
-            updateData.password = await bcrypt.hash(password, 10);
+            user.password = await bcrypt.hash(password, 10);
         }
 
-        await this.userRepository.update(id, updateData);
+        // Actualizar relaciones ManyToMany (si se envían)
+        if (updateUserDto.empresasIds) {
+            user.empresas = updateUserDto.empresasIds.map(id => ({ id } as any));
+        }
 
-        return this.show(id) as Promise<User>;
+        return this.userRepository.save(user);
     }
 
     // Listas permitidas para "Scopes" dinámicos (estilo Laravel)
-    private readonly allowedIncludes = ['regional', 'regional.zona', 'cargo', 'departamento', 'empresaUsuarios', 'usuarioPerfiles', 'etiquetasPropias', 'etiquetasAsignadas', 'role'];
+    private readonly allowedIncludes = ['regional', 'regional.zona', 'cargo', 'departamento', 'empresaUsuarios', 'empresas', 'usuarioPerfiles', 'etiquetasPropias', 'etiquetasAsignadas', 'role'];
     private readonly allowedFilters = ['id', 'nombre', 'apellido', 'email', 'cedula', 'estado', 'rolId', 'cargoId', 'regionalId', 'departamentoId'];
 
     /**
      * Busca un usuario por ID
      * Permite incluir relaciones dinámicamente.
      */
-    async show(id: number, options?: { 
+    async show(id: number, options?: {
         included?: string;
     }): Promise<User | null> {
         const qb = this.userRepository.createQueryBuilder('user');

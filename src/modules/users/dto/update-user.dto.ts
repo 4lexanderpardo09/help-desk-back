@@ -5,6 +5,7 @@ import {
     IsInt,
     IsBoolean,
     MinLength,
+    IsArray,
 } from 'class-validator';
 
 export class UpdateUserDto {
@@ -46,6 +47,12 @@ export class UpdateUserDto {
     cargoId?: number | null;
 
     @IsString()
+    @IsString()
     @IsOptional()
     cedula?: string | null;
+
+    @IsInt({ each: true })
+    @IsArray()
+    @IsOptional()
+    empresasIds?: number[];
 }

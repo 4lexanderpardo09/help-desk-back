@@ -355,7 +355,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nombre\": \"Nuevo\",\n    \"apellido\": \"Usuario\",\n    \"email\": \"nuevo.usuario@example.com\",\n    \"password\": \"123456\",\n    \"rolId\": 2,\n    \"esNacional\": false,\n    \"regionalId\": 1,\n    \"cargoId\": 1,\n    \"departamentoId\": null,\n    \"cedula\": \"1234567890\"\n}"
+                            "raw": "{\n    \"nombre\": \"Nuevo\",\n    \"apellido\": \"Usuario\",\n    \"email\": \"nuevo.usuario@example.com\",\n    \"password\": \"123456\",\n    \"rolId\": 2,\n    \"esNacional\": false,\n    \"regionalId\": 1,\n    \"cargoId\": 1,\n    \"departamentoId\": null,\n    \"cedula\": \"1234567890\",\n    \"empresasIds\": [1]\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/users",
@@ -405,7 +405,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nombre\": \"Nombre Actualizado\",\n    \"apellido\": \"Apellido Actualizado\",\n    \"rolId\": 2\n}"
+                            "raw": "{\n    \"nombre\": \"Nombre Actualizado\",\n    \"apellido\": \"Apellido Actualizado\",\n    \"rolId\": 2,\n    \"empresasIds\": [1, 2]\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/users/1",
@@ -995,7 +995,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nombre\": \"Hardware\",\n    \"estado\": 1\n}"
+                            "raw": "{\n    \"nombre\": \"Hardware\",\n    \"estado\": 1,\n    \"departamentoIds\": [1],\n    \"empresaIds\": [1]\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/categories",
@@ -1026,7 +1026,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nombre\": \"Hardware Actualizado\"\n}"
+                            "raw": "{\n    \"nombre\": \"Hardware Actualizado\",\n    \"departamentoIds\": [1, 2]\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/categories/1",
@@ -1165,7 +1165,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nombre\": \"Nueva Empresa\",\n    \"estado\": 1\n}"
+                            "raw": "{\n    \"nombre\": \"Nueva Empresa\",\n    \"estado\": 1,\n    \"usuariosIds\": [1, 2],\n    \"categoriasIds\": [2]\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/companies",
@@ -1196,7 +1196,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nombre\": \"Empresa Modificada\"\n}"
+                            "raw": "{\n    \"nombre\": \"Empresa Modificada\",\n    \"usuariosIds\": [1]\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/companies/1",
@@ -1335,7 +1335,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nombre\": \"Nuevo Departamento\",\n    \"estado\": 1\n}"
+                            "raw": "{\n    \"nombre\": \"Nuevo Departamento\",\n    \"estado\": 1,\n    \"categoriaIds\": [1]\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/departments",
@@ -1366,7 +1366,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nombre\": \"Departamento Modificado\"\n}"
+                            "raw": "{\n    \"nombre\": \"Departamento Modificado\",\n    \"categoriaIds\": [2]\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/departments/1",

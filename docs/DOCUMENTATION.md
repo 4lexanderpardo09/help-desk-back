@@ -189,16 +189,16 @@ Este endpoint unificado reemplaza múltiples rutas legacy. Se recomienda usar si
 
 ### Endpoints (todos requieren autenticación + autorización CASL)
 
-| Método | Ruta | Descripción | Service Method | Permiso CASL |
-|--------|------|-------------|----------------|---------------|
-| GET | `/users` | Listar usuarios con filtros | `list()` | `read User` |
-| GET | `/users/:id` | Mostrar usuario por ID | `show()` | `read User` |
-| POST | `/users` | Crear usuario | `create()` | `create User` |
-| PUT | `/users/:id` | Actualizar usuario | `update()` | `update User` |
-| DELETE | `/users/:id` | Soft delete | `delete()` | `delete User` |
-| PUT | `/users/:id/firma` | Actualizar firma | `updateFirma()` | `update User` |
-| PUT | `/users/:id/perfiles` | Sincronizar perfiles | `syncPerfiles()` | `update User` |
-| GET | `/users/:id/perfiles` | Obtener perfiles | `getPerfiles()` | `read User` |
+| Método | Ruta | Descripción | Permiso CASL | Body (Ejemplo) |
+|--------|------|-------------|--------------|---------------|
+| `GET` | `/users` | Listar usuarios | `read User` | - |
+| `GET` | `/users/:id` | Ver usuario | `read User` | - |
+| `POST` | `/users` | Crear usuario | `create User` | `{"nombre": "John", "apellido": "Doe", "email": "john@example.com", "password": "123", "empresasIds": [1, 2]}` |
+| `PUT` | `/users/:id` | Editar usuario | `update User` | `{"nombre": "John Updated", "empresasIds": [3]}` |
+| `DELETE` | `/users/:id` | Eliminar (soft) | `delete User` | - |
+| PUT | `/users/:id/firma` | Actualizar firma | `update User` | - |
+| PUT | `/users/:id/perfiles` | Sincronizar perfiles | `update User` | - |
+| GET | `/users/:id/perfiles` | Obtener perfiles | `read User` | - |
 
 #### Ejemplos de Scopes Dinámicos (`GET /users`)
 El nuevo endpoint maestro soporta una API fluida para filtrar y cargar relaciones:
