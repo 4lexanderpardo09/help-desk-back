@@ -265,6 +265,38 @@ No elimina físicamente. Marca `est=0` y `fech_elim=NOW()`.
 | PUT | `/zones/:id` | Actualizar zona | `update()` | `update Zone` |
 | DELETE | `/zones/:id` | Soft delete | `delete()` | `delete Zone` |
 
+
+---
+
+## 3.2 Módulo de Categorías (`src/modules/categories/`)
+
+### Archivos
+| Archivo | Descripción |
+|---------|-------------|
+| `categories.module.ts` | Módulo de categorías |
+| `categories.controller.ts` | Endpoints `/categories/*` |
+| `categories.service.ts` | Lógica de negocio (CRUD) |
+| `entities/categoria.entity.ts` | Entidad `tm_categoria` |
+| `dto/create-category.dto.ts` | DTO creación |
+| `dto/update-category.dto.ts` | DTO actualización |
+
+### Endpoints (requieren permiso `Category`)
+
+| Método | Ruta | Descripción | Service Method | Permiso CASL |
+|--------|------|-------------|----------------|---------------|
+| GET | `/categories` | Listar categorías | `list()` | `read Category` |
+| GET | `/categories/:id` | Mostrar categoría | `show()` | `read Category` |
+| POST | `/categories` | Crear categoría | `create()` | `create Category` |
+| PUT | `/categories/:id` | Actualizar categoría | `update()` | `update Category` |
+| DELETE | `/categories/:id` | Soft delete | `delete()` | `delete Category` |
+
+#### Filtros y Paginación (`GET /categories`)
+- **`page`**: Número de página (ej: `?page=1`).
+- **`limit`**: Resultados por página (ej: `?limit=10`).
+- **`included`**: Relaciones: `subcategorias`, `departamentos`, `empresas`.
+- **`filter[nombre]`**: Filtrar por nombre (LIKE).
+- **`filter[estado]`**: Filtrar por estado (1=Activo, 0=Inactivo).
+
 ## 4. Testing con Postman
 
 ### Colección

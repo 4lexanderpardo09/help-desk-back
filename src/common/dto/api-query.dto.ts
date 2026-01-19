@@ -13,6 +13,11 @@ export class ApiQueryDto {
     included?: string;
 
     @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    page?: number;
+
+    @IsOptional()
     @IsObject()
     // Permitir cualquier propiedad dentro de filter ya que es un filtro dinámico
     filter?: Record<string, any>;

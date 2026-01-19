@@ -891,6 +891,182 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Categories",
+            "description": "Gestión de Categorías (requiere autenticación + permiso Category)",
+            "item": [
+                {
+                    "name": "List Categories",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/categories?page=1&limit=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "categories"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Número de página"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10",
+                                    "description": "Resultados por página"
+                                },
+                                {
+                                    "key": "included",
+                                    "value": "subcategorias,departamentos,empresas",
+                                    "description": "Relaciones a incluir",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "filter[nombre]",
+                                    "value": "",
+                                    "description": "Filtrar por nombre",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "filter[estado]",
+                                    "value": "1",
+                                    "description": "Filtrar por estado",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Lista categorías con filtros dinámicos.\n\n**Params:**\n- `page`: Número de página\n- `limit`: Resultados por página\n- `included`: `subcategorias,departamentos,empresas`\n- `filter[nombre]`: Filtro por nombre\n\n**Permiso:** `read Category`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Category",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/categories/1?included=subcategorias",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "categories",
+                                "1"
+                            ],
+                            "query": [
+                                {
+                                    "key": "included",
+                                    "value": "subcategorias"
+                                }
+                            ]
+                        },
+                        "description": "Obtiene una categoría por ID.\n\n**Permiso:** `read Category`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Category",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Hardware\",\n    \"estado\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/categories",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "categories"
+                            ]
+                        },
+                        "description": "Crea una nueva categoría.\n\n**Permiso:** `create Category`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Category",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Hardware Actualizado\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/categories/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "categories",
+                                "1"
+                            ]
+                        },
+                        "description": "Actualiza una categoría.\n\n**Permiso:** `update Category`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Category",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/categories/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "categories",
+                                "1"
+                            ]
+                        },
+                        "description": "Soft delete de una categoría.\n\n**Permiso:** `delete Category`"
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }
