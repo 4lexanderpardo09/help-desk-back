@@ -16,6 +16,8 @@ import { JwtAuthGuard } from '../auth/jwt.guard';
 import { PoliciesGuard } from '../../common/guards/policies.guard';
 import { CheckPolicies } from '../auth/decorators/check-policies.decorator';
 
+import { SyncRolePermissionsDto } from './dto/sync-role-permissions.dto';
+
 @ApiTags('Permissions')
 @ApiBearerAuth()
 @Controller('permissions')
@@ -67,9 +69,9 @@ export class PermissionsController {
     @ApiResponse({ status: 200, description: 'Permisos sincronizados.' })
     async syncRolePermissions(
         @Param('rolId', ParseIntPipe) rolId: number,
-        @Body('permisoIds') permisoIds: number[],
+        @Body() dto: SyncRolePermissionsDto,
     ): Promise<{ synced: boolean; rolId: number; count: number }> {
-        return this.permissionsService.syncRolePermissions(rolId, permisoIds);
+        return this.permissionsService.syncRolePermissions(rolId, dto.permisoIds);
     }
 
     /**
