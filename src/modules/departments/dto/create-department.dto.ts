@@ -1,21 +1,22 @@
-import { IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, IsArray } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
+/**
+ * DTO para crear un Departamento
+ * 
+ * Las asociaciones con categorías se manejan desde Category:
+ * - Categoría: departamentoIds[] en CreateCategoryDto
+ */
 export class CreateDepartmentDto {
-    @ApiProperty({ example: 'Soporte Técnico', description: 'Nombre del departamento' })
+    @ApiProperty({ description: 'Nombre del departamento', example: 'Soporte Técnico' })
+    @IsNotEmpty({ message: 'El nombre es requerido' })
     @IsString()
-    @IsNotEmpty()
     @MaxLength(100)
     nombre: string;
 
-    @ApiProperty({ example: 1, description: 'Estado del departamento (1: Activo, 0: Inactivo)', required: false, default: 1 })
+    @ApiProperty({ description: 'Estado', default: 1, required: false })
+    @IsOptional()
     @IsInt()
-    @IsOptional()
+    @Min(0)
     estado?: number;
-
-    @ApiProperty({ example: [1, 2], description: 'IDs de categorías asociadas', required: false, type: [Number] })
-    @IsArray()
-    @IsInt({ each: true })
-    @IsOptional()
-    categoriaIds?: number[];
 }

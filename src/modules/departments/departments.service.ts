@@ -66,9 +66,10 @@ export class DepartmentsService {
     /**
      * Crea un nuevo departamento.
      * Valida duplicados por nombre.
+     * 
+     * Las asociaciones con categorías se manejan desde Category.
      */
     async create(createDto: CreateDepartmentDto): Promise<Departamento> {
-        // Validación básica de duplicados
         const exists = await this.departmentRepo.findOne({
             where: { nombre: createDto.nombre, estado: 1 }
         });
@@ -79,14 +80,9 @@ export class DepartmentsService {
 
         const department = this.departmentRepo.create({
             ...createDto,
-            estado: 1, // Default activo
+            estado: createDto.estado ?? 1,
             fechaCreacion: new Date(),
         });
-
-        // Relaciones
-        if (createDto.categoriaIds?.length) {
-            department.categorias = createDto.categoriaIds.map(id => ({ id } as any));
-        }
 
         return await this.departmentRepo.save(department);
     }
@@ -97,18 +93,10 @@ export class DepartmentsService {
     async update(id: number, updateDto: UpdateDepartmentDto): Promise<Departamento> {
         const department = await this.show(id);
 
-        // Actualizar manualmente fecha de modificación si existe en la entidad
-        const updatedData = {
+        this.departmentRepo.merge(department, {
             ...updateDto,
             fechaModificacion: new Date()
-        };
-
-        this.departmentRepo.merge(department, updatedData);
-
-        // Actualizar relaciones
-        if (updateDto.categoriaIds) {
-            department.categorias = updateDto.categoriaIds.map(id => ({ id } as any));
-        }
+        });
 
         return await this.departmentRepo.save(department);
     }
