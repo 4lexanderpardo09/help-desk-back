@@ -1860,6 +1860,159 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Regions",
+            "description": "Gestión de Regionales (requiere autenticación + permiso Regional)",
+            "item": [
+                {
+                    "name": "List Regions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/regions",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "regions"
+                            ],
+                            "query": [
+                                {
+                                    "key": "filter[estado]",
+                                    "value": "1",
+                                    "description": "Filtrar por estado activo"
+                                }
+                            ]
+                        },
+                        "description": "Lista regionales con filtros dinámicos.\n\n**Permiso:** `read Regional`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Region",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/regions/1?included=zona",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "regions",
+                                "1"
+                            ],
+                            "query": [
+                                {
+                                    "key": "included",
+                                    "value": "zona"
+                                }
+                            ]
+                        },
+                        "description": "Obtiene una regional por ID con relación zona.\n\n**Permiso:** `read Regional`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Region",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Regional Norte\",\n    \"zonaId\": 1,\n    \"estado\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/regions",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "regions"
+                            ]
+                        },
+                        "description": "Crea una nueva regional.\n\n**Permiso:** `create Regional`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Region",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Regional Sur\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/regions/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "regions",
+                                "1"
+                            ]
+                        },
+                        "description": "Actualiza una regional.\n\n**Permiso:** `update Regional`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Region",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/regions/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "regions",
+                                "1"
+                            ]
+                        },
+                        "description": "Elimina (soft delete) una regional.\n\n**Permiso:** `delete Regional`"
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }

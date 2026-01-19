@@ -14,6 +14,7 @@ import { DepartmentsModule } from './modules/departments/departments.module';
 import { PrioritiesModule } from './modules/priorities/priorities.module';
 import { PositionsModule } from './modules/positions/positions.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
+import { RegionsModule } from './modules/regions/regions.module';
 import { User } from './modules/users/entities/user.entity';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
@@ -35,7 +36,7 @@ import jwtConfig from './config/jwt.config';
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.database'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: false, // IMPORTANTE: No sincronizar con DB legacy
+        synchronize: false,
       }),
     }),
     PermissionsModule,
@@ -48,6 +49,7 @@ import jwtConfig from './config/jwt.config';
     PrioritiesModule,
     PositionsModule,
     ProfilesModule,
+    RegionsModule,
     AuthModule,
   ],
   controllers: [AppController],

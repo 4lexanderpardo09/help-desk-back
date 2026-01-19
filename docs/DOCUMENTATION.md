@@ -742,3 +742,36 @@ Los endpoints de gestión de perfiles de usuario fueron consolidados en `Profile
 - **`filter[nombre]`**: Filtrar por nombre (LIKE).
 - **`filter[estado]`**: Filtrar por estado.
 - **`filter[usuarioId]`**: Listar perfiles asignados a un usuario específico.
+
+---
+
+## 3.8 Módulo de Regiones (`src/modules/regions/`)
+
+### Archivos
+| Archivo | Descripción |
+|---------|-------------|
+| `regions.module.ts` | Módulo de regiones |
+| `regions.controller.ts` | Endpoints `/regions/*` |
+| `regions.service.ts` | Lógica de negocio (CRUD) |
+| `entities/regional.entity.ts` | Entidad `tm_regional` |
+| `dto/create-regional.dto.ts` | DTO creación |
+| `dto/update-regional.dto.ts` | DTO actualización |
+
+### Endpoints (requieren permiso `Regional`)
+
+| Método | Ruta | Descripción | Service Method | Body (Ejemplo) |
+|--------|------|-------------|----------------|---------------|
+| GET | `/regions` | Listar regionales | `list()` | - |
+| GET | `/regions/:id` | Mostrar regional | `show()` | - |
+| POST | `/regions` | Crear regional | `create()` | `{"nombre": "Regional Norte", "zonaId": 1}` |
+| PUT | `/regions/:id` | Actualizar regional | `update()` | `{"nombre": "Regional Sur"}` |
+| DELETE | `/regions/:id` | Soft delete | `delete()` | - |
+
+#### Filtros y Paginación (`GET /regions`)
+- **`page`**: Número de página.
+- **`limit`**: Resultados por página.
+- **`included`**: Relaciones (`zona`, `usuarios`).
+- **`filter[nombre]`**: Filtrar por nombre (LIKE).
+- **`filter[estado]`**: Filtrar por estado.
+- **`filter[zonaId]`**: Filtrar por zona.
+
