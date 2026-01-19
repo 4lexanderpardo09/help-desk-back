@@ -9,6 +9,7 @@ import { RolesModule } from './modules/roles/roles.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 import { ZonesModule } from './modules/zones/zones.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { CompaniesModule } from './modules/companies/companies.module';
 import { User } from './modules/users/entities/user.entity';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
@@ -38,6 +39,7 @@ import jwtConfig from './config/jwt.config';
     RolesModule,
     ZonesModule,
     CategoriesModule,
+    CompaniesModule,
     AuthModule,
   ],
   controllers: [AppController],

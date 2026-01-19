@@ -561,3 +561,34 @@ mysql -u root -p mesa_de_ayuda < migrations/2026-01-18_dynamic_permissions.sql
 4. **Payload JWT legacy-compatible** - Replica variables de sesión PHP
 5. **CASL para autorización** - Permisos declarativos y centralizados
 6. **Permisos dinámicos** - Almacenados en BD con caché en memoria
+
+---
+
+## 3.3 Módulo de Empresas (`src/modules/companies/`)
+
+### Archivos
+| Archivo | Descripción |
+|---------|-------------|
+| `companies.module.ts` | Módulo de empresas |
+| `companies.controller.ts` | Endpoints `/companies/*` |
+| `companies.service.ts` | Lógica de negocio (CRUD) |
+| `entities/empresa.entity.ts` | Entidad `td_empresa` |
+| `dto/create-company.dto.ts` | DTO creación |
+| `dto/update-company.dto.ts` | DTO actualización |
+
+### Endpoints (requieren permiso `Company`)
+
+| Método | Ruta | Descripción | Service Method | Permiso CASL |
+|--------|------|-------------|----------------|---------------|
+| GET | `/companies` | Listar empresas | `list()` | `read Company` |
+| GET | `/companies/:id` | Mostrar empresa | `show()` | `read Company` |
+| POST | `/companies` | Crear empresa | `create()` | `create Company` |
+| PUT | `/companies/:id` | Actualizar empresa | `update()` | `update Company` |
+| DELETE | `/companies/:id` | Soft delete | `delete()` | `delete Company` |
+
+#### Filtros y Paginación (`GET /companies`)
+- **`page`**: Número de página (ej: `?page=1`).
+- **`limit`**: Resultados por página (ej: `?limit=10`).
+- **`included`**: Relaciones: `usuarios`, `categorias`, `tickets`, `flujosPlantilla`.
+- **`filter[nombre]`**: Filtrar por nombre (LIKE).
+- **`filter[estado]`**: Filtrar por estado (1=Activo, 0=Inactivo).

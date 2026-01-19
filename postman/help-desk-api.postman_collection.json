@@ -1067,6 +1067,176 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Companies",
+            "description": "Gestión de Empresas (requiere autenticación + permiso Company)",
+            "item": [
+                {
+                    "name": "List Companies",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/companies?page=1&limit=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "companies"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Número de página"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10",
+                                    "description": "Resultados por página"
+                                },
+                                {
+                                    "key": "included",
+                                    "value": "usuarios,categorias",
+                                    "description": "Relaciones a incluir",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "filter[nombre]",
+                                    "value": "",
+                                    "description": "Filtrar por nombre",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "filter[estado]",
+                                    "value": "1",
+                                    "description": "Filtrar por estado",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Lista empresas con filtros dinámicos.\n\n**Permiso:** `read Company`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Company",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/companies/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "companies",
+                                "1"
+                            ]
+                        },
+                        "description": "Obtiene una empresa por ID.\n\n**Permiso:** `read Company`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Company",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Nueva Empresa\",\n    \"estado\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/companies",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "companies"
+                            ]
+                        },
+                        "description": "Crea una nueva empresa.\n\n**Permiso:** `create Company`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Company",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Empresa Modificada\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/companies/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "companies",
+                                "1"
+                            ]
+                        },
+                        "description": "Actualiza una empresa.\n\n**Permiso:** `update Company`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Company",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/companies/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "companies",
+                                "1"
+                            ]
+                        },
+                        "description": "Soft delete de una empresa.\n\n**Permiso:** `delete Company`"
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }
