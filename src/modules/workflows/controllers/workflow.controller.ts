@@ -16,7 +16,9 @@ export class WorkflowController {
 
     @Post('transition')
     @ApiOperation({ summary: 'Ejecutar transición de paso de un ticket' })
-    @ApiResponse({ status: 200, description: 'Transición exitosa, retorna el ticket actualizado' })
+    @ApiResponse({ status: 200, description: 'Transición exitosa, retorna el ticket actualizado', type: Ticket })
+    @ApiResponse({ status: 404, description: 'Ticket no encontrado' })
+    @ApiResponse({ status: 400, description: 'Transición inválida o paso no encontrado' })
     @CheckPolicies((ability: AppAbility) => ability.can('update', 'Ticket'))
     async transition(@Body() dto: TransitionTicketDto, @Req() req: any) {
         // Force actor to be the logged in user

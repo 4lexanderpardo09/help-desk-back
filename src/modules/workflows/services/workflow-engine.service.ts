@@ -4,9 +4,11 @@ import { Repository } from 'typeorm';
 import { Ticket } from '../../tickets/entities/ticket.entity';
 import { PasoFlujo } from '../entities/paso-flujo.entity';
 import { FlujoTransicion } from '../entities/flujo-transicion.entity';
+import { Flujo } from '../entities/flujo.entity';
 import { TicketAsignacionHistorico } from '../../tickets/entities/ticket-asignacion-historico.entity';
 import { User } from '../../users/entities/user.entity';
 import { TransitionTicketDto } from '../dto/workflow-transition.dto';
+import { AssignmentService } from '../../assignments/assignment.service';
 
 @Injectable()
 export class WorkflowEngineService {
@@ -17,20 +19,68 @@ export class WorkflowEngineService {
         private readonly pasoRepo: Repository<PasoFlujo>,
         @InjectRepository(FlujoTransicion)
         private readonly transicionRepo: Repository<FlujoTransicion>,
+        @InjectRepository(Flujo)
+        private readonly flujoRepo: Repository<Flujo>,
         @InjectRepository(TicketAsignacionHistorico)
         private readonly historyRepo: Repository<TicketAsignacionHistorico>,
         @InjectRepository(User)
-        private readonly userRepo: Repository<User>
+        private readonly userRepo: Repository<User>,
+        private readonly assignmentService: AssignmentService,
     ) { }
 
     /**
-     * Executes a transition for a ticket.
+     * Determines the first step for a new ticket based on Subcategory.
+     * Searches for an active Flow (`estado: 1`) associated with the subcategory
+     * and returns its first step (lowest `orden`).
+     * 
+     * @param subcategoriaId - The ID of the ticket's subcategory.
+     * @returns The initial `PasoFlujo` entity.
+     * @throws NotFoundException if no active flow is found for the subcategory.
+     * @throws BadRequestException if the flow exists but has no steps configured.
+     */
+    async getInitialStep(subcategoriaId: number): Promise<PasoFlujo> {
+        const flujo = await this.flujoRepo.findOne({
+            where: { subcategoriaId: subcategoriaId, estado: 1 }
+        });
+
+        if (!flujo) {
+            throw new NotFoundException(`No hay flujo activo configurado para la subcategoría ${subcategoriaId}`);
+        }
+
+        const initialStep = await this.pasoRepo.createQueryBuilder('p')
+            .where('p.flujoId = :flujoId', { flujoId: flujo.id })
+            .andWhere('p.estado = 1')
+            .orderBy('p.orden', 'ASC')
+            .take(1)
+            .getOne();
+
+        if (!initialStep) {
+            throw new BadRequestException(`El flujo ${flujo.id} ("${flujo.nombre}") no tiene pasos configurados.`);
+        }
+
+        return initialStep;
+    }
+
+    /**
+     * Executes a state transition for a ticket.
+     * This core method handles the movement of a ticket from one step to another,
+     * resolving the destination step and the responsible agent automatically.
+     * 
      * Logic:
-     * 1. Validate current step.
-     * 2. Determine next step based on transition key (or ID).
-     * 3. Resolve Assignee for the next step.
-     * 4. Update Ticket (step_id, assignee_id).
-     * 5. Record History.
+     * 1. Validates that the ticket exists and has a current step.
+     * 2. Determines the `nextStep`:
+     *    - **Strategy A**: Checks `flujo_transiciones` for a matching `condicionClave` (e.g., 'Approved').
+     *    - **Strategy B**: Checks if `transitionKeyOrStepId` is a direct Step ID (Admin override).
+     *    - **Strategy C**: Default linear progression (Next step by `orden`).
+     * 3. Resolves the `Assignee` (User ID) for the next step using `AssignmentService`:
+     *    - Creation assignment, Immediate Boss, or Regional Role.
+     * 4. Updates the ticket (`pasoActualId`, `usuarioAsignadoIds`, `estado`).
+     * 5. Records the action in `TicketAsignacionHistorico`.
+     * 
+     * @param dto - Data transfer object containing ticket ID, transition key/step ID, and optional comments.
+     * @returns The updated `Ticket` entity.
+     * @throws NotFoundException if ticket is not found.
+     * @throws BadRequestException if transition is invalid or next step cannot be determined.
      */
     async transitionStep(dto: TransitionTicketDto): Promise<Ticket> {
         const ticket = await this.ticketRepo.findOne({
@@ -45,75 +95,107 @@ export class WorkflowEngineService {
 
         // 2. Determine Next Step
         let nextStep: PasoFlujo | null = null;
+        let transitionUsed: FlujoTransicion | null = null;
 
-        // Strategy A: Try to find by transition name (e.g. "Aprobar")
-        const transition = await this.transicionRepo.findOne({
-            where: {
-                pasoOrigenId: currentStep.id,
-                pasoDestino: { nombre: dto.transitionKeyOrStepId } // Simple matching logic or Key matching
-            },
-            relations: ['pasoDestino']
-        });
+        // Strategy A: Explicit Transition by Condition Key
+        if (dto.transitionKeyOrStepId && isNaN(Number(dto.transitionKeyOrStepId))) {
+            const transition = await this.transicionRepo.findOne({
+                where: {
+                    pasoOrigenId: currentStep.id,
+                    condicionClave: dto.transitionKeyOrStepId,
+                    estado: 1
+                },
+                relations: ['pasoDestino']
+            });
+            if (transition && transition.pasoDestino) {
+                nextStep = transition.pasoDestino;
+                transitionUsed = transition;
+            }
+        }
 
-        // This is a simplified logic. In legacy, 'transitionKey' maps to specific logic or IDs.
-        // If string is number-like, treat as Step ID.
-        if (!isNaN(Number(dto.transitionKeyOrStepId))) {
+        // Strategy B: Explicit Target Step ID (Admin overrides or simple transitions)
+        if (!nextStep && !isNaN(Number(dto.transitionKeyOrStepId))) {
             nextStep = await this.pasoRepo.findOne({ where: { id: Number(dto.transitionKeyOrStepId) } });
-        } else if (transition) {
-            nextStep = transition.pasoDestino;
-        } else {
-            // Fallback: Try linear next step (higher order)
+        }
+
+        // Strategy C: Linear Sequence (Next Order)
+        if (!nextStep) {
             nextStep = await this.pasoRepo.createQueryBuilder('p')
                 .where('p.flujoId = :flujoId', { flujoId: currentStep.flujoId })
                 .andWhere('p.orden > :orden', { orden: currentStep.orden })
+                .andWhere('p.estado = 1')
                 .orderBy('p.orden', 'ASC')
                 .getOne();
         }
 
-        if (!nextStep) throw new BadRequestException(`No valid next step found for transition '${dto.transitionKeyOrStepId}'`);
+        if (!nextStep) throw new BadRequestException(`No se encontró un paso siguiente válido.`);
 
-        // 3. Resolve Assignee
-        // Logic: If step has assigned role (cargo), find user in that role + same region/company as ticket creator or ticket flow.
-        // For MVP, we'll assign to a random user with the role or unassigned (null) if "Pool".
-
-        let newAssigneeId: number | null = null;
-        if (nextStep.cargoAsignadoId) {
-            // Find candidate. 
-            // Ideally this should use a separate "AssigneeResolverService".
-            // We'll keep it simple: Find first user with that role.
-            const candidate = await this.userRepo.findOne({
-                where: { cargoId: nextStep.cargoAsignadoId, estado: 1 }
-            });
-            if (candidate) newAssigneeId = candidate.id;
-        } else if (nextStep.asignarCreador) {
-            newAssigneeId = ticket.usuarioId;
-        }
+        // 3. Resolve Assignee (The core complexity)
+        const assigneeId = await this.resolveStepAssignee(nextStep, ticket);
 
         // 4. Update Ticket
         ticket.pasoActualId = nextStep.id;
-        ticket.usuarioAsignadoIds = newAssigneeId ? [newAssigneeId] : [];
-        // ticket.fechaAsignacion = new Date(); // Column does not exist in Ticket entity
+        ticket.usuarioAsignadoIds = assigneeId ? [assigneeId] : [];
+        if (assigneeId) {
+            // ticket.fechaAsignacion = new Date(); // If column existed
+        }
 
-        if (nextStep.permiteCerrar) {
+        if (nextStep.permiteCerrar && nextStep.cerrarTicketObligatorio) {
             ticket.estado = 2; // Closed
             ticket.fechaCierre = new Date();
         }
 
-        await this.ticketRepo.save(ticket);
+        const savedTicket = await this.ticketRepo.save(ticket);
 
         // 5. Record History
         const history = this.historyRepo.create({
             ticketId: ticket.id,
-            usuarioAsignadoId: nextStep.id, // Wait, logic might be confusing Step vs User. 
-            // Legacy history table: usu_asig is User ID. paso_id column exists too.
             pasoId: nextStep.id,
-            usuarioAsignadorId: dto.actorId,
+            usuarioAsignadoId: assigneeId || undefined, // Who got the ticket
+            usuarioAsignadorId: dto.actorId, // Who moved the ticket
             fechaAsignacion: new Date(),
-            comentario: dto.comentario || `Transición a ${nextStep.nombre}`,
+            comentario: dto.comentario || (transitionUsed?.condicionNombre ? `Transición: ${transitionUsed.condicionNombre}` : `Avanzó al paso: ${nextStep.nombre}`),
             estado: 1
         });
         await this.historyRepo.save(history);
 
-        return ticket;
+        return savedTicket;
+    }
+
+    /**
+     * Resolves the user ID that should be assigned to the ticket in a specific step.
+     * 
+     * Resolution Priority:
+     * 1. **Assign to Creator**: If `step.asignarCreador` is true.
+     * 2. **Immediate Boss**: If `step.necesitaAprobacionJefe` is true.
+     * 3. **Role & Region**: If `step.cargoAsignadoId` is set, finds a user with that Role in the Ticket Creator's Region.
+     * 
+     * @param step - The destination step entity.
+     * @param ticket - The ticket being processed (needed for creator context).
+     * @returns The User ID of the assignee, or `null` if unassigned (pool).
+     */
+    private async resolveStepAssignee(step: PasoFlujo, ticket: Ticket): Promise<number | null> {
+        // 1. Assign to Creator?
+        if (step.asignarCreador) {
+            return ticket.usuarioId;
+        }
+
+        // 2. Assign to Immediate Boss? (Approval Flow)
+        if (step.necesitaAprobacionJefe || step.campoReferenciaJefeId === -1) {
+            return this.assignmentService.resolveJefeInmediato(ticket.usuarioId);
+        }
+
+        // 3. Specific Role + Regional Logic
+        if (step.cargoAsignadoId) {
+            // Use the ticket creator's regional to find the local agent
+            const user = await this.userRepo.findOne({ where: { id: ticket.usuarioId } });
+            const regionalId = user?.regionalId || 1; // Default to 1 if unknown
+
+            return this.assignmentService.resolveRegionalAgent(step.cargoAsignadoId, regionalId);
+        }
+
+        // 4. Round Robin / Pool? (Future impl)
+
+        return null;
     }
 }
