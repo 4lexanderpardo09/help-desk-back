@@ -9,6 +9,7 @@ import { TicketAsignacionHistorico } from '../tickets/entities/ticket-asignacion
 import { User } from '../users/entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
 import { AssignmentModule } from '../assignments/assignment.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { FlujoTransicion } from './entities/flujo-transicion.entity';
 
 @Module({
@@ -22,7 +23,9 @@ import { FlujoTransicion } from './entities/flujo-transicion.entity';
             User
         ]),
         AuthModule,
-        AssignmentModule
+        AuthModule,
+        AssignmentModule,
+        NotificationsModule
     ],
     controllers: [WorkflowController],
     providers: [WorkflowEngineService],

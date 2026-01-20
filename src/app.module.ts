@@ -24,6 +24,7 @@ import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 
 import { AssignmentModule } from './modules/assignments/assignment.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -62,7 +63,9 @@ import { AssignmentModule } from './modules/assignments/assignment.module';
     TicketsModule,
     WorkflowsModule,
     AuthModule,
+    AuthModule,
     AssignmentModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

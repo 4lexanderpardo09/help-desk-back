@@ -9,6 +9,7 @@ import { User } from '../../users/entities/user.entity';
 import { WorkflowEngineService } from '../../workflows/services/workflow-engine.service';
 import { TemplatesService } from '../../templates/services/templates.service';
 import { PdfStampingService, TextStampConfig } from '../../templates/services/pdf-stamping.service';
+import { NotificationsService } from '../../notifications/services/notifications.service';
 import * as path from 'path';
 
 // Define where templates are stored (should match configured static assets or storage)
@@ -27,6 +28,7 @@ export class TicketService {
         private readonly workflowEngine: WorkflowEngineService,
         private readonly templatesService: TemplatesService,
         private readonly pdfStampingService: PdfStampingService,
+        private readonly notificationsService: NotificationsService,
     ) { }
 
     /**
@@ -66,6 +68,9 @@ export class TicketService {
 
         // 5. Generate Initial PDF (if applicable)
         await this.generateInitialPdf(ticketWithWorkflow, user);
+
+        // 6. Notify Creator
+        await this.notificationsService.notifyCreation(ticketWithWorkflow, user);
 
         return ticketWithWorkflow;
     }

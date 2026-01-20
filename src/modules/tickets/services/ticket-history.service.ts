@@ -27,7 +27,7 @@ export class TicketHistoryService {
         // 1. Fetch TicketDetalle (Comments, System Logs stored as text)
         const detalles = await this.ticketDetalleRepo.find({
             where: { ticketId, estado: 1 },
-            relations: ['usuario'],
+            relations: ['usuario', 'documentos'],
             order: { fechaCreacion: 'DESC' }
         });
 
@@ -40,24 +40,21 @@ export class TicketHistoryService {
 
         // 3. Convert Detalles -> Timeline Items
         for (const det of detalles) {
-            // Fetch attachments for this detail if any
-            // Optimization: Could use join in step 1, but Documento logic handles 'detalleId'.
-            // In legacy, doc_detalle table links docs to ticket details. 
-            // We'll skip deep doc fetching for now strictly as per scope, or assume basic text.
-            // If descriptions contain "pipes" logic (legacy), we parse it here? 
-            // Legacy TicketDetailLister parses 'tickd_descrip' containing '|' for files.
-            // But we should rely on proper relations if migrated. 
-            // Assuming migrated data uses relation `documentos` in TicketDetalle entity.
+            const docDtos = det.documentos?.map(doc => ({
+                id: doc.id,
+                nombre: doc.nombre,
+                url: `/public/document_detalle/${doc.nombre}` // Simple static path mapping as per legacy convention
+            })) || [];
 
             timeline.push({
                 type: TimelineItemType.COMMENT,
                 fecha: det.fechaCreacion,
                 actor: {
                     id: det.usuarioId,
-                    nombre: det.usuario ? `${det.usuario.nombre} ${det.usuario.apellido}` : 'Unknown'
+                    nombre: det.usuario ? `${det.usuario.nombre} ${det.usuario.apellido || ''}` : 'Unknown'
                 },
                 descripcion: det.descripcion,
-                // TODO: Add documents mapping if relation exists eagerly
+                documentos: docDtos
             });
         }
 

@@ -1131,6 +1131,15 @@ Reemplaza a `TicketDetailLister.php`. Construye la línea de tiempo unificada.
 
 ### 3. Workflow Engine Service
 Reemplaza a `TicketWorkflowService.php`. Motor de transiciones de estado.
+### 13.5 Historial de Ticket (Timeline)
+`TicketHistoryService` consolida eventos de múltiples fuentes en una sola línea de tiempo ordenada cronológicamente:
+1.  **Comentarios y Logs (`tm_ticketdetalle`)**: Mensajes de texto ingresados por usuarios o el sistema.
+    - **Adjuntos**: Ahora se recuperan mediante la relación `documentos` (entidad `DocumentoDetalle`), eliminando la lógica legacy de parseo de texto con pipes (`|`).
+    - Se exponen como un array de objetos `{id, nombre, url}`.
+2.  **Asignaciones (`th_ticket_asignacion`)**: Cambios de responsable y reasignaciones automáticas.
+3.  **Cambios de Estado**: (Pendiente de refactorizar desde log de texto a eventos estructurados).
+
+El endpoint `GET /tickets/:id/history` retorna esta lista unificada tipada como `TicketTimelineItemDto[]`.
 
 #### Endpoints
 - **POST** `/workflows/transition`: Ejecuta una transición de paso.
@@ -1256,5 +1265,29 @@ Servicio de dominio que conecta la base de datos con el motor PDF.
 
 ### 15.3 Integración Futura
 Este módulo será consumido por el `WorkflowEngineService` en transiciones clave (ej: "Firmar Documento" o "Finalizar Ticket") para generar los PDFs anexos al ticket automáticamente.
+
+## 16. Módulo de Notificaciones
+
+El sistema cuenta con una arquitectura de notificaciones centralizada que soporta múltiples canales (Email y DB/In-App).
+
+### 16.1 Arquitectura
+- **NotificationsService (Facade)**: Único punto de entrada para emitir notificaciones. Orquesta a los sub-servicios.
+- **InAppNotificationsService**: Persiste mensajes en la tabla `tm_notificacion` para mostrarse en el frontend (campana, historial).
+- **EmailService**: Maneja el transporte SMTP mediante `@nestjs-modules/mailer` y `nodemailer`.
+
+### 16.2 Canales
+1. **Email Transaccional**:
+    - Asignación de Ticket.
+    - Cambio de Estado (pendiente).
+    - Cierre (pendiente).
+    - Requiere configuración SMTP en `.env`.
+2. **In-App (Base de Datos)**:
+    - Registro histórico de alertas.
+    - Estados: `2` (Nueva/Pendiente Push), `1` (Enviada/No leída), `0` (Leída).
+
+### 16.3 Integración
+El módulo se inyecta en:
+- `TicketsModule`: Notifica al creador tras la generación exitosa (`TicketService.create`).
+- `WorkflowsModule`: Notifica al agente/responsable cada vez que el ticket transiciona o se asigna (`WorkflowEngineService.transitionStep` y `startTicketFlow`).
 
 

@@ -9,6 +9,7 @@ import { TicketAsignacionHistorico } from '../../tickets/entities/ticket-asignac
 import { User } from '../../users/entities/user.entity';
 import { TransitionTicketDto } from '../dto/workflow-transition.dto';
 import { AssignmentService } from '../../assignments/assignment.service';
+import { NotificationsService } from '../../notifications/services/notifications.service';
 
 @Injectable()
 export class WorkflowEngineService {
@@ -26,6 +27,7 @@ export class WorkflowEngineService {
         @InjectRepository(User)
         private readonly userRepo: Repository<User>,
         private readonly assignmentService: AssignmentService,
+        private readonly notificationsService: NotificationsService,
     ) { }
 
     /**
@@ -71,6 +73,13 @@ export class WorkflowEngineService {
             estado: 1
         });
         await this.historyRepo.save(history);
+
+        if (assigneeId) {
+            const assignee = await this.userRepo.findOne({ where: { id: assigneeId } });
+            if (assignee) {
+                await this.notificationsService.notifyAssignment(savedTicket, assignee);
+            }
+        }
 
         savedTicket.pasoActual = initialStep;
 
@@ -207,6 +216,13 @@ export class WorkflowEngineService {
             estado: 1
         });
         await this.historyRepo.save(history);
+
+        if (assigneeId) {
+            const assignee = await this.userRepo.findOne({ where: { id: assigneeId } });
+            if (assignee) {
+                await this.notificationsService.notifyAssignment(savedTicket, assignee);
+            }
+        }
 
         return savedTicket;
     }

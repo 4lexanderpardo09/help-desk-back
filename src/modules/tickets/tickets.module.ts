@@ -17,6 +17,7 @@ import { AssignmentModule } from '../assignments/assignment.module';
 import { UsersModule } from '../users/users.module';
 import { WorkflowsModule } from '../workflows/workflows.module';
 import { TemplatesModule } from '../templates/templates.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
     imports: [
@@ -31,7 +32,9 @@ import { TemplatesModule } from '../templates/templates.module';
         AuthModule,
         AssignmentModule,
         WorkflowsModule,
+        WorkflowsModule,
         TemplatesModule,
+        NotificationsModule,
         forwardRef(() => UsersModule)
     ],
     controllers: [

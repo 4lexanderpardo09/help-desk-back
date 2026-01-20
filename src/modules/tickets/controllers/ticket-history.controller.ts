@@ -14,7 +14,7 @@ import { AppAbility } from '../../auth/abilities/ability.factory';
 export class TicketHistoryController {
     constructor(private readonly ticketHistoryService: TicketHistoryService) { }
 
-    @Get(':id/timeline')
+    @Get(':id/history')
     @ApiOperation({ summary: 'Obtener línea de tiempo del ticket (Historial)' })
     @ApiResponse({ status: 200, type: [TicketTimelineItemDto] })
     @CheckPolicies((ability: AppAbility) => ability.can('read', 'Ticket'))
