@@ -15,6 +15,7 @@ import { User } from '../users/entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
 import { AssignmentModule } from '../assignments/assignment.module';
 import { UsersModule } from '../users/users.module'; // Assuming UsersModule is needed for User Validation
+import { WorkflowsModule } from '../workflows/workflows.module';
 
 @Module({
     imports: [
@@ -28,7 +29,8 @@ import { UsersModule } from '../users/users.module'; // Assuming UsersModule is 
         ]),
         AuthModule,
         UsersModule, // For User Validation if needed
-        AssignmentModule // Needed for TicketService
+        AssignmentModule, // Needed for TicketService
+        WorkflowsModule
     ],
     controllers: [
         TicketListingController,

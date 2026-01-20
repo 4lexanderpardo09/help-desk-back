@@ -1159,6 +1159,26 @@ Reemplaza a `TicketService.php`. CRUD y coordinación principal.
 
 ---
 
+## 14. Orquestación de Creación de Tickets
+
+La creación de un ticket (`TicketService.create`) ya no es una simple inserción en base de datos. Es un proceso orquestado que asegura que el ticket nazca "vivo" y en el estado correcto.
+
+### 14.1 Flujo de Creación
+1. **Recuperación de Contexto**: Se obtienen los datos del usuario creador (Empresa, Departamento, Regional).
+2. **Pre-guardado**: Se crea la entidad `Ticket` con estado `Abierto` (1) pero sin paso ni asignado definitivo.
+3. **Inicio de Workflow**: Se invoca `WorkflowEngineService.startTicketFlow(ticket)`.
+    - Determina el paso inicial de la subcategoría.
+    - Resuelve quién debe atenderlo (Jefe, Agente, etc.).
+    - Actualiza el ticket con `pasoActualId` y `usuarioAsignadoIds`.
+    - Genera el primer registro en el historial.
+
+### 14.2 Beneficios
+- **Tickets nunca huérfanos**: Todos los tickets nacen asignados y en un paso válido.
+- **Reglas Centralizadas**: Si cambia la regla de "Jefe Inmediato", aplica automáticamente a nuevos tickets.
+- **Trazabilidad Total**: Desde el milisegundo 0, existe un registro en `tm_ticket_asignacion`.
+
+---
+
 ### Legacy Services Migrados (Estado Actual)
 | Legacy File | Nuevo Servicio NestJS | Estado |
 |-------------|-----------------------|--------|

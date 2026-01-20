@@ -6,6 +6,7 @@ import { JwtAuthGuard } from 'src/modules/auth/jwt.guard';
 import { PoliciesGuard } from '../../../common/guards/policies.guard';
 import { CheckPolicies } from 'src/modules/auth/decorators/check-policies.decorator';
 import { AppAbility } from '../../auth/abilities/ability.factory';
+import { Ticket } from '../../tickets/entities/ticket.entity';
 
 @ApiTags('Workflows Engine')
 @ApiBearerAuth()

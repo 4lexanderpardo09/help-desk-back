@@ -6,7 +6,7 @@ import { CreateTicketDto } from '../dto/create-ticket.dto';
 import { UpdateTicketDto } from '../dto/update-ticket.dto';
 import { User } from '../../users/entities/user.entity';
 
-import { AssignmentService } from '../../assignments/assignment.service';
+import { WorkflowEngineService } from '../../workflows/services/workflow-engine.service';
 
 @Injectable()
 export class TicketService {
@@ -15,14 +15,16 @@ export class TicketService {
         private readonly ticketRepo: Repository<Ticket>,
         @InjectRepository(User)
         private readonly userRepo: Repository<User>,
-        private readonly assignmentService: AssignmentService,
+        private readonly workflowEngine: WorkflowEngineService,
     ) { }
 
     /**
      * Crea un nuevo ticket en el sistema.
-     * Orquesta la asignación de empresa, departamento y regional basados en el creador.
+     * Orquesta la asignación de empresa, departamento y regional basados en el creador
+     * e inicia el flujo de trabajo correspondiente.
+     * 
      * @param dto Datos iniciales del ticket
-     * @returns Ticket creado
+     * @returns Ticket creado con flujo iniciado
      */
     async create(dto: CreateTicketDto): Promise<Ticket> {
         // 1. Get User Info to fill default fields (empresa, departamento, regional)
@@ -33,17 +35,7 @@ export class TicketService {
 
         if (!user) throw new NotFoundException(`Usuario ${dto.usuarioId} no encontrado`);
 
-        // 3. Resolve Default Assignee (Jefe Inmediato check)
-        let assignedId: number | null = dto.usuarioAsignadoId || null;
-
-        if (!assignedId) {
-            const jefeId = await this.assignmentService.resolveJefeInmediato(dto.usuarioId);
-            if (jefeId) {
-                assignedId = jefeId;
-            }
-        }
-
-        // 4. Prepare Entity
+        // 2. Prepare Entity (Initial State)
         const ticket = this.ticketRepo.create({
             ...dto,
             empresaId: user.empresas?.[0]?.id || 1, // Default to first company or 1
@@ -51,15 +43,15 @@ export class TicketService {
             regionalId: user.regionalId || 0,
             fechaCreacion: new Date(),
             estado: 1, // Abierto
-            usuarioAsignadoIds: assignedId ? [assignedId] : []
+            usuarioAsignadoIds: dto.usuarioAsignadoId ? [dto.usuarioAsignadoId] : [] // Preserve manual assignment if present, though workflow might override
         });
 
-        // Save Ticket
+        // 3. Save Ticket (to generate ID)
         const savedTicket = await this.ticketRepo.save(ticket);
 
-        // TODO: Create Assignment History Record (TicketAsignacionHistorico)
-
-        return savedTicket;
+        // 4. Start Workflow (Resolves Initial Step + Assignee + History)
+        // This will update the ticket with the correct PasoFlujo and Assignee based on rules
+        return this.workflowEngine.startTicketFlow(savedTicket);
     }
 
     /**

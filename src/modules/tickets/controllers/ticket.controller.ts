@@ -7,6 +7,7 @@ import { JwtAuthGuard } from 'src/modules/auth/jwt.guard';
 import { PoliciesGuard } from '../../../common/guards/policies.guard';
 import { CheckPolicies } from 'src/modules/auth/decorators/check-policies.decorator';
 import { AppAbility } from '../../auth/abilities/ability.factory';
+import { Ticket } from '../entities/ticket.entity';
 
 @ApiTags('Tickets Orchestrator')
 @ApiBearerAuth()
@@ -17,7 +18,9 @@ export class TicketController {
 
     @Post()
     @ApiOperation({ summary: 'Crear un nuevo ticket' })
-    @ApiResponse({ status: 201, description: 'Ticket creado exitosamente' })
+    @ApiResponse({ status: 201, description: 'Ticket creado exitosamente e iniciado en el flujo de trabajo', type: Ticket })
+    @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+    @ApiResponse({ status: 400, description: 'Error al iniciar flujo (sin subcategoría)' })
     @CheckPolicies((ability: AppAbility) => ability.can('create', 'Ticket'))
     async create(@Body() dto: CreateTicketDto) {
         return this.ticketService.create(dto);

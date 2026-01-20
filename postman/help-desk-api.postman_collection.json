@@ -2743,7 +2743,7 @@
                                         "tickets"
                                     ]
                                 },
-                                "description": "Crea un nuevo ticket. Asigna departamento y empresa basado en el usuario."
+                                "description": "Crea un nuevo ticket e inicia su Flujo de Trabajo.\n\n### Orquestación:\n1. Asigna Empresa, Departamento y Regional del creador.\n2. Inicia el Workflow (busca paso inicial de la Subcategoría).\n3. Resuelve la asignación automática (Jefe o Agente)."
                             },
                             "response": []
                         },

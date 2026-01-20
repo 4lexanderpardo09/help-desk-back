@@ -29,6 +29,51 @@ export class WorkflowEngineService {
     ) { }
 
     /**
+     * Initializes the workflow for a newly created ticket.
+     * 1. Finds the initial step for the subcategory.
+     * 2. Resolves the initial assignee (e.g., immediate boss or creator).
+     * 3. Updates the ticket with the step and assignee.
+     * 4. Logs the initial history.
+     * 
+     * @param ticket - The newly created ticket (must have ID).
+     * @returns The updated ticket.
+     */
+    async startTicketFlow(ticket: Ticket): Promise<Ticket> {
+        if (!ticket.subcategoriaId) {
+            throw new BadRequestException('El ticket debe tener una subcategoría para iniciar un flujo.');
+        }
+
+        // 1. Get Initial Step
+        const initialStep = await this.getInitialStep(ticket.subcategoriaId);
+
+        // 2. Resolve Assignee
+        const assigneeId = await this.resolveStepAssignee(initialStep, ticket);
+
+        // 3. Update Ticket
+        ticket.pasoActualId = initialStep.id;
+        ticket.usuarioAsignadoIds = assigneeId ? [assigneeId] : [];
+        if (assigneeId) {
+            // ticket.fechaAsignacion = new Date();
+        }
+
+        const savedTicket = await this.ticketRepo.save(ticket);
+
+        // 4. Record History
+        const history = this.historyRepo.create({
+            ticketId: ticket.id,
+            pasoId: initialStep.id,
+            usuarioAsignadoId: assigneeId || undefined,
+            usuarioAsignadorId: ticket.usuarioId, // Self-triggered by creation
+            fechaAsignacion: new Date(),
+            comentario: 'Inicio del flujo de trabajo',
+            estado: 1
+        });
+        await this.historyRepo.save(history);
+
+        return savedTicket;
+    }
+
+    /**
      * Determines the first step for a new ticket based on Subcategory.
      * Searches for an active Flow (`estado: 1`) associated with the subcategory
      * and returns its first step (lowest `orden`).
