@@ -1,8 +1,20 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsInt, IsDateString, Min } from 'class-validator';
+import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
+import { IsOptional, IsString, IsInt, IsDateString, Min, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 
+export enum TicketView {
+    ALL = 'all',
+    CREATED = 'created',
+    ASSIGNED = 'assigned',
+    OBSERVED = 'observed'
+}
+
 export class TicketFilterDto {
+    @ApiProperty({ required: false, enum: TicketView, description: 'Vista de tickets a listar (created, assigned, observed, all)' })
+    @IsOptional()
+    @IsEnum(TicketView)
+    view?: TicketView;
+
     @ApiPropertyOptional({ description: 'Término de búsqueda (título, ID, descripción)' })
     @IsOptional()
     @IsString()

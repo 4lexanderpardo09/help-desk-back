@@ -1084,10 +1084,10 @@ Se ha iniciado el proceso de análisis exhaustivo de los modelos PHP Legacy (`le
 Reemplaza a `TicketLister.php`. Provee endpoints optimizados para bandejas.
 
 #### Endpoints
-- **GET** `/tickets/list/user`: Tickets creados por el usuario autenticado.
-- **GET** `/tickets/list/agent`: Tickets donde el usuario es colaborador/asignado.
-- **GET** `/tickets/list/all`: Todos los tickets (Admin/Supervisor).
-- **GET** `/tickets/list/observed`: Tickets donde el usuario es observador.
+- **GET** `/tickets/list` (**NUEVO - Maestro**): Listado unificado con soporte de vistas dinámicas.
+    - Param `view`: `all` | `created` | `assigned` | `observed`
+    - Param `search`, `status`, `dateFrom`, `dateTo`, etc.
+    - **Seguridad**: Si un usuario pide `view=all` pero no tiene permisos, el sistema automáticamente le muestra `created` o `assigned` (Fallback seguro).
 
 #### DTOs Clave
 - `TicketFilterDto`: Soporta filtros por `status`, `search` (multi-campo), `dateFrom`, `dateTo`, `categoryId`, etc.

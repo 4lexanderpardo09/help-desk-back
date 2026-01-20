@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
 import { Ticket } from '../entities/ticket.entity';
-import { TicketFilterDto } from '../dto/ticket-filter.dto';
+import { TicketFilterDto, TicketView } from '../dto/ticket-filter.dto';
 import { TicketListItemDto, TicketListResponseDto, TicketTagDto } from '../dto/ticket-list-item.dto';
 import { TicketEtiqueta } from '../entities/ticket-etiqueta.entity';
 
@@ -138,39 +138,56 @@ export class TicketListingService {
         };
     }
 
-    async listTicketsByUser(userId: number, filters: TicketFilterDto): Promise<TicketListResponseDto> {
+    async list(
+        user: any, // JwtPayload
+        filters: TicketFilterDto,
+        ability: import('../../auth/abilities/ability.factory').AppAbility
+    ): Promise<TicketListResponseDto> {
         const qb = this.getBaseQuery();
-        qb.andWhere('t.usuarioId = :userId', { userId });
-        this.applyFilters(qb, filters);
-        return this.processResult(qb, filters);
-    }
+        let view = filters.view;
 
-    async listTicketsByAgent(agentId: number, filters: TicketFilterDto): Promise<TicketListResponseDto> {
-        const qb = this.getBaseQuery();
-        // Legacy: FIND_IN_SET(agentId, usu_asig)
-        // TypeORM: simple string check if not using Postgres Array
-        qb.andWhere(`FIND_IN_SET(:agentId, t.usu_asig) > 0`, { agentId });
-        this.applyFilters(qb, filters);
-        return this.processResult(qb, filters);
-    }
+        // 1. Security & Fallback Logic
+        // Si no se especifica vista, o se pide 'all', verificamos permisos
+        if (!view || view === TicketView.ALL) {
+            if (ability.can('manage', 'Ticket')) {
+                view = TicketView.ALL;
+            } else {
+                // Si no es admin/manager, por defecto ve sus tickets creados o asignados
+                // Podríamos intentar deducir la mejor vista por defecto:
+                // Si es "soporte" (tiene permiso update ticket), quizás Assigned.
+                if (ability.can('update', 'Ticket')) {
+                    view = TicketView.ASSIGNED;
+                } else {
+                    view = TicketView.CREATED;
+                }
+            }
+        }
 
-    async listAllTickets(filters: TicketFilterDto): Promise<TicketListResponseDto> {
-        const qb = this.getBaseQuery();
-        this.applyFilters(qb, filters);
-        return this.processResult(qb, filters);
-    }
+        // 2. Aplicar Scope según la Vista Resuelta
+        switch (view) {
+            case TicketView.CREATED:
+                qb.andWhere('t.usuarioId = :userId', { userId: user.usu_id });
+                break;
+            case TicketView.ASSIGNED:
+                qb.andWhere(`FIND_IN_SET(:agentId, t.usu_asig) > 0`, { agentId: user.usu_id });
+                break;
+            case TicketView.OBSERVED:
+                qb.innerJoin('tm_ticket_observador', 'obs', 'obs.tick_id = t.tick_id');
+                qb.andWhere('obs.usu_id = :userId', { userId: user.usu_id });
+                qb.andWhere('obs.est = 1');
+                break;
+            case TicketView.ALL:
+                // No extra filter needed if authorized
+                if (!ability.can('manage', 'Ticket')) {
+                    // Double check defense
+                    qb.andWhere('1=0'); // Bloquear si llegó acá por error
+                }
+                break;
+        }
 
-    async listTicketsObservados(userId: number, filters: TicketFilterDto): Promise<TicketListResponseDto> {
-        // Requires TicketObservador entity or raw join
-        // Using raw join for now as TicketObservador might not be in entities list yet (small model)
-        // Checking task.md: TicketObservador not explicitly listed in small models analysis.
-        // Assuming table 'tm_ticket_observador' exists.
-        const qb = this.getBaseQuery();
-        qb.innerJoin('tm_ticket_observador', 'obs', 'obs.tick_id = t.tick_id');
-        qb.andWhere('obs.usu_id = :userId', { userId });
-        qb.andWhere('obs.est = 1');
-
+        // 3. Filtros Standard
         this.applyFilters(qb, filters);
+
         return this.processResult(qb, filters);
     }
 }
