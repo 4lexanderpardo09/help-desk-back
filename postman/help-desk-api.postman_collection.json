@@ -2803,6 +2803,99 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Tickets Management",
+            "description": "Orquestador Principal - CRUD",
+            "item": [
+                {
+                    "name": "Create Ticket",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"usuarioId\": 5,\n    \"categoriaId\": 1,\n    \"titulo\": \"Falla en Impresora\",\n    \"descripcion\": \"No imprime a color\",\n    \"prioridadId\": 2\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/tickets",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tickets"
+                            ]
+                        },
+                        "description": "Crea un nuevo ticket. Asigna departamento y empresa basado en el usuario."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Ticket",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"titulo\": \"Falla en Impresora (Actualizado)\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/tickets/1400",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tickets",
+                                "1400"
+                            ]
+                        },
+                        "description": "Actualiza campos básicos del ticket."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Ticket Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/tickets/1400",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tickets",
+                                "1400"
+                            ]
+                        },
+                        "description": "Obtiene el detalle completo de un ticket."
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }

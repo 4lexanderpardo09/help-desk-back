@@ -1081,6 +1081,20 @@ Reemplaza a `TicketWorkflowService.php`. Motor de transiciones de estado.
 - `WorkflowEngineService`:
   - `transitionStep()`: Valida paso actual, calcula siguiente paso, resuelve asignación automática y actualiza ticket.
 
+### 4. Ticket Orchestrator Service
+Reemplaza a `TicketService.php`. CRUD y coordinación principal.
+
+#### Endpoints
+- **POST** `/tickets`: Crea un nuevo ticket (Estado: Abierto, Paso Inicial).
+- **PUT** `/tickets/:id`: Actualiza campos del ticket.
+- **GET** `/tickets/:id`: Obtiene detalle completo (incluyendo paso actual).
+
+#### DTOs Clave
+- `CreateTicketDto`:
+  - `usuarioId`, `categoriaId`, `titulo`, `descripcion`: Obligatorios.
+  - `subcategoriaId`, `prioridadId`: Opcionales.
+- `UpdateTicketDto`: Partial de creación.
+
 ---
 
 ### Legacy Services Migrados (Estado Actual)
@@ -1089,5 +1103,5 @@ Reemplaza a `TicketWorkflowService.php`. Motor de transiciones de estado.
 | `TicketLister.php` | `TicketListingService` | ✅ Completado |
 | `TicketDetailLister.php` | `TicketHistoryService` | ✅ Completado |
 | `TicketWorkflowService.php` | `WorkflowEngineService` | ✅ Completado |
-| `Ticket.php` | Utilizado por `TicketListing` y `History` | ✅ En Progreso |
+| `TicketService.php` | `TicketService` | ✅ Completado |
 
