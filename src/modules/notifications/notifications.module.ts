@@ -5,10 +5,13 @@ import { Notificacion } from './entities/notificacion.entity';
 import { NotificationsService } from './services/notifications.service';
 import { InAppNotificationsService } from './services/in-app-notifications.service';
 import { EmailService } from './services/email.service';
+import { NotificationsGateway } from './notifications.gateway';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Notificacion]),
+        AuthModule, // Provides JwtModule
         MailerModule.forRoot({
             transport: {
                 host: process.env.SMTP_HOST || 'smtp.example.com',
@@ -27,7 +30,8 @@ import { EmailService } from './services/email.service';
     providers: [
         NotificationsService,
         InAppNotificationsService,
-        EmailService
+        EmailService,
+        NotificationsGateway
     ],
     exports: [NotificationsService],
 })

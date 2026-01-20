@@ -2,7 +2,7 @@
     "info": {
         "_postman_id": "help-desk-api-v1",
         "name": "Help Desk API",
-        "description": "API REST del sistema Help Desk - Backend NestJS\n\n## Autenticación\nUsa JWT Bearer Token. Primero ejecuta el endpoint de login y copia el token en la variable `token`.\n\n## Variables\n- `base_url`: URL base del API (default: http://localhost:3000)\n- `token`: Token JWT obtenido del login",
+        "description": "API REST del sistema Help Desk - Backend NestJS\n\n## Autenticación\nUsa JWT Bearer Token. Primero ejecuta el endpoint de login y copia el token en la variable `token`.\n\n## Variables\n- `base_url`: URL base del API (default: http://localhost:3000)\n- `token`: Token JWT obtenido del login\n\n## WebSockets (Notificaciones)\nPara conectar usa Socket.IO Client:\n- **URL**: `ws://localhost:3000`\n- **Auth**: Query Param `token={{token}}` o Header `Authorization: Bearer {{token}}`\n- **Eventos**: `new_notification`",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "variable": [

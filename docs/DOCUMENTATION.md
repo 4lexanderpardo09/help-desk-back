@@ -1387,4 +1387,44 @@ El módulo se integra directamente con `TicketService` para:
 Los archivos se organizan por ID de ticket para evitar directorios con millones de archivos:
 `public/documentos/{ticketId}/{filename}`
 
+---
+
+## 18. Notificaciones en Tiempo Real (WebSockets)
+
+### Objetivo
+Permitir a los clientes (Frontend) recibir actualizaciones inmediatas sobre eventos críticos (Asignaciones, Cierre de Tickets) sin necesidad de polling.
+
+### Tecnología
+- **Protocolo:** Socket.IO
+- **Librería Backend:** `@nestjs/websockets` + `socket.io`
+- **Autenticación:** JWT (Reutiliza el mismo token del login REST)
+
+### 18.1 Conexión
+
+```javascript
+import { io } from 'socket.io-client';
+
+const socket = io('http://localhost:3000', {
+  query: {
+    token: 'JWT_ACCESS_TOKEN'
+  }
+});
+// Nota: Se puede usar query param 'token' o header Authorization
+
+socket.on('connect', () => {
+  console.log('Conectado a notificaciones');
+});
+```
+
+### 18.2 Eventos
+
+| Evento | Payload | Descripción |
+|--------|---------|-------------|
+| `new_notification` | `{ mensaje: string, ticketId: number, fecha: Date }` | Se envía al usuario específico cuando se le asigna un ticket o recibe una actualización directa. |
+
+### 18.3 Seguridad
+- El Gateway valida el JWT en el momento de la conexión (`handleConnection`).
+- Si el token es inválido o expira, el servidor desconecta el socket automáticamente.
+- Cada usuario se une a una sala privada `user_{usu_id}` para recibir solo sus mensajes.
+
 
