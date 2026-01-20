@@ -16,7 +16,7 @@ export class RolePermission {
     @Column({ name: 'rol_id' })
     rolId: number;
 
-    @Column({ name: 'per_id' })
+    @Column({ name: 'perm_id' })
     permisoId: number;
 
     @Column({ name: 'est', type: 'tinyint', default: 1 })
@@ -31,6 +31,6 @@ export class RolePermission {
     role: Role;
 
     @ManyToOne(() => Permission, (p) => p.rolePermissions, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'per_id' })
+    @JoinColumn({ name: 'perm_id' })
     permission: Permission;
 }

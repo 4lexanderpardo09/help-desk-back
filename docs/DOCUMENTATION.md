@@ -252,6 +252,7 @@ Gestión de permisos dinámica (RBAC almacenado en BD y cacheado en memoria).
 #### `CreatePermissionDto` (para Crear Permiso)
 ```json
 {
+  "nombre": "Crear Reportes",
   "action": "create",
   "subject": "Reports",
   "descripcion": "Puede crear reportes"
