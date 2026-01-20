@@ -1443,11 +1443,11 @@ El SLA se define en la entidad `PasoFlujo`:
 - `paso_horas_sla`: Tiempo máximo en horas (decimal).
 - `usuario_escalado_id`: ID del usuario a quien se reasignará el ticket si vence el SLA (Opcional).
 
-### 19.2 Lógica de Escalamiento
+### 19.2 Lógica de Alerta
 1. El scheduler busca tickets activos donde `(NOW - fechaAsignacion) > horasSla`.
 2. Si encuentra uno vencido:
    - Marca el histórico actual como `slaStatus = 'Atrasado'`.
-   - Si existe `usuarioEscaladoId`, reasigna el ticket automáticamente.
-   - Envía notificación WebSocket (`ticket_escalated`) al nuevo asignado.
+   - Envía notificación WebSocket (`ticket_overdue`) a los usuarios asignados para alertarles.
+   - **No reasigna** automáticamente (cambio de lógica para mantener responsabilidad).
 
 

@@ -84,39 +84,19 @@ export class SlaService {
             await this.historyRepo.save(lastAssignment);
         }
 
-        // 2. Escalation Logic (if configured)
-        if (ticket.pasoActual.usuarioEscaladoId) {
-            // Reassign to escalation user
-            await this.escalateTicket(ticket, ticket.pasoActual.usuarioEscaladoId);
-        } else {
-            // Just notify current assignee about the delay
-            // TODO: Implement notification for delay without reassignment if needed
+        // 2. Notification Logic (User Alert Only)
+        // Notify current assignees about the delay - NO MORE ESCALATION
+        if (ticket.usuarioAsignadoIds && ticket.usuarioAsignadoIds.length > 0) {
+            for (const userId of ticket.usuarioAsignadoIds) {
+                // Determine if user has connected socket or email
+                // We use emitToUser for real-time alert
+                this.notificationsService.getGateway().emitToUser(userId, 'ticket_overdue', {
+                    mensaje: `ALERTA: El ticket #${ticket.id} "${ticket.titulo}" ha vencido su tiempo límite (SLA).`,
+                    ticketId: ticket.id,
+                    fecha: new Date(),
+                });
+            }
+            this.logger.log(`Notified users [${ticket.usuarioAsignadoIds.join(', ')}] about overdue ticket #${ticket.id}`);
         }
-    }
-
-    private async escalateTicket(ticket: Ticket, newAssigneeId: number) {
-        // Update ticket assignee (Array format)
-        ticket.usuarioAsignadoIds = [newAssigneeId];
-        await this.ticketRepo.save(ticket);
-
-        // Record history
-        const history = this.historyRepo.create({
-            ticketId: ticket.id,
-            usuarioAsignadoId: newAssigneeId,
-            usuarioAsignadorId: null, // System action
-            pasoId: ticket.pasoActualId,
-            fechaAsignacion: new Date(),
-            comentario: 'Escalamiento automático por vencimiento de SLA',
-            slaStatus: 'A Tiempo', // Reset for the new user
-            estadoTiempoPaso: 'A Tiempo'
-        });
-        await this.historyRepo.save(history);
-
-        // Notify
-        this.notificationsService.getGateway().emitToUser(newAssigneeId, 'ticket_escalated', {
-            mensaje: `EL TICKET #${ticket.id} HA SIDO ESCALADO A TI POR SLA VENCIDO.`,
-            ticketId: ticket.id,
-            fecha: new Date(),
-        });
     }
 }

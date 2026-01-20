@@ -161,35 +161,33 @@ describe('SlaService', () => {
             }));
         });
 
-        it('should escalate ticket if usuarioEscaladoId is present', async () => {
+        it('should NOT reassign but notify assignees when overdue', async () => {
             const mockTicket = {
                 id: 1,
                 pasoActualId: 1,
                 pasoActual: { id: 1, nombre: 'Pass 1', usuarioEscaladoId: 99 },
-                usuarioAsignadoIds: [5]
+                usuarioAsignadoIds: [5, 10], // Two current assignees
+                titulo: 'Test Ticket'
             } as any;
 
             const mockHistory = {
                 ticketId: 1,
                 pasoId: 1,
                 slaStatus: 'A Tiempo',
+                save: jest.fn(),
             };
 
             mockHistoryRepo.findOne.mockResolvedValue(mockHistory); // Found existing history
 
-            // Mock creating new history for escalation
-            mockHistoryRepo.create.mockReturnValue({ id: 2 });
-            mockTicketRepo.save.mockResolvedValue(mockTicket);
-
             await service.processOverdueTicket(mockTicket);
 
-            // 1. Should save ticket with new assignee
-            expect(mockTicketRepo.save).toHaveBeenCalled();
-            expect(mockTicket.usuarioAsignadoIds).toEqual([99]);
+            // 1. Should NOT change assignee (save ticket not called for assignment)
+            expect(mockTicketRepo.save).not.toHaveBeenCalled();
 
-            // 2. Should notify new user
+            // 2. Should notify current users about delay
             const gateway = mockNotificationsService.getGateway();
-            expect(gateway.emitToUser).toHaveBeenCalledWith(99, 'ticket_escalated', expect.any(Object));
+            expect(gateway.emitToUser).toHaveBeenCalledWith(5, 'ticket_overdue', expect.any(Object));
+            expect(gateway.emitToUser).toHaveBeenCalledWith(10, 'ticket_overdue', expect.any(Object));
         });
     });
 });
