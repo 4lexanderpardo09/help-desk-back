@@ -1041,7 +1041,37 @@ Se ha iniciado el proceso de análisis exhaustivo de los modelos PHP Legacy (`le
 | ✅ Ya NestJS | 11 | Implementados previamente (Cargo, Categoria, etc.) |
 | 🟠 Pendientes | ~4 | Utilities (DateHelper, Email) |
 
-### Próximos Pasos
-1. Crear PR con todo el análisis.
-2. Implementar servicios NestJS basados en las interfaces `Legacy*Model`.
+## Módulo de Tickets (Implementación Fase 20)
+
+### 1. Ticket Listing Service
+Reemplaza a `TicketLister.php`. Provee endpoints optimizados para bandejas.
+
+#### Endpoints
+- **GET** `/tickets/list/user`: Tickets creados por el usuario autenticado.
+- **GET** `/tickets/list/agent`: Tickets donde el usuario es colaborador/asignado.
+- **GET** `/tickets/list/all`: Todos los tickets (Admin/Supervisor).
+- **GET** `/tickets/list/observed`: Tickets donde el usuario es observador.
+
+#### DTOs Clave
+- `TicketFilterDto`: Soporta filtros por `status`, `search` (multi-campo), `dateFrom`, `dateTo`, `categoryId`, etc.
+- `TicketListItemDto`: Estructura plana para listados. Incluye etiquetas (`TicketTagDto`).
+
+### 2. Ticket History Service
+Reemplaza a `TicketDetailLister.php`. Construye la línea de tiempo unificada.
+
+#### Endpoints
+- **GET** `/tickets/:id/timeline`: Retorna eventos cronológicos (Comentarios + Asignaciones).
+
+#### DTOs Clave
+- `TicketTimelineItemDto`: Objeto polimórfico (`type`: comment | assignment).
+
+---
+
+### Legacy Services Migrados (Estado Actual)
+| Legacy File | Nuevo Servicio NestJS | Estado |
+|-------------|-----------------------|--------|
+| `TicketLister.php` | `TicketListingService` | ✅ Completado |
+| `TicketDetailLister.php` | `TicketHistoryService` | ✅ Completado |
+| `TicketWorkflowService.php` | *Pendiente (WorkflowEngine)* | ⏳ Pendiente |
+| `Ticket.php` | Utilizado por `TicketListing` y `History` | ✅ En Progreso |
 
