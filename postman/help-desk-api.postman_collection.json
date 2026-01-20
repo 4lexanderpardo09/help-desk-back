@@ -2765,6 +2765,44 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Workflows",
+            "description": "Motor de Flujos y Transiciones",
+            "item": [
+                {
+                    "name": "Execute Transition",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ticketId\": 1400,\n    \"transitionKeyOrStepId\": \"20\",\n    \"comentario\": \"Aprobado por jefatura\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/workflows/transition",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "workflows",
+                                "transition"
+                            ]
+                        },
+                        "description": "Ejecuta una transición de estado para un ticket.\n\nPayload:\n- `ticketId`: ID del ticket\n- `transitionKeyOrStepId`: ID del paso destino o clave de transición\n- `comentario`: Opcional"
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }

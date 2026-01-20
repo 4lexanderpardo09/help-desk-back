@@ -1067,11 +1067,27 @@ Reemplaza a `TicketDetailLister.php`. Construye la línea de tiempo unificada.
 
 ---
 
+### 3. Workflow Engine Service
+Reemplaza a `TicketWorkflowService.php`. Motor de transiciones de estado.
+
+#### Endpoints
+- **POST** `/workflows/transition`: Ejecuta una transición de paso.
+
+#### DTOs Clave
+- `TransitionTicketDto`:
+  - `ticketId`: ID del ticket.
+  - `transitionKeyOrStepId`: ID del siguiente paso o palabra clave.
+  - `comentario`: Justificación (opcional).
+- `WorkflowEngineService`:
+  - `transitionStep()`: Valida paso actual, calcula siguiente paso, resuelve asignación automática y actualiza ticket.
+
+---
+
 ### Legacy Services Migrados (Estado Actual)
 | Legacy File | Nuevo Servicio NestJS | Estado |
 |-------------|-----------------------|--------|
 | `TicketLister.php` | `TicketListingService` | ✅ Completado |
 | `TicketDetailLister.php` | `TicketHistoryService` | ✅ Completado |
-| `TicketWorkflowService.php` | *Pendiente (WorkflowEngine)* | ⏳ Pendiente |
+| `TicketWorkflowService.php` | `WorkflowEngineService` | ✅ Completado |
 | `Ticket.php` | Utilizado por `TicketListing` y `History` | ✅ En Progreso |
 

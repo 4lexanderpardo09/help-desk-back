@@ -19,7 +19,7 @@ import { SubcategoriasModule } from './modules/subcategories/subcategorias.modul
 import { ReglasMapeoModule } from './modules/rules/reglas-mapeo.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { TicketsModule } from './modules/tickets/tickets.module';
-import { User } from './modules/users/entities/user.entity';
+import { WorkflowsModule } from './modules/workflows/workflows.module';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 
@@ -58,10 +58,10 @@ import jwtConfig from './config/jwt.config';
     ReglasMapeoModule,
     ReportsModule,
     TicketsModule,
+    WorkflowsModule,
     AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule { }
-

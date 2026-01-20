@@ -160,4 +160,8 @@ export class Ticket {
 
     @OneToMany(() => DocumentoFlujo, (df) => df.ticket)
     documentosFlujo: DocumentoFlujo[];
+
+    @ManyToOne('PasoFlujo', { nullable: true })
+    @JoinColumn({ name: 'paso_actual_id' })
+    pasoActual: any;
 }
