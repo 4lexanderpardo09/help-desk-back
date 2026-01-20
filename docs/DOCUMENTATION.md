@@ -1105,3 +1105,44 @@ Reemplaza a `TicketService.php`. CRUD y coordinación principal.
 | `TicketWorkflowService.php` | `WorkflowEngineService` | ✅ Completado |
 | `TicketService.php` | `TicketService` | ✅ Completado |
 
+---
+
+## 9. Guía de Integración Frontend 🚀
+
+Si estás integrando el frontend (React/Angular/Vue), sigue estos flujos recomendados:
+
+### 1. Autenticación
+1.  Llama a `POST /auth/login` con email/password.
+2.  Guarda el `accessToken` en LocalStorage.
+3.  Incluye el header `Authorization: Bearer <token>` en TODAS las peticiones subsiguientes.
+4.  Llama a `GET /auth/profile` para obtener datos del usuario (Rol, Regional, etc.) y guardarlos en el estado global (Context/Redux/Pinia).
+
+### 2. Listado de Tickets (Dashboard)
+*   **Mis Tickets (Usuario):** `GET /tickets/list/user`
+*   **Inbox (Agente):** `GET /tickets/list/agent`
+*   **Gestión (Admin/Super):** `GET /tickets/list/all`
+    *   Usa params para navegar: `page=1&limit=10`
+    *   Filtra dinámicamente: `status=Abierto&search=impresora`
+
+### 3. Ver Detalle de Ticket
+Para renderizar la vista completa de un ticket, necesitas llamar a dos endpoints en paralelo:
+1.  **Datos Principales:** `GET /tickets/:id` (Título, Descripción, Paso Actual, SLA).
+2.  **Línea de Tiempo:** `GET /tickets/:id/timeline` (Comentarios, Cambios de estado, Historial).
+
+### 4. Crear Ticket
+1.  Carga catálogos necesarios (Categorías, Prioridades).
+2.  Llama a `POST /tickets`.
+    *   No envíes `empresaId`, `departamentoId` ni `regionalId` a menos que sea un caso especial; el backend lo resuelve por el usuario creador.
+
+### 5. Flujo de Workflow (Aprobar/Rechazar/Avanzar)
+1.  El campo `pasoActual` del ticket indica dónde está.
+2.  Si el usuario tiene permiso (es Agente asignado o Supervisor), muestra botones de acción.
+3.  Al hacer clic (ej. "Aprobar"), llama a `POST /workflows/transition`:
+    ```json
+    {
+      "ticketId": 123,
+      "transitionKeyOrStepId": "Aprobar", // O el ID del siguiente paso si lo conoces
+      "comentario": "Todo en orden"
+    }
+    ```
+
