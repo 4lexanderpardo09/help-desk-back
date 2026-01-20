@@ -976,3 +976,68 @@ Soporta parámetros unificados:
 - **`filter[estado]`**: Filtrar por estado.
 - **`filter[zonaId]`**: Filtrar por zona.
 
+
+---
+
+## 2026-01-19 - Análisis de Migración Legacy Models
+
+### Contexto
+Se ha iniciado el proceso de análisis exhaustivo de los modelos PHP Legacy (`legacy_models/*.php`) para garantizar una migración 1:1 de la lógica de negocio y estructura de datos.
+
+### Acciones Realizadas
+1.  **Branch Created**: `migrate/legacy-models-2026-01-19`
+2.  **Legacy Entities**: Creación de carpeta `src/modules/_legacy_entities/` para almacenar definiciones puras de la estructura original.
+3.  **Análisis Ticket.php**: 
+    - Se documentó la lógica de 32KB del modelo original.
+    - Se identificaron métodos críticos (`update_asignacion`, `cerrar_ticket`).
+    - Se creó `LegacyTicketModel` interface para documentar contratos.
+    - Se mapeó `TicketLegacy` entity con JSDoc detallado de comportamientos antiguos (ej: `usu_asig` string CSV).
+4.  **Flows**: Se definieron los endpoints y tests necesarios para replicar la funcionalidad.
+
+### Próximos Pasos de Migración
+- Validar `Flujo.php` (Legacy) vs `Workflow` modules.
+- Implementar los repositorios/servicios basados en las interfaces `Legacy*Model`.
+
+### Avance Usuario.php
+- **Análisis**: Completado en `migrations/Usuario/Usuario.analysis.md`.
+- **Entity**: `UsuarioLegacy` creada.
+- **Model**: `LegacyUsuarioModel` interface creada.
+
+### Avance Workflows (Flujo, Paso, Transición, Ruta)
+- **Análisis**: Detallado en `migrations/Workflow/Workflow.analysis.md`.
+- **Entities**: Grupo unificado en `workflow.entities.ts`.
+- **Model**: Interface `LegacyWorkflowModel` que soporta lógica de navegación y resolución de asignación.
+
+### Avance Documents & KPI
+- **Documents**: Análisis de 3 tipos de adjuntos y lógica de firma. `Document.analysis.md` y `LegacyDocumentModel`.
+- **KPI**: Análisis del motor de BI, scope jerárquico y estadísticas dinámicas. `Kpi.analysis.md` y `LegacyKpiModel`.
+
+### Avance TicketService (Orquestador Principal)
+- **Archivo**: `TicketService.php` (2633 líneas, 132KB).
+- **Análisis**: Detallado en `migrations/TicketService/TicketService.analysis.md`.
+- **Funciones Críticas**: `createTicket()`, `handleDynamicFields()`, `actualizar_estado_ticket()`.
+- **Entidades Relacionadas**: `CampoPlantillaLegacy`, `TicketCampoValorLegacy`, `NotificacionLegacy`, `TicketParaleloLegacy`.
+
+### Avance Legacy Services (Soporte)
+- **TicketListing**: `TicketLister.php` y `TicketDetailLister.php`. Análisis de queries complejas y formateo HTML/Datatables. `TicketListingService.analysis.md`.
+- **TicketWorkflow**: `TicketWorkflowService.php`. Motor de avance de pasos, SLA y lógica de asignación regional/nacional. `TicketWorkflowService.analysis.md`.
+- **PdfService**: `PdfService.php`. Estampado de firmas y campos dinámicos. `PdfService.analysis.md`.
+- **DocumentoFlujo**: Nueva entidad `DocumentoFlujoLegacy` para PDFs firmados en pasos del flujo.
+
+### Avance Modelos Pequeños
+- **Organigrama**: Jerarquía de cargos para "Jefe Inmediato".
+- **Etiqueta**: Tags personalizados por usuario.
+- **TicketError**: Reporte de errores (Proceso vs Info).
+- **Consolidado**: `migrations/SmallModels/SmallModels.analysis.md`.
+
+### Resumen de Cobertura (32 archivos legacy_models)
+| Estado | Cantidad | Descripción |
+|--------|----------|-------------|
+| ✅ Analizados | 20+ | Con análisis MD y entidades legacy |
+| ✅ Ya NestJS | 11 | Implementados previamente (Cargo, Categoria, etc.) |
+| 🟠 Pendientes | ~4 | Utilities (DateHelper, Email) |
+
+### Próximos Pasos
+1. Crear PR con todo el análisis.
+2. Implementar servicios NestJS basados en las interfaces `Legacy*Model`.
+

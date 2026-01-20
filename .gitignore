@@ -1,3 +1,5 @@
 node_modules
 dist
 .env
+legacy_models
+legacy_services
