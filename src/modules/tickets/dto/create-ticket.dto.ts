@@ -36,4 +36,9 @@ export class CreateTicketDto {
     @IsOptional()
     @IsArray()
     archivos?: any[]; // Handled by Multer, mostly logic param
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsNumber()
+    usuarioAsignadoId?: number;
 }

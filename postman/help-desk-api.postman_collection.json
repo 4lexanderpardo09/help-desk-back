@@ -2609,293 +2609,201 @@
                         ],
                         "url": {
                             "raw": "{{base_url}}/tickets/list/user?page=1&limit=10",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "tickets",
-                                "list",
-                                "user"
-                            ],
-                            "query": [
-                                {
-                                    "key": "page",
-                                    "value": "1"
+                            "name": "List Tickets (Unified)",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/tickets/list?view=assigned&page=1&limit=10",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "tickets",
+                                        "list"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "view",
+                                            "value": "assigned",
+                                            "description": "View scope: 'assigned' (default for agents), 'created' (default for users), 'observed', 'all' (managers)"
+                                        },
+                                        {
+                                            "key": "page",
+                                            "value": "1"
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "10"
+                                        }
+                                    ]
                                 },
-                                {
-                                    "key": "limit",
-                                    "value": "10"
-                                },
-                                {
-                                    "key": "status",
-                                    "value": "1",
-                                    "disabled": true,
-                                    "description": "Filtrar por ID de estado"
-                                },
-                                {
-                                    "key": "search",
-                                    "value": "error",
-                                    "disabled": true,
-                                    "description": "Búsqueda global (título, descripción, id)"
-                                }
-                            ]
-                        },
-                        "description": "Obtiene los tickets creados por el usuario autenticado."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "List Agent Tickets",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/tickets/list/agent?page=1&limit=10",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "tickets",
-                                "list",
-                                "agent"
-                            ],
-                            "query": [
-                                {
-                                    "key": "page",
-                                    "value": "1"
-                                },
-                                {
-                                    "key": "limit",
-                                    "value": "10"
-                                }
-                            ]
-                        },
-                        "description": "Obtiene los tickets asignados al agente autenticado."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "List All Tickets",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/tickets/list/all?page=1&limit=10",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "tickets",
-                                "list",
-                                "all"
-                            ],
-                            "query": [
-                                {
-                                    "key": "page",
-                                    "value": "1"
-                                },
-                                {
-                                    "key": "limit",
-                                    "value": "10"
-                                }
-                            ]
-                        },
-                        "description": "Obtiene todos los tickets (Admin/Supervisor)."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "List Observed Tickets",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/tickets/list/observed",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "tickets",
-                                "list",
-                                "observed"
-                            ]
-                        },
-                        "description": "Obtiene los tickets donde el usuario es observador."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Get Ticket Timeline",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/tickets/1400/timeline",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "tickets",
-                                "1400",
-                                "timeline"
-                            ]
-                        },
-                        "description": "Obtiene el historial cronológico (comentarios y asignaciones) de un ticket."
-                    },
-                    "response": []
-                }
-            ]
-        },
-        {
-            "name": "Workflows",
-            "description": "Motor de Flujos y Transiciones",
-            "item": [
-                {
-                    "name": "Execute Transition",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}"
+                                "description": "Endpoint unificado para listar tickets. El backend aplica automáticamente los filtros de seguridad según los permisos del usuario (CASL).\n\n**Views:**\n- `assigned`: Tickets asignados al usuario actual.\n- `created`: Tickets creados por el usuario actual.\n- `observed`: Tickets donde el usuario es observador.\n- `all`: Todos los tickets (Requiere permiso `manage Ticket`)."
                             },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"ticketId\": 1400,\n    \"transitionKeyOrStepId\": \"20\",\n    \"comentario\": \"Aprobado por jefatura\"\n}"
+                            "response": []
                         },
-                        "url": {
-                            "raw": "{{base_url}}/workflows/transition",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "workflows",
-                                "transition"
-                            ]
-                        },
-                        "description": "Ejecuta una transición de estado para un ticket.\n\nPayload:\n- `ticketId`: ID del ticket\n- `transitionKeyOrStepId`: ID del paso destino o clave de transición\n- `comentario`: Opcional"
-                    },
-                    "response": []
-                }
-            ]
-        },
-        {
-            "name": "Tickets Management",
-            "description": "Orquestador Principal - CRUD",
-            "item": [
-                {
-                    "name": "Create Ticket",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}"
+                        {
+                            "name": "Get Ticket Timeline",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/tickets/1400/timeline",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "tickets",
+                                        "1400",
+                                        "timeline"
+                                    ]
+                                },
+                                "description": "Obtiene el historial cronológico (comentarios y asignaciones) de un ticket."
                             },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"usuarioId\": 5,\n    \"categoriaId\": 1,\n    \"titulo\": \"Falla en Impresora\",\n    \"descripcion\": \"No imprime a color\",\n    \"prioridadId\": 2\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/tickets",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "tickets"
-                            ]
-                        },
-                        "description": "Crea un nuevo ticket. Asigna departamento y empresa basado en el usuario."
-                    },
-                    "response": []
+                            "response": []
+                        }
+                    ]
                 },
                 {
-                    "name": "Update Ticket",
-                    "request": {
-                        "method": "PUT",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}"
+                    "name": "Workflows",
+                    "description": "Motor de Flujos y Transiciones",
+                    "item": [
+                        {
+                            "name": "Execute Transition",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"ticketId\": 1400,\n    \"transitionKeyOrStepId\": \"20\",\n    \"comentario\": \"Aprobado por jefatura\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/workflows/transition",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "workflows",
+                                        "transition"
+                                    ]
+                                },
+                                "description": "Ejecuta una transición de estado para un ticket.\n\nPayload:\n- `ticketId`: ID del ticket\n- `transitionKeyOrStepId`: ID del paso destino o clave de transición\n- `comentario`: Opcional"
                             },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"titulo\": \"Falla en Impresora (Actualizado)\"\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/tickets/1400",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "tickets",
-                                "1400"
-                            ]
-                        },
-                        "description": "Actualiza campos básicos del ticket."
-                    },
-                    "response": []
+                            "response": []
+                        }
+                    ]
                 },
                 {
-                    "name": "Get Ticket Detail",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Authorization",
-                                "value": "Bearer {{token}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/tickets/1400",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "tickets",
-                                "1400"
-                            ]
+                    "name": "Tickets Management",
+                    "description": "Orquestador Principal - CRUD",
+                    "item": [
+                        {
+                            "name": "Create Ticket",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"usuarioId\": 5,\n    \"categoriaId\": 1,\n    \"titulo\": \"Falla en Impresora\",\n    \"descripcion\": \"No imprime a color\",\n    \"prioridadId\": 2\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/tickets",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "tickets"
+                                    ]
+                                },
+                                "description": "Crea un nuevo ticket. Asigna departamento y empresa basado en el usuario."
+                            },
+                            "response": []
                         },
-                        "description": "Obtiene el detalle completo de un ticket."
-                    },
-                    "response": []
+                        {
+                            "name": "Update Ticket",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"titulo\": \"Falla en Impresora (Actualizado)\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/tickets/1400",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "tickets",
+                                        "1400"
+                                    ]
+                                },
+                                "description": "Actualiza campos básicos del ticket."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Ticket Detail",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/tickets/1400",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "tickets",
+                                        "1400"
+                                    ]
+                                },
+                                "description": "Obtiene el detalle completo de un ticket."
+                            },
+                            "response": []
+                        }
+                    ]
                 }
             ]
         }
-    ]
-}

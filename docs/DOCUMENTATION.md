@@ -805,7 +805,32 @@ mysql -u root -p mesa_de_ayuda < migrations/2026-01-18_dynamic_permissions.sql
 
 ---
 
-## 3.3 Módulo de Empresas (`src/modules/companies/`)
+## 12. Módulo de Asignaciones (AssignmentModule)
+
+Este módulo encapsula la lógica para determinar "quién debe atender un ticket". Se utiliza principalmente durante la creación del ticket y transiciones de flujo.
+
+### 12.1 AssignmentService
+
+Servicio encargado de resolver usuarios destino basados en reglas de negocio.
+
+#### Métodos Clave
+
+- `resolveJefeInmediato(userId: number): Promise<number | null>`
+  - Determina el jefe del usuario basado en el `tm_organigrama`.
+  - Prioriza asignar un jefe que esté en la misma `regional` del usuario.
+  - Si no encuentra en la misma regional, busca cualquiera activo con el cargo superior.
+  
+- `resolveRegionalAgent(cargoId: number, regionalId: number): Promise<number | null>`
+  - Busca un usuario con un cargo específico en una regional específica.
+  - Útil para flujos distribuidos (ej. "Coordinador de Soporte - Norte").
+
+### 12.2 Integración
+*   **TicketService**: Al crear un ticket (`create`), si no se especifica `usuarioAsignadoId`, el sistema llama automáticamente a `resolveJefeInmediato`.
+
+---
+
+## Fase 8: Módulo de Empresas (CRUD)
+`src/modules/companies/`)
 
 ### Archivos
 | Archivo | Descripción |

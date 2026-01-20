@@ -13,19 +13,22 @@ import { TicketAsignacionHistorico } from './entities/ticket-asignacion-historic
 import { Documento } from '../documents/entities/documento.entity';
 import { User } from '../users/entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
+import { AssignmentModule } from '../assignments/assignment.module';
+import { UsersModule } from '../users/users.module'; // Assuming UsersModule is needed for User Validation
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([
             Ticket,
-            TicketEtiqueta,
             TicketDetalle,
             TicketAsignacionHistorico,
-            TicketAsignacionHistorico,
+            TicketEtiqueta,
             Documento,
             User
         ]),
-        AuthModule
+        AuthModule,
+        UsersModule, // For User Validation if needed
+        AssignmentModule // Needed for TicketService
     ],
     controllers: [
         TicketListingController,
@@ -33,14 +36,10 @@ import { AuthModule } from '../auth/auth.module';
         TicketController
     ],
     providers: [
+        TicketService,
         TicketListingService,
-        TicketHistoryService,
-        TicketService
+        TicketHistoryService
     ],
-    exports: [
-        TicketListingService,
-        TicketHistoryService,
-        TicketService
-    ]
+    exports: [TicketService]
 })
 export class TicketsModule { }

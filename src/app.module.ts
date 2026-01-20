@@ -23,6 +23,8 @@ import { WorkflowsModule } from './modules/workflows/workflows.module';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 
+import { AssignmentModule } from './modules/assignments/assignment.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -60,6 +62,7 @@ import jwtConfig from './config/jwt.config';
     TicketsModule,
     WorkflowsModule,
     AuthModule,
+    AssignmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

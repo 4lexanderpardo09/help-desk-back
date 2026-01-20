@@ -6,13 +6,16 @@ import { CreateTicketDto } from '../dto/create-ticket.dto';
 import { UpdateTicketDto } from '../dto/update-ticket.dto';
 import { User } from '../../users/entities/user.entity';
 
+import { AssignmentService } from '../../assignments/assignment.service';
+
 @Injectable()
 export class TicketService {
     constructor(
         @InjectRepository(Ticket)
         private readonly ticketRepo: Repository<Ticket>,
         @InjectRepository(User)
-        private readonly userRepo: Repository<User>
+        private readonly userRepo: Repository<User>,
+        private readonly assignmentService: AssignmentService,
     ) { }
 
     /**
@@ -30,21 +33,33 @@ export class TicketService {
 
         if (!user) throw new NotFoundException(`Usuario ${dto.usuarioId} no encontrado`);
 
-        // 2. Prepare Entity
+        // 3. Resolve Default Assignee (Jefe Inmediato check)
+        let assignedId: number | null = dto.usuarioAsignadoId || null;
+
+        if (!assignedId) {
+            const jefeId = await this.assignmentService.resolveJefeInmediato(dto.usuarioId);
+            if (jefeId) {
+                assignedId = jefeId;
+            }
+        }
+
+        // 4. Prepare Entity
         const ticket = this.ticketRepo.create({
             ...dto,
             empresaId: user.empresas?.[0]?.id || 1, // Default to first company or 1
             departamentoId: user.departamentoId || 0,
             regionalId: user.regionalId || 0,
             fechaCreacion: new Date(),
-            estado: 1 // Abierto
+            estado: 1, // Abierto
+            usuarioAsignadoIds: assignedId ? [assignedId] : []
         });
 
-        // 3. Initial Flow/Step Logic (Simplified for now - "Start Flow" check referenced in Legacy)
-        // Ideally we would call workflowService.getInitialStep(subcategoryId) here.
-        // For MVP, we assume ticket is created "Open" and WorkflowEngine handles first transition or initial step set by frontend logic/default.
+        // Save Ticket
+        const savedTicket = await this.ticketRepo.save(ticket);
 
-        return this.ticketRepo.save(ticket);
+        // TODO: Create Assignment History Record (TicketAsignacionHistorico)
+
+        return savedTicket;
     }
 
     /**
