@@ -9,7 +9,7 @@ import { DashboardFiltersDto } from './dto/dashboard-filters.dto';
 import { DashboardStatsDto } from './dto/dashboard-stats.dto';
 import { StepMetricDto } from './dto/step-metric.dto';
 import { User } from '../auth/decorators/user.decorator';
-import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 
 @ApiTags('Statistics')
 @ApiBearerAuth()
