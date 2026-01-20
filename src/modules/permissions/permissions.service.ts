@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Permission } from './entities/permission.entity';
 import { RolePermission } from './entities/role-permission.entity';
+import { CreatePermissionDto } from './dto/create-permission.dto';
+import { UpdatePermissionDto } from './dto/update-permission.dto';
 
 /**
  * Estructura de permiso simplificada para CASL
@@ -222,5 +224,61 @@ export class PermissionsService {
         const result = await this.rolePermissionRepository.delete({ rolId, permisoId });
         this.invalidateCacheForRole(rolId);
         return { removed: (result.affected || 0) > 0 };
+    }
+
+    // ========================================
+    // GESTIÓN DE DEFINICIONES DE PERMISOS
+    // ========================================
+
+    /**
+     * Crea un nuevo permiso en el catálogo
+     */
+    async createPermission(dto: import('./dto/create-permission.dto').CreatePermissionDto): Promise<Permission> {
+        const existing = await this.permissionRepository.findOne({
+            where: { action: dto.action, subject: dto.subject }
+        });
+
+        if (existing) {
+            // Si existe y estaba borrado, lo reactivamos
+            if (existing.estado === 0) {
+                existing.estado = 1;
+                existing.descripcion = dto.descripcion || existing.descripcion;
+                return this.permissionRepository.save(existing);
+            }
+            throw new Error(`El permiso ${dto.action} ${dto.subject} ya existe.`);
+        }
+
+        const newPerm = this.permissionRepository.create(dto);
+        return this.permissionRepository.save(newPerm);
+    }
+
+    /**
+     * Actualiza un permiso existente
+     */
+    async updatePermission(id: number, dto: import('./dto/update-permission.dto').UpdatePermissionDto): Promise<Permission> {
+        const perm = await this.permissionRepository.findOne({ where: { id } });
+        if (!perm) throw new NotFoundException(`Permiso ${id} no encontrado`);
+
+        this.permissionRepository.merge(perm, dto);
+        const updated = await this.permissionRepository.save(perm);
+
+        // Al cambiar la definición de un permiso, debemos refrescar el caché global
+        // porque puede que roles lo tengan asignado y su significado (action/subject) haya cambiado
+        await this.refreshAllCache();
+
+        return updated;
+    }
+
+    /**
+     * Elimina (soft delete) un permiso del catálogo
+     */
+    async deletePermission(id: number): Promise<void> {
+        const perm = await this.permissionRepository.findOne({ where: { id } });
+        if (!perm) throw new NotFoundException(`Permiso ${id} no encontrado`);
+
+        perm.estado = 0;
+        await this.permissionRepository.save(perm);
+
+        await this.refreshAllCache();
     }
 }

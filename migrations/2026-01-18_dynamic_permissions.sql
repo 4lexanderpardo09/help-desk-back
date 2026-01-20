@@ -1,280 +1,219 @@
--- ============================================
--- Migración: Sistema de Permisos Dinámicos (Base + Admin)
--- Fecha: 2026-01-18
--- Descripción: Tablas, catálogo de permisos y asignación a Admin
--- ============================================
-
--- Tabla de Permisos (catálogo de acciones disponibles)
+-- 1. Asegurar que la tabla existe (si no fue creada por TypeORM aún)
 CREATE TABLE IF NOT EXISTS `tm_permiso` (
-    `per_id` INT AUTO_INCREMENT PRIMARY KEY,
-    `per_action` VARCHAR(50) NOT NULL COMMENT 'Acción: read, create, update, delete, manage',
-    `per_subject` VARCHAR(50) NOT NULL COMMENT 'Recurso: User, Ticket, Category, etc.',
-    `per_descripcion` VARCHAR(255) NULL COMMENT 'Descripción legible del permiso',
-    `est` TINYINT(1) DEFAULT 1 COMMENT 'Estado: 1=activo, 0=inactivo',
-    `fech_cre` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY `uk_action_subject` (`per_action`, `per_subject`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+    `perm_id` int(11) NOT NULL AUTO_INCREMENT,
+    `perm_nom` varchar(100) NOT NULL,
+    `perm_accion` varchar(50) NOT NULL,
+    `perm_subject` varchar(50) NOT NULL,
+    `perm_desc` text DEFAULT NULL,
+    `est` int(11) NOT NULL DEFAULT 1,
+    PRIMARY KEY (`perm_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
--- Tabla pivote: Rol-Permiso (asignación de permisos a roles)
-CREATE TABLE IF NOT EXISTS `tm_rol_permiso` (
-    `rp_id` INT AUTO_INCREMENT PRIMARY KEY,
-    `rol_id` INT NOT NULL COMMENT 'FK a tm_rol',
-    `per_id` INT NOT NULL COMMENT 'FK a tm_permiso',
-    `est` TINYINT(1) DEFAULT 1 COMMENT 'Estado: 1=activo, 0=inactivo',
-    `fech_cre` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY `uk_rol_permiso` (`rol_id`, `per_id`),
-    FOREIGN KEY (`rol_id`) REFERENCES `tm_rol` (`rol_id`) ON DELETE CASCADE,
-    FOREIGN KEY (`per_id`) REFERENCES `tm_permiso` (`per_id`) ON DELETE CASCADE
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+-- 2. Limpiar permisos existentes para evitar duplicados en seed inicial
+TRUNCATE TABLE `tm_permiso`;
 
--- ============================================
--- Datos iniciales: Permisos granulares
--- ============================================
-
+-- 3. Insertar Permisos Base
+-- USERS
 INSERT INTO
     `tm_permiso` (
-        `per_action`,
-        `per_subject`,
-        `per_descripcion`
+        `perm_nom`,
+        `perm_accion`,
+        `perm_subject`,
+        `perm_desc`,
+        `est`
     )
-VALUES
-    -- User
-    (
+VALUES (
+        'Ver Usuarios',
         'read',
         'User',
-        'Ver usuarios'
+        'Puede ver lista y detalles de usuarios',
+        1
     ),
     (
+        'Crear Usuarios',
         'create',
         'User',
-        'Crear usuarios'
+        'Puede crear nuevos usuarios',
+        1
     ),
     (
+        'Editar Usuarios',
         'update',
         'User',
-        'Actualizar usuarios'
+        'Puede editar usuarios existentes',
+        1
     ),
     (
+        'Eliminar Usuarios',
         'delete',
         'User',
-        'Eliminar usuarios'
+        'Puede eliminar (soft delete) usuarios',
+        1
+    );
+INSERT INTO
+    `tm_permiso` (
+        `perm_nom`,
+        `perm_accion`,
+        `perm_subject`,
+        `perm_desc`,
+        `est`
+    )
+VALUES (
+        'Ver Tickets',
+        'read',
+        'Ticket',
+        'Puede ver tickets',
+        1
     ),
     (
-        'manage',
-        'User',
-        'Gestión completa de usuarios'
+        'Crear Tickets',
+        'create',
+        'Ticket',
+        'Puede crear nuevos tickets',
+        1
     ),
-
--- Ticket
-(
-    'read',
-    'Ticket',
-    'Ver tickets'
-),
-(
-    'create',
-    'Ticket',
-    'Crear tickets'
-),
-(
-    'update',
-    'Ticket',
-    'Actualizar tickets'
-),
-(
-    'delete',
-    'Ticket',
-    'Eliminar tickets'
-),
-(
-    'manage',
-    'Ticket',
-    'Gestión completa de tickets'
-),
-
--- Category
-(
-    'read',
-    'Category',
-    'Ver categorías'
-),
-(
-    'create',
-    'Category',
-    'Crear categorías'
-),
-(
-    'update',
-    'Category',
-    'Actualizar categorías'
-),
-(
-    'delete',
-    'Category',
-    'Eliminar categorías'
-),
-(
-    'manage',
-    'Category',
-    'Gestión completa de categorías'
-),
-
--- Department
-(
-    'read',
-    'Department',
-    'Ver departamentos'
-),
-(
-    'create',
-    'Department',
-    'Crear departamentos'
-),
-(
-    'update',
-    'Department',
-    'Actualizar departamentos'
-),
-(
-    'delete',
-    'Department',
-    'Eliminar departamentos'
-),
-(
-    'manage',
-    'Department',
-    'Gestión completa de departamentos'
-),
-
--- Role
-('read', 'Role', 'Ver roles'),
-(
-    'create',
-    'Role',
-    'Crear roles'
-),
-(
-    'update',
-    'Role',
-    'Actualizar roles'
-),
-(
-    'delete',
-    'Role',
-    'Eliminar roles'
-),
-(
-    'manage',
-    'Role',
-    'Gestión completa de roles'
-),
-
--- Profile
-(
-    'read',
-    'Profile',
-    'Ver perfiles'
-),
-(
-    'create',
-    'Profile',
-    'Crear perfiles'
-),
-(
-    'update',
-    'Profile',
-    'Actualizar perfiles'
-),
-(
-    'delete',
-    'Profile',
-    'Eliminar perfiles'
-),
-(
-    'manage',
-    'Profile',
-    'Gestión completa de perfiles'
-),
-
--- Regional
-(
-    'read',
-    'Regional',
-    'Ver regionales'
-),
-(
-    'create',
-    'Regional',
-    'Crear regionales'
-),
-(
-    'update',
-    'Regional',
-    'Actualizar regionales'
-),
-(
-    'delete',
-    'Regional',
-    'Eliminar regionales'
-),
-(
-    'manage',
-    'Regional',
-    'Gestión completa de regionales'
-),
-
--- Company
-(
-    'read',
-    'Company',
-    'Ver empresas'
-),
-(
-    'create',
-    'Company',
-    'Crear empresas'
-),
-(
-    'update',
-    'Company',
-    'Actualizar empresas'
-),
-(
-    'delete',
-    'Company',
-    'Eliminar empresas'
-),
-(
-    'manage',
-    'Company',
-    'Gestión completa de empresas'
-),
-
--- Permission
-(
-    'read',
-    'Permission',
-    'Ver permisos'
-),
-(
-    'update',
-    'Permission',
-    'Asignar permisos'
-),
-(
-    'manage',
-    'Permission',
-    'Gestión completa de permisos'
-);
-
--- ============================================
--- Asignación inicial: SOLO ADMIN
--- ============================================
-
--- Admin (rol_id = 3): Acceso total
+    (
+        'Editar Tickets',
+        'update',
+        'Ticket',
+        'Puede editar tickets existentes',
+        1
+    ),
+    (
+        'Administrar Tickets',
+        'manage',
+        'Ticket',
+        'Control total sobre tickets',
+        1
+    );
 INSERT INTO
-    `tm_rol_permiso` (`rol_id`, `per_id`)
-SELECT 3, per_id
-FROM `tm_permiso`
-WHERE
-    per_action = 'manage';
+    `tm_permiso` (
+        `perm_nom`,
+        `perm_accion`,
+        `perm_subject`,
+        `perm_desc`,
+        `est`
+    )
+VALUES (
+        'Ver Roles',
+        'read',
+        'Role',
+        'Puede ver lista de roles',
+        1
+    ),
+    (
+        'Crear Roles',
+        'create',
+        'Role',
+        'Puede crear nuevos roles',
+        1
+    ),
+    (
+        'Editar Roles',
+        'update',
+        'Role',
+        'Puede editar roles',
+        1
+    ),
+    (
+        'Eliminar Roles',
+        'delete',
+        'Role',
+        'Puede eliminar roles',
+        1
+    );
+
+-- PERMISSIONS (Meta-permisos)
+INSERT INTO
+    `tm_permiso` (
+        `perm_nom`,
+        `perm_accion`,
+        `perm_subject`,
+        `perm_desc`,
+        `est`
+    )
+VALUES (
+        'Ver Permisos',
+        'read',
+        'Permission',
+        'Puede ver catálogo de permisos',
+        1
+    ),
+    (
+        'Asignar Permisos',
+        'update',
+        'Permission',
+        'Puede asignar/revocar permisos a roles',
+        1
+    ),
+    (
+        'Administrar Permisos',
+        'manage',
+        'Permission',
+        'Control total sobre sistema de permisos',
+        1
+    );
+
+-- CATEGORIES
+INSERT INTO
+    `tm_permiso` (
+        `perm_nom`,
+        `perm_accion`,
+        `perm_subject`,
+        `perm_desc`,
+        `est`
+    )
+VALUES (
+        'Ver Categorías',
+        'read',
+        'Category',
+        'Puede ver categorías',
+        1
+    ),
+    (
+        'Administrar Categorías',
+        'manage',
+        'Category',
+        'Puede crear, editar y borrar categorías',
+        1
+    );
+
+-- REPORTS
+INSERT INTO
+    `tm_permiso` (
+        `perm_nom`,
+        `perm_accion`,
+        `perm_subject`,
+        `perm_desc`,
+        `est`
+    )
+VALUES (
+        'Ver Reportes',
+        'read',
+        'Report',
+        'Puede ejecutar reportes',
+        1
+    ),
+    (
+        'Administrar Reportes',
+        'manage',
+        'Report',
+        'Puede crear/editar consultas SQL',
+        1
+    );
+
+-- 4. Asignar Permisos Iniciales al Rol Admin (ID: 1)
+-- Asumimos que existe la tabla pivote tm_rol_permiso. Si no, la creamos.
+CREATE TABLE IF NOT EXISTS `tm_rol_permiso` (
+    `rol_id` int(11) NOT NULL,
+    `perm_id` int(11) NOT NULL,
+    PRIMARY KEY (`rol_id`, `perm_id`),
+    CONSTRAINT `fk_rp_rol` FOREIGN KEY (`rol_id`) REFERENCES `tm_rol` (`rol_id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_rp_perm` FOREIGN KEY (`perm_id`) REFERENCES `tm_permiso` (`perm_id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+-- Dar TODOS los permisos al Rol 1 (Admin)
+INSERT INTO
+    `tm_rol_permiso` (rol_id, perm_id)
+SELECT 1, perm_id
+FROM `tm_permiso`;

@@ -108,6 +108,7 @@ export class PermissionsController {
         return this.permissionsService.removePermissionFromRole(rolId, permisoId);
     }
 
+
     // ========================================
     // CACHÉ (ADMIN)
     // ========================================
@@ -135,5 +136,34 @@ export class PermissionsController {
     async refreshCache() {
         await this.permissionsService.refreshAllCache();
         return { refreshed: true, ...this.permissionsService.getCacheStatus() };
+    }
+
+    // ========================================
+    // CRUD DE DEFINICIONES DE PERMISOS
+    // ========================================
+
+    @Post()
+    @CheckPolicies((ability) => ability.can('create', 'Permission'))
+    @ApiOperation({ summary: 'Crear definición de permiso', description: 'Crea un nuevo permiso en el sistema (ej: "create User").' })
+    @ApiResponse({ status: 201, description: 'Permiso creado.', type: Permission })
+    async createPermission(@Body() dto: import('./dto/create-permission.dto').CreatePermissionDto) {
+        return this.permissionsService.createPermission(dto);
+    }
+
+    @Put(':id')
+    @CheckPolicies((ability) => ability.can('update', 'Permission'))
+    @ApiOperation({ summary: 'Actualizar definición de permiso', description: 'Actualiza nombre o descripción de un permiso existente.' })
+    @ApiResponse({ status: 200, description: 'Permiso actualizado.', type: Permission })
+    async updatePermission(@Param('id', ParseIntPipe) id: number, @Body() dto: import('./dto/update-permission.dto').UpdatePermissionDto) {
+        return this.permissionsService.updatePermission(id, dto);
+    }
+
+    @Delete(':id')
+    @CheckPolicies((ability) => ability.can('delete', 'Permission'))
+    @ApiOperation({ summary: 'Eliminar definición de permiso', description: 'Mata el permiso (soft delete). Nadie podrá usarlo.' })
+    @ApiResponse({ status: 200, description: 'Permiso eliminado.' })
+    async deletePermission(@Param('id', ParseIntPipe) id: number) {
+        await this.permissionsService.deletePermission(id);
+        return { deleted: true };
     }
 }

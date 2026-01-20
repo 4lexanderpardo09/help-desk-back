@@ -238,11 +238,23 @@ Gestión de permisos dinámica (RBAC almacenado en BD y cacheado en memoria).
 | `GET`  | `/permissions` | Catálogo completo | `read Permission` |
 | `GET`  | `/permissions/role/:rolId` | Permisos de un rol | `read Permission` |
 | `PUT`  | `/permissions/role/:rolId` | Sincronizar permisos | `update Permission` |
+| `POST` | `/permissions` | Crear definición permiso | `create Permission` |
+| `PUT` | `/permissions/:id` | Editar definición permiso | `update Permission` |
+| `DELETE` | `/permissions/:id` | Eliminar definición permiso | `delete Permission` |
 
-#### `SyncRolePermissionsDto` (para PUT)
+#### `SyncRolePermissionsDto` (para Sincronizar Rol)
 ```json
 {
   "permisoIds": [1, 2, 3]  // IDs de los permisos a asignar
+}
+```
+
+#### `CreatePermissionDto` (para Crear Permiso)
+```json
+{
+  "action": "create",
+  "subject": "Reports",
+  "descripcion": "Puede crear reportes"
 }
 ```
 
