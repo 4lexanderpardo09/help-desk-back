@@ -36,9 +36,6 @@ export class TicketAsignacionHistorico {
     @Column({ name: 'estado_tiempo_paso', type: 'varchar', length: 20, nullable: true })
     estadoTiempoPaso: string | null;
 
-    @Column({ name: 'sla_status', type: 'varchar', length: 20, nullable: true, comment: 'A Tiempo | Atrasado' })
-    slaStatus: 'A Tiempo' | 'Atrasado' | null;
-
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 

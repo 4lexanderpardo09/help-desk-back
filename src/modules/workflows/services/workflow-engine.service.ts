@@ -73,7 +73,6 @@ export class WorkflowEngineService {
             fechaAsignacion: new Date(),
             comentario: 'Inicio del flujo de trabajo',
             estado: 1,
-            slaStatus: 'A Tiempo',
             estadoTiempoPaso: 'A Tiempo'
         });
         await this.historyRepo.save(history);
@@ -218,7 +217,6 @@ export class WorkflowEngineService {
             fechaAsignacion: new Date(),
             comentario: dto.comentario || (transitionUsed?.condicionNombre ? `Transición: ${transitionUsed.condicionNombre}` : `Avanzó al paso: ${nextStep.nombre}`),
             estado: 1,
-            slaStatus: 'A Tiempo',
             estadoTiempoPaso: 'A Tiempo'
         });
         await this.historyRepo.save(history);
