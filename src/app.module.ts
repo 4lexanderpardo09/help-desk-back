@@ -25,6 +25,7 @@ import jwtConfig from './config/jwt.config';
 
 import { AssignmentModule } from './modules/assignments/assignment.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { DocumentsModule } from './modules/documents/documents.module';
 
 @Module({
   imports: [
@@ -63,9 +64,9 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     TicketsModule,
     WorkflowsModule,
     AuthModule,
-    AuthModule,
     AssignmentModule,
     NotificationsModule,
+    DocumentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

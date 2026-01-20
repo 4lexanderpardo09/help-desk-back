@@ -10,7 +10,6 @@ import type { AppAbility } from '../../auth/abilities/ability.factory';
 import { User } from '../../auth/decorators/user.decorator';
 import { CaslAbility } from '../../auth/decorators/casl-ability.decorator';
 import type { JwtPayload } from '../../auth/interfaces/jwt-payload.interface';
-
 import { Request } from 'express';
 
 interface RequestWithUser extends Request {

@@ -10,7 +10,9 @@ import { WorkflowEngineService } from '../../workflows/services/workflow-engine.
 import { TemplatesService } from '../../templates/services/templates.service';
 import { PdfStampingService, TextStampConfig } from '../../templates/services/pdf-stamping.service';
 import { NotificationsService } from '../../notifications/services/notifications.service';
+import { DocumentsService } from '../../documents/services/documents.service';
 import * as path from 'path';
+import * as fs from 'fs/promises';
 
 // Define where templates are stored (should match configured static assets or storage)
 const TEMPLATE_DIR = path.resolve(process.cwd(), 'public', 'document', 'formato');
@@ -29,6 +31,7 @@ export class TicketService {
         private readonly templatesService: TemplatesService,
         private readonly pdfStampingService: PdfStampingService,
         private readonly notificationsService: NotificationsService,
+        private readonly documentsService: DocumentsService,
     ) { }
 
     /**
@@ -132,10 +135,17 @@ export class TicketService {
 
                 await this.pdfStampingService.stampPdf(inputPath, textsToStamp, outputPath);
 
-                // Note: We should verify input file exists first, handled by service error
-                this.logger.log(`Generated PDF for Ticket ${ticket.id} at ${outputPath}`);
+                // Read the generated file
+                try {
+                    const fileBuffer = await fs.readFile(outputPath);
+                    await this.documentsService.saveTicketFile(ticket.id, fileBuffer, `ticket_${ticket.id}.pdf`);
+                    this.logger.log(`Registered PDF for Ticket ${ticket.id}`);
 
-                // TODO: Register this file in 'Documento' table
+                    // Clean up temp file in default output dir
+                    await fs.unlink(outputPath);
+                } catch (err) {
+                    this.logger.error(`Error registering PDF for Ticket ${ticket.id}`, err);
+                }
             }
 
         } catch (error) {
