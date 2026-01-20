@@ -1427,4 +1427,27 @@ socket.on('connect', () => {
 - Si el token es inválido o expira, el servidor desconecta el socket automáticamente.
 - Cada usuario se une a una sala privada `user_{usu_id}` para recibir solo sus mensajes.
 
+---
+
+## 19. Automatización de SLA (SLA Service)
+
+### Objetivo
+Monitorear el tiempo que un ticket pasa en cada paso y realizar acciones automáticas si se excede el tiempo límite (`horasSla`).
+
+### Componentes
+- **`SlaService`**: Lógica de cálculo de tiempos y ejecución de escalamientos.
+- **`SlaSchedulerService`**: Cron Job que ejecuta la revisión cada 5 minutos (configurable via `SLA_CHECK_CRON`).
+
+### 19.1 Configuración
+El SLA se define en la entidad `PasoFlujo`:
+- `paso_horas_sla`: Tiempo máximo en horas (decimal).
+- `usuario_escalado_id`: ID del usuario a quien se reasignará el ticket si vence el SLA (Opcional).
+
+### 19.2 Lógica de Escalamiento
+1. El scheduler busca tickets activos donde `(NOW - fechaAsignacion) > horasSla`.
+2. Si encuentra uno vencido:
+   - Marca el histórico actual como `slaStatus = 'Atrasado'`.
+   - Si existe `usuarioEscaladoId`, reasigna el ticket automáticamente.
+   - Envía notificación WebSocket (`ticket_escalated`) al nuevo asignado.
+
 

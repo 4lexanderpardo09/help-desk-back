@@ -15,6 +15,10 @@ export class NotificationsService {
         private readonly gateway: NotificationsGateway,
     ) { }
 
+    getGateway() {
+        return this.gateway;
+    }
+
     /**
      * Notify a user that a ticket has been assigned to them.
      * Triggers:

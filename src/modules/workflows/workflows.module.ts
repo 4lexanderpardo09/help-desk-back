@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { WorkflowController } from './controllers/workflow.controller';
 import { WorkflowEngineService } from './services/workflow-engine.service';
+import { SlaService } from './services/sla.service';
+import { SlaSchedulerService } from './services/sla-scheduler.service';
 import { PasoFlujo } from './entities/paso-flujo.entity';
 import { Flujo } from './entities/flujo.entity';
 import { Ticket } from '../tickets/entities/ticket.entity';
@@ -25,10 +28,11 @@ import { FlujoTransicion } from './entities/flujo-transicion.entity';
         AuthModule,
         AuthModule,
         AssignmentModule,
-        NotificationsModule
+        NotificationsModule,
+        ScheduleModule.forRoot()
     ],
     controllers: [WorkflowController],
-    providers: [WorkflowEngineService],
+    providers: [WorkflowEngineService, SlaService, SlaSchedulerService],
     exports: [WorkflowEngineService]
 })
 export class WorkflowsModule { }

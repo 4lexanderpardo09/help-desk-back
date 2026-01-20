@@ -10,6 +10,7 @@ import { User } from '../../users/entities/user.entity';
 import { TransitionTicketDto } from '../dto/workflow-transition.dto';
 import { AssignmentService } from '../../assignments/assignment.service';
 import { NotificationsService } from '../../notifications/services/notifications.service';
+import { SlaService } from './sla.service';
 
 @Injectable()
 export class WorkflowEngineService {
@@ -28,6 +29,7 @@ export class WorkflowEngineService {
         private readonly userRepo: Repository<User>,
         private readonly assignmentService: AssignmentService,
         private readonly notificationsService: NotificationsService,
+        private readonly slaService: SlaService,
     ) { }
 
     /**
@@ -70,7 +72,9 @@ export class WorkflowEngineService {
             usuarioAsignadorId: ticket.usuarioId, // Self-triggered by creation
             fechaAsignacion: new Date(),
             comentario: 'Inicio del flujo de trabajo',
-            estado: 1
+            estado: 1,
+            slaStatus: 'A Tiempo',
+            estadoTiempoPaso: 'A Tiempo'
         });
         await this.historyRepo.save(history);
 
@@ -213,7 +217,9 @@ export class WorkflowEngineService {
             usuarioAsignadorId: dto.actorId, // Who moved the ticket
             fechaAsignacion: new Date(),
             comentario: dto.comentario || (transitionUsed?.condicionNombre ? `Transición: ${transitionUsed.condicionNombre}` : `Avanzó al paso: ${nextStep.nombre}`),
-            estado: 1
+            estado: 1,
+            slaStatus: 'A Tiempo',
+            estadoTiempoPaso: 'A Tiempo'
         });
         await this.historyRepo.save(history);
 
