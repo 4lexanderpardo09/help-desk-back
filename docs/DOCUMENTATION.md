@@ -794,6 +794,63 @@ mysql -u root -p mesa_de_ayuda < migrations/2026-01-18_dynamic_permissions.sql
 
 ---
 
+## 9. Módulo de Estadísticas (`src/modules/reports/`)
+
+### Objetivos
+Reemplazar la lógica legacy de `Kpi.php` por un servicio limpio basado en QueryBuilder y DTOs, capaz de calcular KPIs dinámicos y métricas de desempeño.
+
+### 9.1 Endpoints (`StatisticsController`)
+
+Prefix: `/statistics` (requiere permiso `Report`)
+
+| Método | Ruta | Descripción | Params |
+|--------|------|-------------|--------|
+| `GET` | `/statistics/dashboard` | Dashboard de KPIs | `?dateFrom=...&groupBy=department` |
+| `GET` | `/statistics/ticket/:id/performance` | Métricas de Tiempos | `id` (Ticket ID) |
+
+### 9.2 Request: Dashboard Filters (`DashboardFiltersDto`)
+```json
+{
+  "dateFrom": "2026-01-01",
+  "dateTo": "2026-01-31",
+  "groupBy": "department" // 'category', 'user', 'priority'
+}
+```
+
+### 9.3 Response: Dashboard Stats (`DashboardStatsDto`)
+```json
+{
+  "openCount": 150,
+  "closedCount": 50,
+  "totalCount": 200,
+  "dataset": [
+    { "label": "Sistemas", "value": 120, "id": 1 },
+    { "label": "Recursos Humanos", "value": 80, "id": 2 }
+  ]
+}
+```
+
+### 9.4 Response: Performance Metrics (`StepMetricDto[]`)
+```json
+[
+  {
+    "stepName": "Paso 1",
+    "durationMinutes": 45,
+    "startDate": "2026-01-20T10:00:00.000Z",
+    "endDate": "2026-01-20T10:45:00.000Z",
+    "assignedUser": "Juan Perez"
+  }
+]
+```
+
+### 9.5 Estructura del Servicio (`TicketStatisticsService`)
+
+- **`getScope(user)`**: Determina si el usuario ve 'all' o solo sus tickets, basado en reglas de rol.
+- **`getDashboardStats(user, filters)`**: Aplica el scope + filtros y ejecuta agregaciones (COUNT, GROUP BY).
+- **`getPerformanceMetrics(ticketId)`**: Analiza `th_ticket_asignacion` para calcular la duración entre reasignaciones.
+
+---
+
 ## Decisiones Técnicas
 
 1. **`synchronize: false`** - No se modifica el esquema de la DB legacy

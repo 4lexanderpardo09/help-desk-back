@@ -2930,6 +2930,74 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Statistics",
+            "description": "Motor de Estadísticas y KPIs (requiere autenticación + permiso Report)",
+            "item": [
+                {
+                    "name": "Dashboard Stats",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/statistics/dashboard?dateFrom=2026-01-01&groupBy=department",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "statistics",
+                                "dashboard"
+                            ],
+                            "query": [
+                                {
+                                    "key": "dateFrom",
+                                    "value": "2026-01-01",
+                                    "description": "Fecha inicio"
+                                },
+                                {
+                                    "key": "groupBy",
+                                    "value": "department",
+                                    "description": "Agrupar por: department, category, user"
+                                }
+                            ]
+                        },
+                        "description": "Obtiene estadísticas generales del dashboard."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Ticket Performance",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/statistics/ticket/1/performance",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "statistics",
+                                "ticket",
+                                "1",
+                                "performance"
+                            ]
+                        },
+                        "description": "Obtiene métricas de tiempos por paso para un ticket."
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }
