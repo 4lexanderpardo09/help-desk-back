@@ -2793,6 +2793,143 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Documents",
+            "description": "Gestión de documentos (Upload/Download)",
+            "item": [
+                {
+                    "name": "Upload to Ticket",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/documents/ticket/1050",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "documents",
+                                "ticket",
+                                "1050"
+                            ]
+                        },
+                        "description": "Sube un archivo adjunto principal a un ticket."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Upload to Detail (Comment)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/documents/comment/500",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "documents",
+                                "comment",
+                                "500"
+                            ]
+                        },
+                        "description": "Sube un archivo adjunto a un comentario específico."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Upload to Closing",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/documents/closing/1050",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "documents",
+                                "closing",
+                                "1050"
+                            ]
+                        },
+                        "description": "Sube un archivo adjunto al cierre del ticket."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Download Document",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/documents/ticket/1/download",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "documents",
+                                "ticket",
+                                "1",
+                                "download"
+                            ]
+                        },
+                        "description": "Descarga un documento. Type puede ser: ticket, detail, closing."
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }

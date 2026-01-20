@@ -1290,4 +1290,44 @@ El módulo se inyecta en:
 - `TicketsModule`: Notifica al creador tras la generación exitosa (`TicketService.create`).
 - `WorkflowsModule`: Notifica al agente/responsable cada vez que el ticket transiciona o se asigna (`WorkflowEngineService.transitionStep` y `startTicketFlow`).
 
+---
+
+## 17. Módulo de Gestión Documental (`src/modules/documents/`)
+
+### Objetivo
+Proporcionar un mecanismo centralizado y seguro para el almacenamiento y recuperación de archivos adjuntos asociados a Tickets, Comentarios y Cierres. Se elimina la dispersión de lógica de archivos del sistema legacy.
+
+### Arquitectura
+- **StorageService**: Abstracción de bajo nivel que maneja el sistema de archivos físico (`fs`). Actualmente usa almacenamiento local en `public/documentos/{ticketId}/`, pero está diseñado para facilitar la migración a S3/Cloud Storage.
+- **DocumentsService**: Lógica de negocio. Registra los metadatos del archivo en la base de datos (`tm_documento`, `td_documento_detalle`, `td_documento_cierre`) y coordina con `StorageService`.
+- **DocumentsController**: Exposición API. Maneja subidas (via `Multer`) y descargas seguras (streaming).
+
+### Integración con Tickets
+El módulo se integra directamente con `TicketService` para:
+- Registrar automáticamente los PDFs de tickets generados por el sistema.
+- Permitir adjuntar archivos durante el ciclo de vida del ticket.
+
+### Endpoints (`DocumentsController`)
+
+| Método | Ruta | Descripción | Permiso Requ | Body (Multipart) |
+|--------|------|-------------|--------------|------------------|
+| `POST` | `/documents/ticket/:ticketId` | Subir adjunto principal al ticket | `update Ticket` | `file`: (binary) |
+| `POST` | `/documents/comment/:detailId` | Subir adjunto a un comentario | `update Ticket` | `file`: (binary) |
+| `POST` | `/documents/closing/:ticketId` | Subir adjunto de cierre | `update Ticket` | `file`: (binary) |
+| `GET` | `/documents/:type/:id/download` | Descargar archivo | `read Ticket` | - |
+
+**Tipos para descarga (`:type`):**
+- `ticket`: Documentos principales (`tm_documento`)
+- `detail`: Adjuntos de comentarios (`td_documento_detalle`)
+- `closing`: Adjuntos de cierre (`td_documento_cierre`)
+
+### Seguridad (CASL)
+- **Subidas**: Requieren permiso `update` sobre el recurso `Ticket`.
+- **Descargas**: Requieren permiso `read` sobre el recurso `Ticket` asociado.
+- **Validación de Archivos**: Se utiliza `Interceptor` de NestJS para manejar `multipart/form-data`.
+
+### Almacenamiento Físico
+Los archivos se organizan por ID de ticket para evitar directorios con millones de archivos:
+`public/documentos/{ticketId}/{filename}`
+
 
