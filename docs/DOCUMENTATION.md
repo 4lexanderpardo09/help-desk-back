@@ -1228,3 +1228,32 @@ Para renderizar la vista completa de un ticket, necesitas llamar a dos endpoints
     }
     ```
 
+---
+
+## 15. Módulo de Plantillas (Motor PDF)
+
+El módulo `TemplatesModule` provee la infraestructura para generar documentos PDF dinámicos, una funcionalidad crítica heredada de la versión legacy (FPDF).
+
+### 15.1 Arquitectura `pdf-lib`
+Se eligió `pdf-lib` sobre librerías como `pdfkit` o `puppeteer` por:
+- **Manipulación de PDFs existentes**: Capacidad nativa de "estampar" sobre plantillas (`.pdf` base).
+- **Rendimiento**: Opera sobre `Uint8Array` sin leaks de memoria.
+- **Portabilidad**: 100% JavaScript/TypeScript, sin dependencias binarias (ej: ImageMagick).
+
+### 15.2 Servicios Core
+
+#### `PdfStampingService`
+Servicio de bajo nivel para manipulación vectorial.
+- **Método**: `stampPdf(inputPath, texts, outputPath?)`
+- **Lógica**: Carga un PDF, inserta texto usando coordenadas Cartesianas (Y=0 es abajo, con autoconversión desde sistema legacy Top-Left).
+- **Entrada**: Array de coordenadas `{x, y, text, page}`.
+
+#### `TemplatesService`
+Servicio de dominio que conecta la base de datos con el motor PDF.
+- **Recuperación de Configuración**: `getPdfFieldsForStep(pasoId)` consulta `tm_campo_plantilla` buscando campos con coordenadas válidas.
+- **Resolución de Plantilla**: `getTemplateForFlow` determina qué archivo base usar según la Empresa y el Flujo.
+
+### 15.3 Integración Futura
+Este módulo será consumido por el `WorkflowEngineService` en transiciones clave (ej: "Firmar Documento" o "Finalizar Ticket") para generar los PDFs anexos al ticket automáticamente.
+
+
