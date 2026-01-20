@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TicketListingController } from './controllers/ticket-listing.controller';
 import { TicketHistoryController } from './controllers/ticket-history.controller';
@@ -14,8 +14,9 @@ import { Documento } from '../documents/entities/documento.entity';
 import { User } from '../users/entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
 import { AssignmentModule } from '../assignments/assignment.module';
-import { UsersModule } from '../users/users.module'; // Assuming UsersModule is needed for User Validation
+import { UsersModule } from '../users/users.module';
 import { WorkflowsModule } from '../workflows/workflows.module';
+import { TemplatesModule } from '../templates/templates.module';
 
 @Module({
     imports: [
@@ -28,9 +29,10 @@ import { WorkflowsModule } from '../workflows/workflows.module';
             User
         ]),
         AuthModule,
-        UsersModule, // For User Validation if needed
-        AssignmentModule, // Needed for TicketService
-        WorkflowsModule
+        AssignmentModule,
+        WorkflowsModule,
+        TemplatesModule,
+        forwardRef(() => UsersModule)
     ],
     controllers: [
         TicketListingController,

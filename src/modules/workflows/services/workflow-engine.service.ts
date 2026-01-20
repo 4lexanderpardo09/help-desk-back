@@ -30,13 +30,15 @@ export class WorkflowEngineService {
 
     /**
      * Initializes the workflow for a newly created ticket.
-     * 1. Finds the initial step for the subcategory.
-     * 2. Resolves the initial assignee (e.g., immediate boss or creator).
-     * 3. Updates the ticket with the step and assignee.
-     * 4. Logs the initial history.
+     * Core logic:
+     * 1. Finds the initial step (`orden` lowest) for the subcategory's active flow.
+     * 2. Resolves the initial assignee (e.g., immediate boss or creator) based on step rules.
+     * 3. Updates the ticket with the `pasoActualId` and `usuarioAsignadoIds`.
+     * 4. Logs the initial history in `TicketAsignacionHistorico`.
+     * 5. Sets the `pasoActual` relation on the returned entity to facilitate immediate usage (e.g. PDF generation).
      * 
      * @param ticket - The newly created ticket (must have ID).
-     * @returns The updated ticket.
+     * @returns The updated ticket entity with `pasoActual` populated.
      */
     async startTicketFlow(ticket: Ticket): Promise<Ticket> {
         if (!ticket.subcategoriaId) {
@@ -69,6 +71,8 @@ export class WorkflowEngineService {
             estado: 1
         });
         await this.historyRepo.save(history);
+
+        savedTicket.pasoActual = initialStep;
 
         return savedTicket;
     }

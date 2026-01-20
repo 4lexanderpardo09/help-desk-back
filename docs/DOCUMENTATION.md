@@ -1171,6 +1171,7 @@ La creación de un ticket (`TicketService.create`) ya no es una simple inserció
     - Resuelve quién debe atenderlo (Jefe, Agente, etc.).
     - Actualiza el ticket con `pasoActualId` y `usuarioAsignadoIds`.
     - Genera el primer registro en el historial.
+4. **Generación Documental (Opcional)**: Si el flujo tiene una plantilla PDF configurada (`FlujoPlantilla`), se invoca `PdfStampingService` para crear el documento inicial con los datos básicos y campos configurados en el paso 1.
 
 ### 14.2 Beneficios
 - **Tickets nunca huérfanos**: Todos los tickets nacen asignados y en un paso válido.
