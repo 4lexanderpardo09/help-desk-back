@@ -7,15 +7,7 @@ import { NotificationsService } from '../../notifications/services/notifications
 
 /**
  * SLA Service for tracking step time limits.
- * 
- * DISABLED: This service requires database schema updates.
- * Columns needed in `tm_flujo_paso`:
- *   - paso_horas_sla DECIMAL(10,2)
- *   - usuario_escalado_id INT
- * Column needed in `th_ticket_asignacion`:
- *   - sla_status VARCHAR(20)
- * 
- * Once these columns are added, re-enable the logic below.
+ * Uses `paso_tiempo_habil` (Days) from DB.
  */
 @Injectable()
 export class SlaService {
@@ -30,35 +22,91 @@ export class SlaService {
     ) { }
 
     /**
-     * Calculates if a step is on time or late based on start time and SLA hours.
-     * @disabled Database columns missing
+     * Calculates if a step is on time or late based on start time and SLA days.
+     * 
+     * @param startDate Date the ticket entered the step.
+     * @param slaDays SLA in business days (assumed sequential days for MVP, business days logic requires holiday calendar).
      */
-    calculateSlaStatus(startDate: Date, slaHours: number): 'A Tiempo' | 'Atrasado' {
-        if (!startDate || slaHours === null || slaHours === undefined) return 'A Tiempo';
+    calculateSlaStatus(startDate: Date, slaDays: number): 'A Tiempo' | 'Atrasado' {
+        if (!startDate || slaDays === null || slaDays === undefined) return 'A Tiempo';
 
         const now = new Date();
         const elapsedMillis = now.getTime() - startDate.getTime();
-        const slaMillis = slaHours * 60 * 60 * 1000;
+        // Assuming slaDays is strictly 24-hour periods for now.
+        // TODO: Implement true business day calculation (excluding weekends/holidays) if required.
+        const slaMillis = slaDays * 24 * 60 * 60 * 1000;
 
         return elapsedMillis > slaMillis ? 'Atrasado' : 'A Tiempo';
     }
 
     /**
      * Finds tickets that have exceeded their current step's SLA.
-     * @disabled Database columns missing (paso_horas_sla)
      */
     async findOverdueTickets(): Promise<Ticket[]> {
-        // DISABLED: horasSla column does not exist in tm_flujo_paso
-        this.logger.warn('SLA Check DISABLED: Missing DB columns (paso_horas_sla, sla_status)');
-        return [];
+        // Find tickets that are active (est=1) and not closed
+        const tickets = await this.ticketRepo.find({
+            where: {
+                estado: 1, // Active tickets
+            },
+            relations: ['pasoActual', 'historiales'],
+        });
+
+        const overdueTickets: Ticket[] = [];
+
+        for (const ticket of tickets) {
+            // Check if step exists and has SLA Config (tiempoHabil)
+            if (!ticket.pasoActual || !ticket.pasoActual.tiempoHabil) continue;
+
+            // Get the last assignment date (current step start date)
+            const lastAssignment = await this.historyRepo.findOne({
+                where: { ticketId: ticket.id, pasoId: ticket.pasoActualId as number },
+                order: { fechaAsignacion: 'DESC' }
+            });
+
+            if (!lastAssignment) continue;
+
+            // Check if already marked as overdue to avoid re-processing
+            if (lastAssignment.estadoTiempoPaso === 'Vencido') continue;
+
+            const status = this.calculateSlaStatus(lastAssignment.fechaAsignacion, ticket.pasoActual.tiempoHabil);
+
+            if (status === 'Atrasado') {
+                overdueTickets.push(ticket);
+            }
+        }
+
+        return overdueTickets;
     }
 
     /**
      * Processes an overdue ticket: updates status and notifies assignees.
-     * @disabled Database columns missing
      */
     async processOverdueTicket(ticket: Ticket) {
-        // DISABLED: slaStatus column does not exist in th_ticket_asignacion
-        this.logger.warn(`processOverdueTicket DISABLED for ticket #${ticket.id}`);
+        this.logger.log(`Processing overdue ticket #${ticket.id} at step ${ticket.pasoActual.nombre}`);
+
+        // 1. Mark current assignment as 'Vencido'
+        const lastAssignment = await this.historyRepo.findOne({
+            where: { ticketId: ticket.id, pasoId: ticket.pasoActualId as number },
+            order: { fechaAsignacion: 'DESC' }
+        });
+
+        if (lastAssignment) {
+            // Update the existing column `estadoTiempoPaso`
+            lastAssignment.estadoTiempoPaso = 'Vencido';
+            await this.historyRepo.save(lastAssignment);
+        }
+
+        // 2. Notification Logic (User Alert Only)
+        // Notify current assignees about the delay
+        if (ticket.usuarioAsignadoIds && ticket.usuarioAsignadoIds.length > 0) {
+            for (const userId of ticket.usuarioAsignadoIds) {
+                this.notificationsService.getGateway().emitToUser(userId, 'ticket_overdue', {
+                    mensaje: `ALERTA: El ticket #${ticket.id} "${ticket.titulo}" ha vencido su tiempo límite (${ticket.pasoActual.tiempoHabil} días).`,
+                    ticketId: ticket.id,
+                    fecha: new Date(),
+                });
+            }
+            this.logger.log(`Notified users [${ticket.usuarioAsignadoIds.join(', ')}] about overdue ticket #${ticket.id}`);
+        }
     }
 }

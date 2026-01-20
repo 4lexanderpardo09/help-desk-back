@@ -58,6 +58,9 @@ export class PasoFlujo {
     @Column({ name: 'necesita_aprobacion_jefe', type: 'tinyint', default: 0, nullable: true })
     necesitaAprobacionJefe: boolean | null;
 
+    @Column({ name: 'paso_tiempo_habil', type: 'int', nullable: true, comment: 'Tiempo SLA en horas/dias' })
+    tiempoHabil: number | null;
+
     @Column({ name: 'es_paralelo', type: 'tinyint', default: 0, nullable: true })
     esParalelo: boolean | null;
 

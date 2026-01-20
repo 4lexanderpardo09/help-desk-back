@@ -1478,3 +1478,51 @@ const pdfBytes = await this.signatureService.stampSignaturesForStep(pdfPath, pas
 Si el usuario no tiene firma configurada en `User.firma`, la operación se omite para ese usuario con un warning.
 
 
+
+## 10. Módulo de Workflows y SLA ('src/modules/workflows/')
+
+### SLA (Acuerdos de Nivel de Servicio)
+
+El sistema monitorea automáticamente el tiempo que un ticket permanece en cada paso del flujo.
+
+#### Conceptos Clave
+- **Tiempo Hábil ('paso_tiempo_habil')**: Definido en 'tm_flujo_paso'. Representa los días calendario (MVP) o hábiles que un ticket puede estar en un paso.
+- **Estado de Tiempo ('estado_tiempo_paso')**: Columna en 'th_ticket_asignacion_historico'.
+    - 'A Tiempo': El ticket está dentro del plazo.
+    - 'Vencido': El ticket excedió el tiempo límite.
+
+#### Funcionamiento del Motor SLA ('SlaSchedulerService')
+1. **Cron Job**: Se ejecuta cada 5 minutos.
+2. **Detección**: Busca tickets activos ('est=1') cuyo tiempo transcurrido desde la última asignación supere el 'tiempoHabil' del paso actual.
+3. **Acción**:
+    - Actualiza 'estado_tiempo_paso' a 'Vencido'.
+    - Envía notificación WebSocket ('ticket_overdue') en tiempo real al usuario asignado.
+
+#### Configuración
+- **Frecuencia de Chequeo**: Define 'SLA_CHECK_CRON' en '.env' (Default: '*/5 * * * *').
+
+### PDF Dynamic Stamping ('PdfStampingService')
+Permite estampar firmas y sellos dinámicos en documentos PDF generados o subidos.
+
+- **Servicio:** 'src/modules/templates/services/pdf-stamping.service.ts'
+- **Capacidades:**
+    - Insertar imágenes (PNG/JPG) en coordenadas específicas (X, Y).
+    - Insertar en páginas específicas (1-based).
+    - Escalar imágenes automáticamente.
+
+#### Uso:
+```typescript
+const pdfBytes = await this.pdfStampingService.stampImages(
+    'path/to/document.pdf',
+    [
+        {
+            imagePath: 'path/to/signature.png',
+            page: 1,
+            x: 100,
+            y: 200,
+            width: 150,
+            height: 50
+        }
+    ]
+);
+```
