@@ -1030,6 +1030,10 @@ Se ha iniciado el proceso de análisis exhaustivo de los modelos PHP Legacy (`le
 - **TicketError**: Reporte de errores (Proceso vs Info).
 - **Consolidado**: `migrations/SmallModels/SmallModels.analysis.md`.
 
+> [!NOTE]
+> Todas las interfaces legacy (`*.legacy.model.ts`) se han centralizado en `src/modules/_legacy_interfaces/` para evitar confusión con los modelos definitivos de NestJS.
+> Las entidades legacy (`*.entity.ts`) residen en `src/modules/_legacy_entities/`.
+
 ### Resumen de Cobertura (32 archivos legacy_models)
 | Estado | Cantidad | Descripción |
 |--------|----------|-------------|

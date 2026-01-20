@@ -1,4 +1,5 @@
-import { FlujoPasoLegacy } from '../../_legacy_entities/workflow.entities';
+import { FlujoPasoLegacy } from "../_legacy_entities/workflow.entities";
+
 
 /**
  * Contrato para el motor de flujos.

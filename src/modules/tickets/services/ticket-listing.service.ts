@@ -1,0 +1,176 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
+import { Ticket } from '../entities/ticket.entity';
+import { TicketFilterDto } from '../dto/ticket-filter.dto';
+import { TicketListItemDto, TicketListResponseDto, TicketTagDto } from '../dto/ticket-list-item.dto';
+import { TicketEtiqueta } from '../entities/ticket-etiqueta.entity';
+
+@Injectable()
+export class TicketListingService {
+    constructor(
+        @InjectRepository(Ticket)
+        private readonly ticketRepository: Repository<Ticket>,
+        @InjectRepository(TicketEtiqueta)
+        private readonly ticketEtiquetaRepository: Repository<TicketEtiqueta>,
+    ) { }
+
+    /**
+     * Base query builder with common joins and selects
+     */
+    private getBaseQuery(): SelectQueryBuilder<Ticket> {
+        return this.ticketRepository.createQueryBuilder('t')
+            .leftJoinAndSelect('t.usuario', 'u')
+            .leftJoinAndSelect('t.categoria', 'c')
+            .leftJoinAndSelect('t.subcategoria', 'sc')
+            //.leftJoinAndSelect('t.prioridad', 'p') // Prioridad might be null if legacy data is weird, but usually OK.
+            .leftJoinAndSelect('t.regional', 'r')
+            .where('t.estado = 1'); // t.est = 1 (Active)
+    }
+
+    private applyFilters(qb: SelectQueryBuilder<Ticket>, filters: TicketFilterDto) {
+        if (filters.search) {
+            qb.andWhere(new Brackets(qb => {
+                qb.where('t.titulo LIKE :search', { search: `%${filters.search}%` })
+                    .orWhere('t.id = :id', { id: filters.search }) // Exact ID match if numeric
+                    .orWhere('u.nombre LIKE :search', { search: `%${filters.search}%` })
+                    .orWhere('u.apellido LIKE :search', { search: `%${filters.search}%` });
+            }));
+        }
+
+        if (filters.status) {
+            qb.andWhere('t.ticketEstado = :status', { status: filters.status });
+        }
+
+        if (filters.dateFrom) {
+            qb.andWhere('t.fechaCreacion >= :dateFrom', { dateFrom: `${filters.dateFrom} 00:00:00` });
+        }
+        if (filters.dateTo) {
+            qb.andWhere('t.fechaCreacion <= :dateTo', { dateTo: `${filters.dateTo} 23:59:59` });
+        }
+
+        if (filters.ticketId) {
+            qb.andWhere('t.id = :ticketId', { ticketId: filters.ticketId });
+        }
+
+        if (filters.categoryId) {
+            qb.andWhere('t.categoriaId = :catId', { catId: filters.categoryId });
+        }
+
+        if (filters.subcategoryId) {
+            qb.andWhere('t.subcategoriaId = :scatId', { scatId: filters.subcategoryId });
+        }
+
+        if (filters.companyId) {
+            qb.andWhere('t.empresaId = :empId', { empId: filters.companyId });
+        }
+
+        // Tag filter logic involves subquery or join, somewhat complex for 1:N
+        if (filters.tagId) {
+            qb.innerJoin('t.ticketEtiquetas', 'te_filter', 'te_filter.etiquetaId = :tagId AND te_filter.estado = 1', { tagId: filters.tagId });
+        }
+    }
+
+    private async processResult(qb: SelectQueryBuilder<Ticket>, filters: TicketFilterDto): Promise<TicketListResponseDto> {
+        const page = filters.page || 1;
+        const limit = filters.limit || 10;
+        const skip = (page - 1) * limit;
+
+        const [tickets, total] = await qb
+            .orderBy('t.id', 'DESC')
+            .skip(skip)
+            .take(limit)
+            .getManyAndCount();
+
+        // Map to DTO
+        // Warning: TypeORM transformation for `usuarioAsignadoIds` runs after query.
+        // We also need to fetch tags for each ticket efficiently.
+        // Or we can rely on `eager` or manual fetch. Given pagination, manual fetch/join is fine.
+
+        // Fetch tags for these tickets
+        const ticketIds = tickets.map(t => t.id);
+        let tagsMap: Record<number, TicketTagDto[]> = {};
+
+        if (ticketIds.length > 0) {
+            const tags = await this.ticketEtiquetaRepository.createQueryBuilder('te')
+                .innerJoinAndSelect('te.etiqueta', 'e')
+                .where('te.ticketId IN (:...ids)', { ids: ticketIds })
+                .andWhere('te.estado = 1')
+                .andWhere('e.estado = 1')
+                .getMany();
+
+            tags.forEach(te => {
+                if (!tagsMap[te.ticketId]) tagsMap[te.ticketId] = [];
+                if (te.etiqueta) {
+                    tagsMap[te.ticketId].push({ nombre: te.etiqueta.nombre, color: te.etiqueta.color });
+                }
+            });
+        }
+
+        const data: TicketListItemDto[] = tickets.map(t => {
+            // Assignee Name resolution: legacy stores "123" or "123,456". 
+            // Our entity has `usuarioAsignadoIds` as number[].
+            // We might need to fetch names if we want to display "Juan Perez".
+            // Legacy list shows assignee name but logic suggests single assignee usually or "Sin Asignar".
+            // This service focuses on structure first. We can optimize assignee name loading later if critical.
+            // For now, let's map what we have.
+
+            return {
+                id: t.id,
+                titulo: t.titulo,
+                estado: t.ticketEstado || 'Abierto', // Default
+                fechaCreacion: t.fechaCreacion || new Date(),
+                categoria: t.categoria?.nombre || 'N/A',
+                subcategoria: t.subcategoria?.nombre || 'N/A',
+                prioridadUsuario: 'Media', // Placeholder, need relation or logic
+                prioridadDefecto: 'Media', // Placeholder
+                creadorNombre: t.usuario ? `${t.usuario.nombre} ${t.usuario.apellido}` : 'Unknown',
+                etiquetas: tagsMap[t.id] || [],
+                // TODO: Add logic for 'prioridad' text and assignee name dynamic resolution
+            };
+        });
+
+        return {
+            data,
+            total,
+            page,
+            limit
+        };
+    }
+
+    async listTicketsByUser(userId: number, filters: TicketFilterDto): Promise<TicketListResponseDto> {
+        const qb = this.getBaseQuery();
+        qb.andWhere('t.usuarioId = :userId', { userId });
+        this.applyFilters(qb, filters);
+        return this.processResult(qb, filters);
+    }
+
+    async listTicketsByAgent(agentId: number, filters: TicketFilterDto): Promise<TicketListResponseDto> {
+        const qb = this.getBaseQuery();
+        // Legacy: FIND_IN_SET(agentId, usu_asig)
+        // TypeORM: simple string check if not using Postgres Array
+        qb.andWhere(`FIND_IN_SET(:agentId, t.usu_asig) > 0`, { agentId });
+        this.applyFilters(qb, filters);
+        return this.processResult(qb, filters);
+    }
+
+    async listAllTickets(filters: TicketFilterDto): Promise<TicketListResponseDto> {
+        const qb = this.getBaseQuery();
+        this.applyFilters(qb, filters);
+        return this.processResult(qb, filters);
+    }
+
+    async listTicketsObservados(userId: number, filters: TicketFilterDto): Promise<TicketListResponseDto> {
+        // Requires TicketObservador entity or raw join
+        // Using raw join for now as TicketObservador might not be in entities list yet (small model)
+        // Checking task.md: TicketObservador not explicitly listed in small models analysis.
+        // Assuming table 'tm_ticket_observador' exists.
+        const qb = this.getBaseQuery();
+        qb.innerJoin('tm_ticket_observador', 'obs', 'obs.tick_id = t.tick_id');
+        qb.andWhere('obs.usu_id = :userId', { userId });
+        qb.andWhere('obs.est = 1');
+
+        this.applyFilters(qb, filters);
+        return this.processResult(qb, filters);
+    }
+}

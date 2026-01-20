@@ -1,4 +1,4 @@
-import { DocumentoLegacy, DocumentoDetalleLegacy, DocumentoCierreLegacy } from '../../_legacy_entities/document.entities';
+import { DocumentoCierreLegacy, DocumentoDetalleLegacy, DocumentoLegacy } from "../_legacy_entities/document.entities";
 
 export interface LegacyDocumentModel {
     // Basic CRUD
