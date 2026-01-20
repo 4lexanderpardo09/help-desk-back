@@ -1450,4 +1450,31 @@ El SLA se define en la entidad `PasoFlujo`:
    - Envía notificación WebSocket (`ticket_overdue`) a los usuarios asignados para alertarles.
    - **No reasigna** automáticamente (cambio de lógica para mantener responsabilidad).
 
+---
+
+## 20. Estampado de Firmas en PDF
+
+### Objetivo
+Incrustar dinámicamente la firma de los usuarios (imagen PNG/JPG) en los documentos generados por el flujo.
+
+### Componentes
+- **`PdfStampingService`**: Utilería de bajo nivel para manipular PDFs. Ahora soporta `stampImages` para incrustar imágenes.
+- **`SignatureStampingService`**: Orquestador que:
+  1. Lee la configuración de firmas del paso actual (`PasoFlujoFirma`).
+  2. Resuelve la ruta física de la imagen de firma del usuario (`User.firma`).
+  3. Llama a `PdfStampingService` para estampar.
+
+### 20.1 Configuración
+La entidad `PasoFlujoFirma` define:
+- `coord_x`, `coord_y`: Coordenadas en la página.
+- `pagina`: Número de página (1-based).
+- `usu_id` o `car_id`: A quién corresponde la firma (Usuario específico o Cargo).
+
+### 20.2 Uso
+El servicio se invoca durante la transición o generación de documentos:
+```typescript
+const pdfBytes = await this.signatureService.stampSignaturesForStep(pdfPath, pasoId);
+```
+Si el usuario no tiene firma configurada en `User.firma`, la operación se omite para ese usuario con un warning.
+
 
