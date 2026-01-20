@@ -1,7 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Inject, forwardRef } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
+import { PermissionsService } from '../permissions/permissions.service';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 
 @Injectable()
@@ -9,6 +10,8 @@ export class AuthService {
     constructor(
         private readonly jwtService: JwtService,
         private readonly usersService: UsersService,
+        @Inject(forwardRef(() => PermissionsService))
+        private readonly permissionsService: PermissionsService,
     ) { }
 
     /**
@@ -80,5 +83,40 @@ export class AuthService {
      */
     verifyToken(token: string): JwtPayload {
         return this.jwtService.verify<JwtPayload>(token);
+    }
+
+    /**
+     * Obtiene el perfil completo del usuario con detalles y permisos
+     */
+    async getFullProfile(user: JwtPayload): Promise<any> {
+        // 1. Obtener detalles básicos del usuario (Nombre, Apellido, etc) e incluir relaciones útiles
+        // Definimos los scopes que queremos traer para el perfil completo
+        const userDetails = await this.usersService.show(user.usu_id, {
+            included: 'role,cargo,regional,departamento'
+        });
+
+        if (!userDetails) {
+            throw new UnauthorizedException('Usuario no encontrado');
+        }
+
+        // 2. Obtener permisos del rol
+        let permissions: import('../permissions/permissions.service').CachedPermission[] = [];
+        if (user.rol_id) {
+            const perms = await this.permissionsService.getPermissionsForRole(user.rol_id);
+            // Transformar a formato simple si es necesario, o devolver CachedPermission directo
+            permissions = perms;
+        }
+
+        // 3. Combinar respuesta
+        return {
+            ...user, // Payload original (ids)
+            nombre: userDetails.nombre,
+            apellido: userDetails.apellido,
+            permissions: permissions,
+            role: userDetails.role,
+            cargo: userDetails.cargo,
+            regional: userDetails.regional,
+            departamento: userDetails.departamento
+        };
     }
 }

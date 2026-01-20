@@ -21,4 +21,24 @@ export class ProfileResponseDto {
 
     @ApiProperty({ description: 'Indica si es usuario nacional', example: false })
     es_nacional: boolean;
+
+    @ApiProperty({ description: 'Nombre del usuario', example: 'Juan', required: false })
+    nombre?: string;
+
+    @ApiProperty({ description: 'Apellido del usuario', example: 'Perez', required: false })
+    apellido?: string;
+
+    @ApiProperty({ description: 'Permisos del usuario', example: [{ action: 'read', subject: 'User' }], required: false })
+    permissions?: any[]; // Usamos any[] para evitar dependencia circular con Permission entity aqui, o definimos un DTO simple
+    @ApiProperty({ description: 'Datos del rol', required: false })
+    role?: any;
+
+    @ApiProperty({ description: 'Datos del cargo', required: false })
+    cargo?: any;
+
+    @ApiProperty({ description: 'Datos de la regional', required: false })
+    regional?: any;
+
+    @ApiProperty({ description: 'Datos del departamento', required: false })
+    departamento?: any;
 }

@@ -91,16 +91,40 @@ Retorna datos del usuario autenticado.
 
 **Headers:** `Authorization: Bearer <token>`
 
-**Response (200):**
+#### Respuesta Exitosa (200 OK)
 ```json
 {
   "usu_id": 1,
-  "usu_correo": "usuario@example.com",
-  "rol_id": 2,
+  "usu_correo": "admin@helpdesk.com",
+  "rol_id": 1,
   "reg_id": 1,
   "car_id": 1,
-  "dp_id": null,
-  "es_nacional": false
+  "dp_id": 1,
+  "es_nacional": true,
+  "nombre": "Alexander",
+  "apellido": "Pardo",
+  "permissions": [
+    {
+      "action": "manage",
+      "subject": "all"
+    }
+  ],
+  "role": {
+    "id": 1,
+    "nombre": "Admin"
+  },
+  "cargo": {
+    "id": 1,
+    "nombre": "Desarrollador"
+  },
+  "regional": {
+    "id": 1,
+    "nombre": "Bogotá"
+  },
+  "departamento": {
+    "id": 1,
+    "nombre": "Sistemas"
+  }
 }
 ```
 

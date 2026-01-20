@@ -24,11 +24,11 @@ export class AuthController {
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     @Get('profile')
-    @ApiOperation({ summary: 'Perfil de usuario', description: 'Obtiene el perfil del usuario autenticado (desde el token).' })
+    @ApiOperation({ summary: 'Perfil de usuario', description: 'Obtiene el perfil del usuario autenticado (desde el token) incluyendo permisos y detalles.' })
     @ApiResponse({ status: 200, description: 'Perfil del usuario.', type: ProfileResponseDto })
     @ApiResponse({ status: 401, description: 'No autorizado.' })
-    getProfile(@User() user: JwtPayload): ProfileResponseDto {
-        return user;
+    async getProfile(@User() user: JwtPayload): Promise<ProfileResponseDto> {
+        return this.authService.getFullProfile(user);
     }
 }
 
