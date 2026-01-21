@@ -7,14 +7,18 @@ import { FlujoPlantilla } from '../workflows/entities/flujo-plantilla.entity';
 import { Consulta } from '../reports/entities/consulta.entity';
 import { TicketCampoValor } from '../tickets/entities/ticket-campo-valor.entity';
 import { TemplatesController } from './templates.controller';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([
-        CampoPlantilla,
-        FlujoPlantilla,
-        Consulta,
-        TicketCampoValor
-    ])],
+    imports: [
+        TypeOrmModule.forFeature([
+            CampoPlantilla,
+            FlujoPlantilla,
+            Consulta,
+            TicketCampoValor
+        ]),
+        AuthModule
+    ],
     controllers: [TemplatesController],
     providers: [TemplatesService, PdfStampingService],
     exports: [TemplatesService, PdfStampingService],

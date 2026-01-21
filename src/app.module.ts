@@ -26,6 +26,8 @@ import jwtConfig from './config/jwt.config';
 import { AssignmentModule } from './modules/assignments/assignment.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { DocumentsModule } from './modules/documents/documents.module';
+import { FastAnswersModule } from './modules/fast-answers/fast-answers.module';
+import { ImportsModule } from './modules/imports/imports.module';
 
 @Module({
   imports: [
@@ -66,7 +68,10 @@ import { DocumentsModule } from './modules/documents/documents.module';
     AuthModule,
     AssignmentModule,
     NotificationsModule,
+    NotificationsModule,
     DocumentsModule,
+    FastAnswersModule,
+    ImportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -160,4 +160,44 @@ export class ApiQueryHelper {
             qb.skip((options.page - 1) * options.limit);
         }
     }
+
+    static parse(query: ApiQueryDto): FindOptions {
+        return {
+            filter: query.filter,
+            include: query.include,
+            sort: query.sort,
+            page: query.page,
+            limit: query.limit
+        };
+    }
+}
+
+export interface FindOptions {
+    filter?: Record<string, any>;
+    include?: string;
+    sort?: string;
+    page?: number;
+    limit?: number;
+}
+
+import { ApiPropertyOptional } from '@nestjs/swagger';
+
+export class ApiQueryDto {
+    @ApiPropertyOptional({ description: 'Objecto de filtros (ej: ?filter[nombre]=Juan)' })
+    filter?: Record<string, any>;
+
+    @ApiPropertyOptional({ description: 'Relaciones a incluir (ej: zona,regional)' })
+    include?: string;
+
+    @ApiPropertyOptional({ description: 'Ordenamiento (ej: id,-nombre)' })
+    sort?: string;
+
+    @ApiPropertyOptional({ description: 'Número de página', default: 1 })
+    page?: number;
+
+    @ApiPropertyOptional({ description: 'Registros por página', default: 20 })
+    limit?: number;
+
+    // Add optional key access signature
+    [key: string]: any;
 }

@@ -115,6 +115,26 @@ Implemented dynamic field logic matching legacy `CampoPlantilla.php` capabilitie
 
 ---
 
+## 2026-01-20: Helpers & Utilities (Completed)
+
+### 1. DateUtilService (Common)
+- **Location**: `src/common/services/date-util.service.ts`
+- **Logic**: Handles calculation of business hours/days.
+- **Methods**: `addBusinessHours`, `addBusinessDays`.
+
+### 2. FastAnswers Module (New)
+- **Location**: `src/modules/fast-answers/`
+- **Endpoint**: `GET /fast-answers`
+- **Entity**: `tm_fast_answer` (Process mistakes, frequent answers).
+- **Access**: Public for authenticated users (`read Ticket` permission).
+
+### 3. ExcelDataService (Imports Module)
+- **Location**: `src/modules/imports/services/excel-data.service.ts`
+- **Logic**: Retrieves JSON content stored in `tm_data_excel` linked to workflows.
+- **Usage**: Used to load regional Excel files dynamically during flow execution.
+
+---
+
 ## 2026-01-15 - Configuración Inicial del Backend NestJS
 
 ### Contexto

@@ -3205,6 +3205,35 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Fast Answers",
+            "description": "Respuestas rápidas y Tipos de error (tm_fast_answer)",
+            "item": [
+                {
+                    "name": "List All",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/fast-answers",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "fast-answers"
+                            ]
+                        },
+                        "description": "Listado de respuestas rápidas."
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }
