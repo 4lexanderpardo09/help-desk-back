@@ -2,10 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsNumber, IsOptional, IsString, IsArray } from 'class-validator';
 
 export class CreateTicketDto {
-    @ApiProperty()
+    @ApiProperty({ required: false, description: 'ID del usuario (extraído del token JWT)' })
+    @IsOptional()
     @IsNumber()
-    @IsNotEmpty()
-    usuarioId: number;
+    usuarioId?: number;
 
     @ApiProperty()
     @IsNumber()

@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Get, Param, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Get, Param, Put, UseGuards, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { TicketService } from '../services/ticket.service';
 import { CreateTicketDto } from '../dto/create-ticket.dto';
@@ -22,7 +22,8 @@ export class TicketController {
     @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
     @ApiResponse({ status: 400, description: 'Error al iniciar flujo (sin subcategoría)' })
     @CheckPolicies((ability: AppAbility) => ability.can('create', 'Ticket'))
-    async create(@Body() dto: CreateTicketDto) {
+    async create(@Body() dto: CreateTicketDto, @Req() req: any) {
+        dto.usuarioId = req.user.usu_id;
         return this.ticketService.create(dto);
     }
 

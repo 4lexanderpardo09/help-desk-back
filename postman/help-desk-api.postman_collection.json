@@ -2799,7 +2799,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"usuarioId\": 5,\n    \"categoriaId\": 1,\n    \"titulo\": \"Falla en Impresora\",\n    \"descripcion\": \"No imprime a color\",\n    \"prioridadId\": 2\n}"
+                            "raw": "{\n    \"categoriaId\": 1,\n    \"titulo\": \"Falla en Impresora\",\n    \"descripcion\": \"No imprime a color\",\n    \"prioridadId\": 2\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/tickets",
