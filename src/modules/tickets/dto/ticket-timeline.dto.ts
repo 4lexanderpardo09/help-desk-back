@@ -4,7 +4,8 @@ export enum TimelineItemType {
     COMMENT = 'comment',
     ASSIGNMENT = 'assignment',
     STATUS_CHANGE = 'status_change',
-    ERROR_REPORT = 'error_report'
+    ERROR_REPORT = 'error_report',
+    SIGNED_DOCUMENT = 'signed_document'
 }
 
 export class TimelineActorDto {
@@ -24,6 +25,20 @@ export class TimelineDocumentDto {
 
     @ApiProperty()
     nombre: string;
+
+    @ApiProperty()
+    url: string;
+}
+
+export class SignedDocumentDto {
+    @ApiProperty()
+    id: number;
+
+    @ApiProperty()
+    nombre: string;
+
+    @ApiProperty()
+    fechaCreacion: Date;
 
     @ApiProperty()
     url: string;

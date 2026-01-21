@@ -3,8 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TicketDetalle } from '../entities/ticket-detalle.entity';
 import { TicketAsignacionHistorico } from '../entities/ticket-asignacion-historico.entity';
-import { TicketTimelineItemDto, TimelineItemType } from '../dto/ticket-timeline.dto';
+import { TicketTimelineItemDto, TimelineItemType, SignedDocumentDto } from '../dto/ticket-timeline.dto';
 import { Documento } from '../../documents/entities/documento.entity';
+import { DocumentoFlujo } from '../../documents/entities/documento-flujo.entity';
 
 @Injectable()
 export class TicketHistoryService {
@@ -14,7 +15,9 @@ export class TicketHistoryService {
         @InjectRepository(TicketAsignacionHistorico)
         private readonly ticketAsigRepo: Repository<TicketAsignacionHistorico>,
         @InjectRepository(Documento)
-        private readonly documentoRepo: Repository<Documento>
+        private readonly documentoRepo: Repository<Documento>,
+        @InjectRepository(DocumentoFlujo)
+        private readonly documentoFlujoRepo: Repository<DocumentoFlujo>
     ) { }
 
     /**
@@ -38,7 +41,14 @@ export class TicketHistoryService {
             order: { fechaAsignacion: 'DESC' }
         });
 
-        // 3. Convert Detalles -> Timeline Items
+        // 3. Fetch Signed Documents (DocumentoFlujo)
+        const signedDocs = await this.documentoFlujoRepo.find({
+            where: { ticketId, estado: 1 },
+            relations: ['usuario'],
+            order: { fechaCreacion: 'DESC' }
+        });
+
+        // 4. Convert Detalles -> Timeline Items
         for (const det of detalles) {
             const docDtos = det.documentos?.map(doc => ({
                 id: doc.id,
@@ -58,7 +68,7 @@ export class TicketHistoryService {
             });
         }
 
-        // 4. Convert Assignments -> Timeline Items
+        // 5. Convert Assignments -> Timeline Items
         for (const asig of assignments) {
             let description = 'Reasignación de ticket';
             if (asig.comentario) description += `: ${asig.comentario}`;
@@ -78,7 +88,45 @@ export class TicketHistoryService {
             });
         }
 
-        // 5. Sort DESC by date
+        // 6. Convert Signed Documents -> Timeline Items
+        for (const doc of signedDocs) {
+            timeline.push({
+                type: TimelineItemType.SIGNED_DOCUMENT,
+                fecha: doc.fechaCreacion,
+                actor: {
+                    id: doc.usuarioId || 0,
+                    nombre: doc.usuario ? `${doc.usuario.nombre} ${doc.usuario.apellido}` : 'Sistema'
+                },
+                descripcion: `Documento firmado generado: ${doc.nombre}`,
+                documentos: [{
+                    id: doc.id,
+                    nombre: doc.nombre,
+                    url: `/public/document_flujo/${doc.nombre}`
+                }]
+            });
+        }
+
+        // 7. Sort DESC by date
         return timeline.sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
+    }
+
+    /**
+     * Retrieves the last signed document for a ticket.
+     * Useful for checking if the current step requires a signed document or for display.
+     */
+    async getLastSignedDocument(ticketId: number): Promise<SignedDocumentDto | null> {
+        const doc = await this.documentoFlujoRepo.findOne({
+            where: { ticketId, estado: 1 },
+            order: { fechaCreacion: 'DESC' }
+        });
+
+        if (!doc) return null;
+
+        return {
+            id: doc.id,
+            nombre: doc.nombre,
+            fechaCreacion: doc.fechaCreacion,
+            url: `/public/document_flujo/${doc.nombre}`
+        };
     }
 }

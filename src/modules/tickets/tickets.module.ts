@@ -11,6 +11,7 @@ import { TicketEtiqueta } from './entities/ticket-etiqueta.entity';
 import { TicketDetalle } from './entities/ticket-detalle.entity';
 import { TicketAsignacionHistorico } from './entities/ticket-asignacion-historico.entity';
 import { Documento } from '../documents/entities/documento.entity';
+import { DocumentoFlujo } from '../documents/entities/documento-flujo.entity';
 import { User } from '../users/entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
 import { AssignmentModule } from '../assignments/assignment.module';
@@ -28,6 +29,7 @@ import { DocumentsModule } from '../documents/documents.module';
             TicketAsignacionHistorico,
             TicketEtiqueta,
             Documento,
+            DocumentoFlujo,
             User
         ]),
         AuthModule,

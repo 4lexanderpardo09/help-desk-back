@@ -29,6 +29,31 @@ Implemented critical legacy functionalities for the Workflow Engine to support m
 
 ---
 
+## 2026-01-20: Ticket Listing & History (Completed)
+
+### Summary
+Backfilled missing functionality in `TicketListingService` and `TicketHistoryService` to match legacy capabilities, including precise filtering, assignee name resolution, and signed document tracking.
+
+### Technical Detail
+1. **Ticket Listing (`TicketListingService`)**:
+   - Implemented view-based scopes (`CREATED`, `ASSIGNED`, `ALL`, `ERRORS_REPORTED`, `ERRORS_RECEIVED`).
+   - Added automatic assignee name resolution: Legacy stores IDs as "1,2,3", service maps these to "Real Name (+N)".
+   - Optimized eager loading with `TicketEtiqueta` (Tags).
+
+2. **Ticket History (`TicketHistoryService`)**:
+   - Merged timeline from three sources: 
+     - `TicketDetalle` (Comments/Logs)
+     - `TicketAsignacionHistorico` (Events)
+     - `DocumentoFlujo` (Signed Documents) - **New Implementation**
+   - Implemented `getLastSignedDocument(ticketId)` helper for UI usage.
+
+### Testing
+- **Filters**: Verified correct query building for different user roles and views.
+- **Timeline**: Verified correct chronological merging of heterogeneous events (Signed Docs, Assignments, Comments).
+- **Unit Tests**: `ticket-listing.service.spec.ts` and `ticket-history.service.spec.ts` added and passed.
+
+---
+
 ## 2026-01-15 - Configuración Inicial del Backend NestJS
 
 ### Contexto
