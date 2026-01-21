@@ -2,15 +2,24 @@ import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsString, IsInt, IsDateString, Min, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 
+/**
+ * Views available for ticket listing.
+ */
 export enum TicketView {
     ALL = 'all',
     CREATED = 'created',
     ASSIGNED = 'assigned',
-    OBSERVED = 'observed'
+    OBSERVED = 'observed',
+    ERRORS_REPORTED = 'errors_reported',
+    ERRORS_RECEIVED = 'errors_received'
 }
 
 export class TicketFilterDto {
-    @ApiProperty({ required: false, enum: TicketView, description: 'Vista de tickets a listar (created, assigned, observed, all)' })
+    /**
+     * View mode to filter tickets.
+     * Use specialized views like 'errors_reported' to see tickets with errors reported by the user.
+     */
+    @ApiProperty({ required: false, enum: TicketView, description: 'Vista de tickets a listar (created, assigned, observed, all, errors_reported, errors_received)' })
     @IsOptional()
     @IsEnum(TicketView)
     view?: TicketView;

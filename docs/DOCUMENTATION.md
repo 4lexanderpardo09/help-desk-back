@@ -1167,7 +1167,7 @@ Reemplaza a `TicketLister.php`. Provee endpoints optimizados para bandejas.
 
 #### Endpoints
 - **GET** `/tickets/list` (**NUEVO - Maestro**): Listado unificado con soporte de vistas dinámicas.
-    - Param `view`: `all` | `created` | `assigned` | `observed`
+    - Param `view`: `all` | `created` | `assigned` | `observed` | `errors_reported` | `errors_received`
     - Param `search`, `status`, `dateFrom`, `dateTo`, etc.
     - **Seguridad**: Si un usuario pide `view=all` pero no tiene permisos, el sistema automáticamente le muestra `created` o `assigned` (Fallback seguro).
 

@@ -2598,6 +2598,84 @@
             "description": "Gestión de Tickets (Listing & History)",
             "item": [
                 {
+                    "name": "List - Errors Reported",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/tickets/list?view=errors_reported&page=1&limit=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tickets",
+                                "list"
+                            ],
+                            "query": [
+                                {
+                                    "key": "view",
+                                    "value": "errors_reported",
+                                    "description": "Tickets donde el usuario reportó un error"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                }
+                            ]
+                        },
+                        "description": "Lista tickets que contienen errores reportados por el usuario actual (tm_ticket_error.usu_id_reporta)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "List - Errors Received",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/tickets/list?view=errors_received&page=1&limit=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tickets",
+                                "list"
+                            ],
+                            "query": [
+                                {
+                                    "key": "view",
+                                    "value": "errors_received",
+                                    "description": "Tickets con errores asignados al usuario responsable"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                }
+                            ]
+                        },
+                        "description": "Lista tickets que tienen errores asignados al usuario actual (tm_ticket_error.usu_id_responsable)."
+                    },
+                    "response": []
+                },
+                {
                     "name": "List Tickets (Unified)",
                     "request": {
                         "method": "GET",

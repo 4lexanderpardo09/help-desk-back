@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository, SelectQueryBuilder } from 'typeorm';
+import { Brackets, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { Ticket } from '../entities/ticket.entity';
 import { TicketFilterDto, TicketView } from '../dto/ticket-filter.dto';
 import { TicketListItemDto, TicketListResponseDto, TicketTagDto } from '../dto/ticket-list-item.dto';
 import { TicketEtiqueta } from '../entities/ticket-etiqueta.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Injectable()
 export class TicketListingService {
@@ -13,6 +14,8 @@ export class TicketListingService {
         private readonly ticketRepository: Repository<Ticket>,
         @InjectRepository(TicketEtiqueta)
         private readonly ticketEtiquetaRepository: Repository<TicketEtiqueta>,
+        @InjectRepository(User)
+        private readonly userRepository: Repository<User>,
     ) { }
 
     /**
@@ -25,6 +28,7 @@ export class TicketListingService {
             .leftJoinAndSelect('t.subcategoria', 'sc')
             //.leftJoinAndSelect('t.prioridad', 'p') // Prioridad might be null if legacy data is weird, but usually OK.
             .leftJoinAndSelect('t.regional', 'r')
+            .leftJoinAndSelect('t.pasoActual', 'pa') // Incluir Paso Actual para ver SLA/Status
             .where('t.estado = 1'); // t.est = 1 (Active)
     }
 
@@ -87,10 +91,10 @@ export class TicketListingService {
         // We also need to fetch tags for each ticket efficiently.
         // Or we can rely on `eager` or manual fetch. Given pagination, manual fetch/join is fine.
 
-        // Fetch tags for these tickets
         const ticketIds = tickets.map(t => t.id);
-        let tagsMap: Record<number, TicketTagDto[]> = {};
 
+        // 1. Fetch Tags
+        let tagsMap: Record<number, TicketTagDto[]> = {};
         if (ticketIds.length > 0) {
             const tags = await this.ticketEtiquetaRepository.createQueryBuilder('te')
                 .innerJoinAndSelect('te.etiqueta', 'e')
@@ -107,13 +111,32 @@ export class TicketListingService {
             });
         }
 
+        // 2. Fetch Assignee Names
+        // Collect all assignee IDs across all tickets
+        const allAssigneeIds = [...new Set(tickets.flatMap(t => t.usuarioAsignadoIds || []))].filter(id => id);
+        let assigneeNamesMap = new Map<number, string>();
+
+        if (allAssigneeIds.length > 0) {
+            const assignees = await this.userRepository.find({
+                where: { id: In(allAssigneeIds) },
+                select: ['id', 'nombre', 'apellido']
+            });
+            assignees.forEach(u => assigneeNamesMap.set(u.id, `${u.nombre} ${u.apellido}`));
+        }
+
         const data: TicketListItemDto[] = tickets.map(t => {
-            // Assignee Name resolution: legacy stores "123" or "123,456". 
-            // Our entity has `usuarioAsignadoIds` as number[].
-            // We might need to fetch names if we want to display "Juan Perez".
-            // Legacy list shows assignee name but logic suggests single assignee usually or "Sin Asignar".
-            // This service focuses on structure first. We can optimize assignee name loading later if critical.
-            // For now, let's map what we have.
+            // Resolver nombre del primer asignado (MVP: usualmente 1, si hay multiples se muestra el primero o 'Múltiples')
+            // Legacy solía mostrar el nombre del asignado principal.
+            let asignadoNombre = 'Sin Asignar';
+            if (t.usuarioAsignadoIds && t.usuarioAsignadoIds.length > 0) {
+                const firstId = t.usuarioAsignadoIds[0];
+                const name = assigneeNamesMap.get(firstId);
+                if (name) {
+                    asignadoNombre = t.usuarioAsignadoIds.length > 1 ? `${name} (+${t.usuarioAsignadoIds.length - 1})` : name;
+                } else {
+                    asignadoNombre = 'Usuario Eliminado';
+                }
+            }
 
             return {
                 id: t.id,
@@ -122,11 +145,12 @@ export class TicketListingService {
                 fechaCreacion: t.fechaCreacion || new Date(),
                 categoria: t.categoria?.nombre || 'N/A',
                 subcategoria: t.subcategoria?.nombre || 'N/A',
-                prioridadUsuario: 'Media', // Placeholder, need relation or logic
+                prioridadUsuario: 'Media', // Placeholder
                 prioridadDefecto: 'Media', // Placeholder
                 creadorNombre: t.usuario ? `${t.usuario.nombre} ${t.usuario.apellido}` : 'Unknown',
+                asignadoNombre: asignadoNombre,
                 etiquetas: tagsMap[t.id] || [],
-                // TODO: Add logic for 'prioridad' text and assignee name dynamic resolution
+                // TODO: Add logic for 'prioridad' text based on entity if needed
             };
         });
 
@@ -138,6 +162,23 @@ export class TicketListingService {
         };
     }
 
+    /**
+     * Lists tickets based on the provided filters and user permissions.
+     * 
+     * Applies security scopes to ensure users only see what they are allowed to see.
+     * - Admins/Managers: Can see 'all'.
+     * - Agents: Can see 'assigned'.
+     * - Users: Can see 'created'.
+     * 
+     * Supports specific views for Error Tracking:
+     * - `ERRORS_REPORTED`: Tickets where the user reported an error.
+     * - `ERRORS_RECEIVED`: Tickets where the error is assigned to the user.
+     * 
+     * @param user The authenticated user payload.
+     * @param filters The filter DTO containing view mode, search, dates, etc.
+     * @param ability The CASL ability for fine-grained permission checks.
+     * @returns A paginated list of tickets with resolved assignee names and tags.
+     */
     async list(
         user: any, // JwtPayload
         filters: TicketFilterDto,
@@ -175,6 +216,16 @@ export class TicketListingService {
                 qb.innerJoin('tm_ticket_observador', 'obs', 'obs.tick_id = t.tick_id');
                 qb.andWhere('obs.usu_id = :userId', { userId: user.usu_id });
                 qb.andWhere('obs.est = 1');
+                break;
+            case TicketView.ERRORS_REPORTED:
+                // Join con tm_ticket_error donde usu_id_reporta = user
+                qb.innerJoin('t.ticketErrors', 'te_rep', 'te_rep.usuarioReportaId = :userId', { userId: user.usu_id });
+                qb.andWhere('te_rep.estado = 1');
+                break;
+            case TicketView.ERRORS_RECEIVED:
+                // Join con tm_ticket_error donde usu_id_responsable = user
+                qb.innerJoin('t.ticketErrors', 'te_resp', 'te_resp.usuarioResponsableId = :userId', { userId: user.usu_id });
+                qb.andWhere('te_resp.estado = 1');
                 break;
             case TicketView.ALL:
                 // No extra filter needed if authorized
