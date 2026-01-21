@@ -793,6 +793,27 @@ async findAll(options: FindOptions) {
 }
 ```
 
+### ⚡ Filtrado Relacional (Nuevo)
+Ahora es posible filtrar por propiedades de relaciones utilizando notación de puntos. El sistema detecta automáticamente la relación y realiza el `JOIN` necesario.
+
+#### Ejemplo:
+Para filtrar categorías que pertenecen al departamento con ID 1:
+
+**En el Servicio (`allowedFilters`):**
+```typescript
+private readonly allowedFilters = ['nombre', 'estado', 'departamentos.id'];
+```
+
+**En el API:**
+`GET /categories?filter[departamentos.id]=1`
+
+El `ApiQueryHelper`:
+1. Detecta `departamentos` como una relación.
+2. Si la relación no está incluida (ignora), hace un `INNER JOIN`.
+3. Aplica el filtro `departamentos.id = 1`.
+
+Esto evita tener que escribir bloques manuales de Join en los servicios.
+
 ### Uso en API (Frontend)
 
 - **Incluir Relaciones:** `GET /resource?included=regional,regional.zona`
