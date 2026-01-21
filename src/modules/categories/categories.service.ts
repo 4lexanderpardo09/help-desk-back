@@ -16,7 +16,7 @@ export class CategoriesService {
 
     // Listas permitidas para "Scopes" dinámicos
     private readonly allowedIncludes = ['subcategorias', 'departamentos', 'empresas'];
-    private readonly allowedFilters = ['nombre', 'estado'];
+    private readonly allowedFilters = ['nombre', 'estado', 'departamentos.id'];
 
     /**
      * Lista las categorías aplicando filtros y paginación.
@@ -31,6 +31,14 @@ export class CategoriesService {
 
         // Filtro base: solo activos
         qb.where('category.estado = :estado', { estado: 1 });
+
+        // Filtro manual para relaciones (no soportado por ApiQueryHelper)
+        if (options?.filter && options.filter['departamentos.id']) {
+            qb.innerJoin('category.departamentos', 'dept', 'dept.id = :deptId', {
+                deptId: options.filter['departamentos.id']
+            });
+            delete options.filter['departamentos.id'];
+        }
 
         // Scopes dinámicos
         ApiQueryHelper.applyIncludes(qb, options?.included, this.allowedIncludes, 'category');

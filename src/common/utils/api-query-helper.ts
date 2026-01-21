@@ -1,5 +1,34 @@
 import { SelectQueryBuilder } from 'typeorm';
 import { BadRequestException } from '@nestjs/common';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+
+export interface FindOptions {
+    filter?: Record<string, any>;
+    include?: string;
+    sort?: string;
+    page?: number;
+    limit?: number;
+}
+
+export class ApiQueryDto {
+    @ApiPropertyOptional({ description: 'Objecto de filtros (ej: ?filter[nombre]=Juan)' })
+    filter?: Record<string, any>;
+
+    @ApiPropertyOptional({ description: 'Relaciones a incluir (ej: zona,regional)' })
+    include?: string;
+
+    @ApiPropertyOptional({ description: 'Ordenamiento (ej: id,-nombre)' })
+    sort?: string;
+
+    @ApiPropertyOptional({ description: 'Número de página', default: 1 })
+    page?: number;
+
+    @ApiPropertyOptional({ description: 'Registros por página', default: 20 })
+    limit?: number;
+
+    // Add optional key access signature
+    [key: string]: any;
+}
 
 export class ApiQueryHelper {
     /**
@@ -23,15 +52,6 @@ export class ApiQueryHelper {
 
         const relations = included.split(',');
 
-        // Set para rastrear alias ya usados en esta ejecución y evitar llamadas duplicadas
-        // (aunque TypeORM maneja bien leftJoin si el alias es distinto, aquí queremos proteger nombres)
-        // const processedAliases = new Set<string>(); // This is no longer needed with the new logic
-
-        // Pre-cargar alias existentes en el QB para no re-joinear lo que ya está
-        // qb.expressionMap.aliases.forEach(alias => {
-        //     processedAliases.add(alias.name);
-        // }); // This is no longer needed with the new logic
-
         relations.forEach((relation) => {
             const trimmedRel = relation.trim();
             if (allowed.includes(trimmedRel)) {
@@ -42,30 +62,22 @@ export class ApiQueryHelper {
                 parts.forEach((part) => {
                     try {
                         // 1. Verificar si la relación ya ha sido unida previamente en el QueryBuilder
-                        // Buscamos en los atributos de join existentes para ver si este path (parentAlias + property) ya existe
                         const existingJoin = qb.expressionMap.joinAttributes.find(
                             ja => ja.parentAlias === currentParentAlias && ja.relation?.propertyName === part
                         );
 
                         if (existingJoin) {
-                            // Si ya existe, reutilizamos el alias existente y avanzamos al siguiente nivel
                             currentParentAlias = existingJoin.alias.name;
                             return;
                         }
 
                         // 2. Si no existe, debemos crear el JOIN.
-                        // Generamos un alias candidato. Preferimos el nombre simple 'part' (ej: 'zona').
                         let targetAlias = part;
-
-                        // Función helper para verificar si un alias ya está en uso en todo el query
                         const isAliasTaken = (name: string) => qb.expressionMap.aliases.some(a => a.name === name);
 
                         // 3. Resolución de Colisiones de Alias
                         if (isAliasTaken(targetAlias)) {
-                            // Si 'zona' está ocupado (ej: por otra relación), probamos 'parent_child' (ej: 'regional_zona')
                             targetAlias = `${currentParentAlias}_${part}`;
-
-                            // Si aún así hay colisión (caso raro), agregamos un sufijo aleatorio
                             if (isAliasTaken(targetAlias)) {
                                 targetAlias = `${targetAlias}_${Math.floor(Math.random() * 1000)}`;
                             }
@@ -74,8 +86,6 @@ export class ApiQueryHelper {
                         // 4. Ejecutar el Join
                         const propertyPath = `${currentParentAlias}.${part}`;
                         qb.leftJoinAndSelect(propertyPath, targetAlias);
-
-                        // Actualizar el padre para la siguiente iteración del loop
                         currentParentAlias = targetAlias;
                     } catch (error) {
                         throw new BadRequestException(
@@ -114,23 +124,39 @@ export class ApiQueryHelper {
 
                 if (allowed.includes(key)) {
                     // Generamos un nombre de parámetro único para evitar colisiones
-                    const paramName = `filter_${key}`;
+                    const paramName = `filter_${key.replace('.', '_')}`;
+                    let alias = mainAlias;
+                    let field = key;
+
+                    // Support for relation filtering (e.g. 'departamentos.id')
+                    if (key.includes('.')) {
+                        const parts = key.split('.');
+                        const relationName = parts[0];
+                        field = parts[1];
+                        alias = relationName;
+
+                        // Check if alias exists, if not, innerJoin
+                        const aliasExists = qb.expressionMap.aliases.some(a => a.name === alias);
+                        if (!aliasExists) {
+                            qb.innerJoin(`${mainAlias}.${relationName}`, alias);
+                        }
+                    }
 
                     // Lógica inteligente: ID y Estado o claves que terminan en Id usan IGUALDAD estricta o IN
                     // Texto usa LIKE
-                    if (key === 'id' || key.endsWith('Id') || key === 'estado' || key === 'est') {
+                    if (field === 'id' || field.endsWith('Id') || field === 'estado' || field === 'est' || key.endsWith('.id')) {
                         if (Array.isArray(value)) {
                             // Caso: filter[id][]=1&filter[id][]=2
-                            qb.andWhere(`${mainAlias}.${key} IN (:...${paramName})`, { [paramName]: value });
+                            qb.andWhere(`${alias}.${field} IN (:...${paramName})`, { [paramName]: value });
                         } else if (typeof value === 'string' && value.includes(',')) {
                             // Caso: filter[id]=1,2
                             const values = value.split(',').map(v => v.trim());
-                            qb.andWhere(`${mainAlias}.${key} IN (:...${paramName})`, { [paramName]: values });
+                            qb.andWhere(`${alias}.${field} IN (:...${paramName})`, { [paramName]: values });
                         } else {
-                            qb.andWhere(`${mainAlias}.${key} = :${paramName}`, { [paramName]: value });
+                            qb.andWhere(`${alias}.${field} = :${paramName}`, { [paramName]: value });
                         }
                     } else {
-                        qb.andWhere(`${mainAlias}.${key} LIKE :${paramName}`, { [paramName]: `%${value}%` });
+                        qb.andWhere(`${alias}.${field} LIKE :${paramName}`, { [paramName]: `%${value}%` });
                     }
                 }
             });
@@ -140,6 +166,7 @@ export class ApiQueryHelper {
             );
         }
     }
+
     /**
      * Aplica paginación standard (take/skip)
      * 
@@ -170,34 +197,4 @@ export class ApiQueryHelper {
             limit: query.limit
         };
     }
-}
-
-export interface FindOptions {
-    filter?: Record<string, any>;
-    include?: string;
-    sort?: string;
-    page?: number;
-    limit?: number;
-}
-
-import { ApiPropertyOptional } from '@nestjs/swagger';
-
-export class ApiQueryDto {
-    @ApiPropertyOptional({ description: 'Objecto de filtros (ej: ?filter[nombre]=Juan)' })
-    filter?: Record<string, any>;
-
-    @ApiPropertyOptional({ description: 'Relaciones a incluir (ej: zona,regional)' })
-    include?: string;
-
-    @ApiPropertyOptional({ description: 'Ordenamiento (ej: id,-nombre)' })
-    sort?: string;
-
-    @ApiPropertyOptional({ description: 'Número de página', default: 1 })
-    page?: number;
-
-    @ApiPropertyOptional({ description: 'Registros por página', default: 20 })
-    limit?: number;
-
-    // Add optional key access signature
-    [key: string]: any;
 }
