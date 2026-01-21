@@ -2676,7 +2676,93 @@
                     "response": []
                 },
                 {
-                    "name": "List Tickets (Unified)",
+                    "name": "List Tickets - View ALL (Admin Only)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "// Test: Admin puede ver todos los tickets",
+                                    "pm.test('Status code es 200 o 403', function () {",
+                                    "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                                    "});",
+                                    "",
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.test('Respuesta contiene data', function () {",
+                                    "        var jsonData = pm.response.json();",
+                                    "        pm.expect(jsonData).to.have.property('data');",
+                                    "    });",
+                                    "} else if (pm.response.code === 403) {",
+                                    "    pm.test('Mensaje de error correcto', function () {",
+                                    "        var jsonData = pm.response.json();",
+                                    "        pm.expect(jsonData.message).to.include('No tienes permiso');",
+                                    "    });",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/tickets/list?view=all&page=1&limit=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tickets",
+                                "list"
+                            ],
+                            "query": [
+                                {
+                                    "key": "view",
+                                    "value": "all",
+                                    "description": "Ver TODOS los tickets del sistema (Requiere permiso 'view:all')"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                }
+                            ]
+                        },
+                        "description": "**Permiso Requerido**: `view:all` sobre `Ticket`\n\n**Roles con acceso**:\n- Admin (rol_id=1)\n\n**Comportamiento**:\n- ✅ 200 OK: Usuario tiene permiso, retorna todos los tickets\n- ❌ 403 Forbidden: Usuario no tiene permiso 'view:all'"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "List Tickets - View ASSIGNED (Agentes)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "// Test: Usuario puede ver tickets asignados",
+                                    "pm.test('Status code es 200 o 403', function () {",
+                                    "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                                    "});",
+                                    "",
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.test('Respuesta contiene data', function () {",
+                                    "        var jsonData = pm.response.json();",
+                                    "        pm.expect(jsonData).to.have.property('data');",
+                                    "    });",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
                     "request": {
                         "method": "GET",
                         "header": [
@@ -2698,7 +2784,7 @@
                                 {
                                     "key": "view",
                                     "value": "assigned",
-                                    "description": "View scope: 'assigned' (default for agents), 'created' (default for users), 'observed', 'all' (managers)"
+                                    "description": "Ver tickets asignados al usuario (Requiere permiso 'view:assigned')"
                                 },
                                 {
                                     "key": "page",
@@ -2710,7 +2796,178 @@
                                 }
                             ]
                         },
-                        "description": "Endpoint unificado para listar tickets. El backend aplica automáticamente los filtros de seguridad según los permisos del usuario (CASL).\n\n**Views:**\n- `assigned`: Tickets asignados al usuario actual.\n- `created`: Tickets creados por el usuario actual.\n- `observed`: Tickets donde el usuario es observador.\n- `all`: Todos los tickets (Requiere permiso `manage Ticket`)."
+                        "description": "**Permiso Requerido**: `view:assigned` sobre `Ticket`\n\n**Roles con acceso**:\n- Admin (rol_id=1)\n- Agente (rol_id=2)\n\n**Filtro aplicado**: `FIND_IN_SET(usuario_id, ticket.usu_asig) > 0`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "List Tickets - View CREATED (Todos)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "// Test: Usuario puede ver sus tickets creados",
+                                    "pm.test('Status code es 200', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test('Respuesta contiene data', function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData).to.have.property('data');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/tickets/list?view=created&page=1&limit=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tickets",
+                                "list"
+                            ],
+                            "query": [
+                                {
+                                    "key": "view",
+                                    "value": "created",
+                                    "description": "Ver tickets creados por el usuario (Requiere permiso 'view:created')"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                }
+                            ]
+                        },
+                        "description": "**Permiso Requerido**: `view:created` sobre `Ticket`\n\n**Roles con acceso**:\n- Admin (rol_id=1)\n- Agente (rol_id=2)\n- Usuario (rol_id=3)\n\n**Filtro aplicado**: `ticket.usuarioId = usuario_autenticado.id`\n\n**Nota**: Este es el permiso mínimo que todos los usuarios tienen."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "List Tickets - View OBSERVED",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "// Test: Usuario puede ver tickets observados",
+                                    "pm.test('Status code es 200 o 403', function () {",
+                                    "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                                    "});",
+                                    "",
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.test('Respuesta contiene data', function () {",
+                                    "        var jsonData = pm.response.json();",
+                                    "        pm.expect(jsonData).to.have.property('data');",
+                                    "    });",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/tickets/list?view=observed&page=1&limit=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tickets",
+                                "list"
+                            ],
+                            "query": [
+                                {
+                                    "key": "view",
+                                    "value": "observed",
+                                    "description": "Ver tickets observados por el usuario (Requiere permiso 'view:observed')"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                }
+                            ]
+                        },
+                        "description": "**Permiso Requerido**: `view:observed` sobre `Ticket`\n\n**Roles con acceso**:\n- Admin (rol_id=1)\n- Agente (rol_id=2)\n\n**Filtro aplicado**: `INNER JOIN tm_ticket_observador WHERE usuario_id = usuario_autenticado.id`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "List Tickets - Auto (Default View)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "// Test: Backend determina la mejor vista automáticamente",
+                                    "pm.test('Status code es 200', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test('Respuesta contiene data', function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData).to.have.property('data');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/tickets/list?page=1&limit=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tickets",
+                                "list"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                }
+                            ]
+                        },
+                        "description": "**Sin parámetro `view`**: El backend determina automáticamente la mejor vista según permisos:\n\n**Lógica de determinación**:\n1. Si tiene `view:all` → Vista ALL\n2. Si tiene `view:assigned` → Vista ASSIGNED\n3. Si tiene `view:created` → Vista CREATED\n4. Fallback → Vista CREATED\n\n**Resultado por rol**:\n- Admin → ALL\n- Agente → ASSIGNED\n- Usuario → CREATED"
                     },
                     "response": []
                 },

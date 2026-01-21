@@ -188,23 +188,48 @@ export class TicketListingService {
         let view = filters.view;
 
         // 1. Security & Fallback Logic
-        // Si no se especifica vista, o se pide 'all', verificamos permisos
+        // Si no se especifica vista, determinamos la mejor vista según permisos
         if (!view || view === TicketView.ALL) {
-            if (ability.can('manage', 'Ticket')) {
+            // Determinar vista por permisos específicos
+            if (ability.can('view:all', 'Ticket')) {
                 view = TicketView.ALL;
+            } else if (ability.can('view:assigned', 'Ticket')) {
+                view = TicketView.ASSIGNED;
+            } else if (ability.can('view:created', 'Ticket')) {
+                view = TicketView.CREATED;
             } else {
-                // Si no es admin/manager, por defecto ve sus tickets creados o asignados
-                // Podríamos intentar deducir la mejor vista por defecto:
-                // Si es "soporte" (tiene permiso update ticket), quizás Assigned.
-                if (ability.can('update', 'Ticket')) {
-                    view = TicketView.ASSIGNED;
-                } else {
-                    view = TicketView.CREATED;
-                }
+                // Fallback: si tiene permiso read, al menos ve sus creados
+                view = TicketView.CREATED;
             }
         }
 
-        // 2. Aplicar Scope según la Vista Resuelta
+        // 2. Validar que el usuario tenga permiso para la vista solicitada
+        const { ForbiddenException } = await import('@nestjs/common');
+
+        switch (view) {
+            case TicketView.ALL:
+                if (!ability.can('view:all', 'Ticket')) {
+                    throw new ForbiddenException('No tienes permiso para ver todos los tickets');
+                }
+                break;
+            case TicketView.ASSIGNED:
+                if (!ability.can('view:assigned', 'Ticket')) {
+                    throw new ForbiddenException('No tienes permiso para ver tickets asignados');
+                }
+                break;
+            case TicketView.CREATED:
+                if (!ability.can('view:created', 'Ticket')) {
+                    throw new ForbiddenException('No tienes permiso para ver tus tickets');
+                }
+                break;
+            case TicketView.OBSERVED:
+                if (!ability.can('view:observed', 'Ticket')) {
+                    throw new ForbiddenException('No tienes permiso para ver tickets observados');
+                }
+                break;
+        }
+
+        // 3. Aplicar Scope según la Vista Resuelta
         switch (view) {
             case TicketView.CREATED:
                 qb.andWhere('t.usuarioId = :userId', { userId: user.usu_id });
@@ -228,11 +253,7 @@ export class TicketListingService {
                 qb.andWhere('te_resp.estado = 1');
                 break;
             case TicketView.ALL:
-                // No extra filter needed if authorized
-                if (!ability.can('manage', 'Ticket')) {
-                    // Double check defense
-                    qb.andWhere('1=0'); // Bloquear si llegó acá por error
-                }
+                // No extra filter needed - already validated permission above
                 break;
         }
 

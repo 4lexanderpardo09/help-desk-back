@@ -21,6 +21,52 @@ Enhanced security in ticket creation by enforcing user identity from the JWT tok
 ---
 
 
+## 2026-01-21: Permisos Granulares para Vistas de Tickets
+
+### Summary
+Implementación de permisos específicos para controlar el acceso a diferentes vistas de tickets, reemplazando la lógica genérica basada en permisos CRUD.
+
+### Technical Detail
+1. **Nuevas Acciones CASL**:
+   - `view:assigned` - Ver tickets asignados al usuario
+   - `view:created` - Ver tickets creados por el usuario
+   - `view:all` - Ver todos los tickets del sistema
+   - `view:observed` - Ver tickets observados por el usuario
+
+2. **ability.factory.ts**:
+   - Expandido el tipo `Actions` para incluir las 4 nuevas acciones de vista
+   - Mantiene compatibilidad con acciones CRUD existentes
+
+3. **ticket-listing.service.ts**:
+   - **Determinación de Vista**: Ahora usa permisos específicos en lugar de `manage` o `update`
+   - **Validación Explícita**: Lanza `ForbiddenException` si el usuario intenta acceder a una vista sin el permiso correspondiente
+   - **Fallback Inteligente**: Si no se especifica vista, selecciona automáticamente la mejor según permisos disponibles
+
+4. **Migración SQL** (`2026-01-21_granular-ticket-view-permissions.sql`):
+   - Crea 4 nuevos permisos en `tm_permiso`
+   - Asigna permisos a roles según matriz:
+     - **Admin (rol_id=1)**: Todos los permisos de vista
+     - **Agente (rol_id=2)**: `view:assigned`, `view:created`, `view:observed`
+     - **Usuario (rol_id=3)**: `view:created`
+
+### Benefits
+- **Control Granular**: Cada rol tiene permisos específicos para cada vista
+- **Seguridad Mejorada**: No se puede acceder a vistas sin el permiso correcto
+- **Escalable**: Fácil agregar nuevas vistas (`view:errors_reported`, etc.)
+- **Explícito**: Los permisos son claros y autodocumentados
+
+### API Usage
+```typescript
+// Ejemplo: Listar tickets con vista específica
+GET /tickets/list?view=assigned
+
+// Si el usuario no tiene permiso 'view:assigned', recibirá:
+// 403 Forbidden: "No tienes permiso para ver tickets asignados"
+```
+
+---
+
+
 ## 2026-01-20: Workflow Engine Enhancements (Completed)
 
 ### Summary

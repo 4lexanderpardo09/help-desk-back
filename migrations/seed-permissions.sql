@@ -99,6 +99,34 @@ VALUES (
         'Ticket',
         'Acceso completo a todas las operaciones de tickets',
         1
+    ),
+    (
+        'Ver Tickets Asignados',
+        'view:assigned',
+        'Ticket',
+        'Permite ver tickets asignados al usuario',
+        1
+    ),
+    (
+        'Ver Tickets Creados',
+        'view:created',
+        'Ticket',
+        'Permite ver tickets creados por el usuario',
+        1
+    ),
+    (
+        'Ver Todos los Tickets',
+        'view:all',
+        'Ticket',
+        'Permite ver todos los tickets del sistema',
+        1
+    ),
+    (
+        'Ver Tickets Observados',
+        'view:observed',
+        'Ticket',
+        'Permite ver tickets que el usuario está observando',
+        1
     );
 
 -- =====================================================

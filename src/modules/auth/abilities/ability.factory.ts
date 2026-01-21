@@ -8,8 +8,18 @@ import { PermissionsService, CachedPermission } from '../../permissions/permissi
  * 
  * - manage: implica todas las acciones
  * - create, read, update, delete: operaciones CRUD estándar
+ * - view:assigned, view:created, view:all, view:observed: vistas específicas de tickets
  */
-export type Actions = 'manage' | 'create' | 'read' | 'update' | 'delete';
+export type Actions =
+    | 'manage'
+    | 'create'
+    | 'read'
+    | 'update'
+    | 'delete'
+    | 'view:assigned'
+    | 'view:created'
+    | 'view:all'
+    | 'view:observed';
 
 /**
  * Subjects (recursos) del sistema
