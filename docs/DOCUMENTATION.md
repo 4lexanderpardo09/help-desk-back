@@ -87,6 +87,34 @@ Implemented robust statistical analysis and hierarchical scoping for the Dashboa
 
 ---
 
+## 2026-01-20: Template Fields Module (Completed)
+
+### Summary
+Implemented dynamic field logic matching legacy `CampoPlantilla.php` capabilities, including dynamic autocomplete queries and step-specific field retrieval.
+
+### Technical Detail
+1. **Field Retrieval (`getFieldsByStep`)**:
+   - `GET /templates/fields/:stepId`
+   - Returns all active fields (`estado=1`) for a given workflow step.
+   - Used by frontend to render dynamic inputs.
+
+2. **Dynamic Autocomplete (`executeFieldQuery`)**:
+   - `GET /templates/query/:fieldId?term=searchvalue`
+   - **Presets**:
+     - `PRESET_REGIONAL`: Searches `tm_regional`.
+     - `PRESET_CARGO`: Searches `tm_cargo`.
+     - `PRESET_USUARIOS`: Searches `tm_usuario` (Name + Surname).
+   - **Dynamic SQL**: Finds distinct `tm_consulta` record by ID stored in `campoQuery`. Executes the stored SQL directly.
+   - **Security**:
+     - Uses `DataSource.query()` for raw execution.
+     - Filters results in memory if the SQL doesn't support parameters, ensuring `term` is respected without SQL injection risk in the fallback path.
+
+### Testing
+- **Service**: `templates.service.ts` logic updated and verified manually via Postman.
+- **Controller**: `TemplatesController` endpoints exposed and secured with `read Ticket` policy.
+
+---
+
 ## 2026-01-15 - Configuración Inicial del Backend NestJS
 
 ### Contexto

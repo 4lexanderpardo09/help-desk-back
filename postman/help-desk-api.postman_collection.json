@@ -3117,6 +3117,94 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Templates",
+            "description": "Gestión de Campos Dinámicos (requiere autenticación)",
+            "item": [
+                {
+                    "name": "Get Fields By Step",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/templates/fields/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "templates",
+                                "fields",
+                                "1"
+                            ]
+                        },
+                        "description": "Obtiene los campos dinámicos para un paso de flujo."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Execute Field Query",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/templates/query/1?term=bog",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "templates",
+                                "query",
+                                "1"
+                            ],
+                            "query": [
+                                {
+                                    "key": "term",
+                                    "value": "bog",
+                                    "description": "Término de búsqueda"
+                                }
+                            ]
+                        },
+                        "description": "Ejecuta query de autocompletado (Preset o SQL Dinámico)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Values By Ticket",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/templates/values/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "templates",
+                                "values",
+                                "1"
+                            ]
+                        },
+                        "description": "Obtiene los valores guardados."
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }
