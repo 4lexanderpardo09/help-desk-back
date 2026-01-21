@@ -238,9 +238,10 @@ export class TicketListingService {
                 qb.andWhere(`FIND_IN_SET(:agentId, t.usu_asig) > 0`, { agentId: user.usu_id });
                 break;
             case TicketView.OBSERVED:
-                qb.innerJoin('tm_ticket_observador', 'obs', 'obs.tick_id = t.tick_id');
-                qb.andWhere('obs.usu_id = :userId', { userId: user.usu_id });
-                qb.andWhere('obs.est = 1');
+                // Los observadores están asociados al FLUJO, no al ticket directamente
+                // Relación: ticket → subcategoria → flujo → flujo_usuario (observadores)
+                qb.innerJoin('sc.flujo', 'flujo');
+                qb.innerJoin('flujo.usuariosObservadores', 'obs', 'obs.id = :userId', { userId: user.usu_id });
                 break;
             case TicketView.ERRORS_REPORTED:
                 // Join con tm_ticket_error donde usu_id_reporta = user

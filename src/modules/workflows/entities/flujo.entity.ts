@@ -38,7 +38,7 @@ export class Flujo {
     @Column({ name: 'flujo_nom_adjunto', type: 'varchar', length: 255, nullable: true })
     nombreAdjunto: string | null;
 
-    @ManyToOne(() => Subcategoria)
+    @ManyToOne(() => Subcategoria, (s) => s.flujo)
     @JoinColumn({ name: 'cats_id' })
     subcategoria: Subcategoria;
 

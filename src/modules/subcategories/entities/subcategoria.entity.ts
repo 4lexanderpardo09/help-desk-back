@@ -2,7 +2,8 @@ import { Categoria } from 'src/modules/categories/entities/categoria.entity';
 import { Prioridad } from 'src/modules/priorities/entities/prioridad.entity';
 import { ReglaMapeo } from 'src/modules/rules/entities/regla-mapeo.entity';
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Flujo } from 'src/modules/workflows/entities/flujo.entity';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('tm_subcategoria')
 export class Subcategoria {
@@ -34,6 +35,9 @@ export class Subcategoria {
     @ManyToOne(() => Prioridad, (p) => p.subcategoria)
     @JoinColumn({ name: 'pd_id' })
     prioridad: Prioridad;
+
+    @OneToOne(() => Flujo, (f) => f.subcategoria)
+    flujo: Flujo;
 
     @OneToMany(() => Ticket, (t) => t.subcategoria)
     tickets: Ticket[];
