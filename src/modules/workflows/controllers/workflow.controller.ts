@@ -1,7 +1,8 @@
-import { Body, Controller, Post, UseGuards, Req } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, Req, Get, Param } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { WorkflowEngineService } from '../services/workflow-engine.service';
 import { TransitionTicketDto } from '../dto/workflow-transition.dto';
+import { CheckStartFlowResponseDto } from '../dto/start-flow-check.dto';
 import { JwtAuthGuard } from 'src/modules/auth/jwt.guard';
 import { PoliciesGuard } from '../../../common/guards/policies.guard';
 import { CheckPolicies } from 'src/modules/auth/decorators/check-policies.decorator';
@@ -25,5 +26,31 @@ export class WorkflowController {
         // Force actor to be the logged in user
         dto.actorId = req.user.id;
         return this.workflowService.transitionStep(dto);
+    }
+
+    /**
+     * Checks if the start of the flow requires manual user selection.
+     * @param subcategoriaId - ID of the subcategory.
+     */
+    @Get('check-start-flow/:subcategoriaId')
+    @ApiOperation({ summary: 'Verificar si el inicio de flujo requiere selección manual' })
+    @ApiResponse({ status: 200, description: 'Retorna requerimientos y candidatos', type: CheckStartFlowResponseDto })
+    @CheckPolicies((ability: AppAbility) => ability.can('create', 'Ticket'))
+    async checkStartFlow(@Param('subcategoriaId') subcategoriaId: number) {
+        return this.workflowService.checkStartFlow(Number(subcategoriaId));
+    }
+
+    /**
+     * Approves a ticket flow (used by Bosses/Approvers).
+     * @param ticketId - The ID of the ticket.
+     */
+    @Post('approve-flow/:ticketId')
+    @ApiOperation({ summary: 'Aprobar flujo (Jefe/Aprobador)' })
+    @ApiResponse({ status: 200, description: 'Aprobación exitosa' })
+    @ApiResponse({ status: 403, description: 'No es el aprobador asignado' })
+    @CheckPolicies((ability: AppAbility) => ability.can('update', 'Ticket'))
+    async approveFlow(@Param('ticketId') ticketId: number, @Req() req: any) {
+        await this.workflowService.approveFlow(Number(ticketId), req.user.id);
+        return { message: 'Flujo aprobado correctamente' };
     }
 }

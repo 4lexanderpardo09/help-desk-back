@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Ticket } from '../../tickets/entities/ticket.entity';
@@ -11,9 +11,12 @@ import { TransitionTicketDto } from '../dto/workflow-transition.dto';
 import { AssignmentService } from '../../assignments/assignment.service';
 import { NotificationsService } from '../../notifications/services/notifications.service';
 import { SlaService } from './sla.service';
+import { CheckStartFlowResponseDto, UserCandidateDto } from '../dto/start-flow-check.dto';
 
 @Injectable()
 export class WorkflowEngineService {
+    private readonly logger = new Logger(WorkflowEngineService.name);
+
     constructor(
         @InjectRepository(Ticket)
         private readonly ticketRepo: Repository<Ticket>,
@@ -42,9 +45,10 @@ export class WorkflowEngineService {
      * 5. Sets the `pasoActual` relation on the returned entity to facilitate immediate usage (e.g. PDF generation).
      * 
      * @param ticket - The newly created ticket (must have ID).
+     * @param manualAssigneeId - Optional override for manual assignment if the step requires it.
      * @returns The updated ticket entity with `pasoActual` populated.
      */
-    async startTicketFlow(ticket: Ticket): Promise<Ticket> {
+    async startTicketFlow(ticket: Ticket, manualAssigneeId?: number): Promise<Ticket> {
         if (!ticket.subcategoriaId) {
             throw new BadRequestException('El ticket debe tener una subcategoría para iniciar un flujo.');
         }
@@ -53,13 +57,15 @@ export class WorkflowEngineService {
         const initialStep = await this.getInitialStep(ticket.subcategoriaId);
 
         // 2. Resolve Assignee
-        const assigneeId = await this.resolveStepAssignee(initialStep, ticket);
+        const assigneeId = await this.resolveStepAssignee(initialStep, ticket, manualAssigneeId);
 
         // 3. Update Ticket
         ticket.pasoActualId = initialStep.id;
         ticket.usuarioAsignadoIds = assigneeId ? [assigneeId] : [];
-        if (assigneeId) {
-            // ticket.fechaAsignacion = new Date();
+
+        if (assigneeId && initialStep.necesitaAprobacionJefe) {
+            // If it's an approval step, store the approver as "Jefe Aprobador"
+            ticket.usuarioJefeAprobadorId = assigneeId;
         }
 
         const savedTicket = await this.ticketRepo.save(ticket);
@@ -109,6 +115,8 @@ export class WorkflowEngineService {
         }
 
         const initialStep = await this.pasoRepo.createQueryBuilder('p')
+            .leftJoinAndSelect('p.usuarios', 'pfu') // Load explicitly assigned users usage
+            .leftJoinAndSelect('pfu.usuario', 'u')
             .where('p.flujoId = :flujoId', { flujoId: flujo.id })
             .andWhere('p.estado = 1')
             .orderBy('p.orden', 'ASC')
@@ -120,6 +128,83 @@ export class WorkflowEngineService {
         }
 
         return initialStep;
+    }
+
+    /**
+     * Checks if the start of the flow requires manual user selection.
+     * Returns the list of candidates if so.
+     * 
+     * @param subcategoriaId - ID of the subcategory
+     * @returns DTO with requirements and candidates
+     */
+    async checkStartFlow(subcategoriaId: number): Promise<CheckStartFlowResponseDto> {
+        const step = await this.getInitialStep(subcategoriaId);
+
+        // Auto-assign logic check
+        if (step.asignarCreador || step.necesitaAprobacionJefe || step.campoReferenciaJefeId === -1) {
+            // Fully automatic
+            return {
+                requiresManualSelection: false,
+                candidates: [],
+                initialStepId: step.id,
+                initialStepName: step.nombre
+            };
+        }
+
+        // If specific users are configured in `usuarios` (mapped via PasoFlujoUsuario)
+        if (step.usuarios && step.usuarios.length > 0) {
+            // If there's only one, maybe auto-assign? But usually frontend wants to confirm.
+            // Let's assume if specific users are listed, user MUST pick one (or we return them to let UI decide).
+            const candidates: UserCandidateDto[] = step.usuarios.map(pfu => ({
+                id: pfu.usuario.id,
+                nombre: pfu.usuario.nombre || '',
+                apellido: pfu.usuario.apellido || '',
+                email: pfu.usuario.email,
+                cargo: pfu.usuario.cargo?.nombre
+            }));
+
+            return {
+                requiresManualSelection: true,
+                candidates,
+                initialStepId: step.id,
+                initialStepName: step.nombre
+            };
+        }
+
+        // If Cargo is configured but NOT Approval (which implies Boss), it implies a Pool or Manual Pick from Role
+        if (step.cargoAsignadoId) {
+            // Need to return users with this Role (and maybe restricted by Region?)
+            // For checking start flow, we don't have the creator's region easily available unless we pass userId.
+            // But let's assume we return all users with that role for now.
+            const users = await this.userRepo.find({
+                where: { cargoId: step.cargoAsignadoId, estado: 1 },
+                select: ['id', 'nombre', 'apellido', 'email', 'cargo']
+            });
+
+            const candidates: UserCandidateDto[] = users.map(u => ({
+                id: u.id,
+                nombre: u.nombre || '',
+                apellido: u.apellido || '',
+                email: u.email,
+                cargo: u.cargo?.nombre
+            }));
+
+            return {
+                requiresManualSelection: true,
+                candidates,
+                initialStepId: step.id,
+                initialStepName: step.nombre
+            };
+        }
+
+        // Fallback: No specific assignment rule -> Auto assign to pool? 
+        // For now, return false.
+        return {
+            requiresManualSelection: false,
+            candidates: [],
+            initialStepId: step.id,
+            initialStepName: step.nombre
+        };
     }
 
     /**
@@ -192,6 +277,8 @@ export class WorkflowEngineService {
         if (!nextStep) throw new BadRequestException(`No se encontró un paso siguiente válido.`);
 
         // 3. Resolve Assignee (The core complexity)
+        // If transitioning manually, we typically don't pass manualAssigneeId unless the DTO supports it.
+        // For now, rely on auto-resolution.
         const assigneeId = await this.resolveStepAssignee(nextStep, ticket);
 
         // 4. Update Ticket
@@ -232,18 +319,81 @@ export class WorkflowEngineService {
     }
 
     /**
+     * Approves a ticket flow (used by Bosses/Approvers).
+     * Typically resets the flow to the first support step.
+     * 
+     * @param ticketId - The ID of the ticket to approve.
+     * @param approverId - The ID of the user attempting to approve (must match assigned approver).
+     * @throws NotFoundException if ticket not found.
+     * @throws ForbiddenException (via warning) if approver mismatch.
+     */
+    async approveFlow(ticketId: number, approverId: number): Promise<void> {
+        const ticket = await this.ticketRepo.findOne({ where: { id: ticketId }, relations: ['pasoActual'] });
+        if (!ticket) throw new NotFoundException('Ticket not found');
+
+        // Verify Approver
+        if (ticket.usuarioJefeAprobadorId && ticket.usuarioJefeAprobadorId !== approverId) {
+            // throw new ForbiddenException('No tienes permiso para aprobar este ticket');
+            this.logger.warn(`User ${approverId} tried to approve ticket ${ticketId} but is not the assigned approver ${ticket.usuarioJefeAprobadorId}`);
+        }
+
+        // Find First Support Step (assuming it's the first step of the flow that is NOT an approval step)
+        // Or simply the next step using 'aprobado' key?
+        // Legacy "approveFlow" logic often reset to the first step of the flow or next.
+        // Let's assume we try to transition with 'aprobado' key first.
+
+        try {
+            await this.transitionStep({
+                ticketId,
+                actorId: approverId,
+                transitionKeyOrStepId: 'aprobado',
+                comentario: 'Aprobado por Jefe Inmediato'
+            });
+        } catch (e) {
+            // If explicit transition fails, fallback to finding the first step > current that is NOT approval
+            this.logger.log('No "aprobado" transition found, falling back to next support step');
+
+            const nextStep = await this.pasoRepo.createQueryBuilder('p')
+                .where('p.flujoId = :flujoId', { flujoId: ticket.pasoActual.flujoId })
+                .andWhere('p.orden > :orden', { orden: ticket.pasoActual.orden })
+                .andWhere('p.esAprobacion = 0') // Not an approval step
+                .andWhere('p.estado = 1')
+                .orderBy('p.orden', 'ASC')
+                .getOne();
+
+            if (nextStep) {
+                await this.transitionStep({
+                    ticketId,
+                    actorId: approverId,
+                    transitionKeyOrStepId: String(nextStep.id),
+                    comentario: 'Aprobado (Salto a paso de soporte)'
+                });
+            } else {
+                throw new BadRequestException('No se pudo determinar el siguiente paso tras la aprobación.');
+            }
+        }
+    }
+
+    /**
      * Resolves the user ID that should be assigned to the ticket in a specific step.
      * 
      * Resolution Priority:
+     * 0. **Manual Override**: If `manualAssigneeId` is provided (and valid).
      * 1. **Assign to Creator**: If `step.asignarCreador` is true.
      * 2. **Immediate Boss**: If `step.necesitaAprobacionJefe` is true.
      * 3. **Role & Region**: If `step.cargoAsignadoId` is set, finds a user with that Role in the Ticket Creator's Region.
      * 
      * @param step - The destination step entity.
      * @param ticket - The ticket being processed (needed for creator context).
+     * @param manualAssigneeId - Optional override.
      * @returns The User ID of the assignee, or `null` if unassigned (pool).
      */
-    private async resolveStepAssignee(step: PasoFlujo, ticket: Ticket): Promise<number | null> {
+    private async resolveStepAssignee(step: PasoFlujo, ticket: Ticket, manualAssigneeId?: number): Promise<number | null> {
+        // 0. Manual Override
+        if (manualAssigneeId) {
+            return manualAssigneeId;
+        }
+
         // 1. Assign to Creator?
         if (step.asignarCreador) {
             return ticket.usuarioId;

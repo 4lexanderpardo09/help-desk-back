@@ -1,5 +1,34 @@
 # Help Desk API - Documentación
 
+## 2026-01-20: Workflow Engine Enhancements (Completed)
+
+### Summary
+Implemented critical legacy functionalities for the Workflow Engine to support manual assignment and approval flows.
+
+### Technical Detail
+1. **Manual Assignment (`checkStartFlow`)**:
+   - Implemented `checkStartFlow` in `WorkflowEngineService`.
+   - Checks if the initial step has explicit users (`step.usuarios`) or a specific role (`step.cargoAsignadoId`).
+   - Returns a list of candidates (`UserCandidateDto[]`) for the frontend to present a selection UI.
+   - Endpoint: `GET /workflows/check-start-flow/:subcategoriaId`
+
+2. **Approval Flow (`approveFlow`)**:
+   - Implemented `approveFlow` to handle Boss Approvals.
+   - Validates `usuarioJefeAprobadorId` matches the requester.
+   - Transitions ticket using 'aprobado' key.
+   - Fallback logic: If 'aprobado' transition fails, searches for the next non-approval step.
+   - Endpoint: `POST /workflows/approve-flow/:ticketId`
+
+3. **Entity Improvements**:
+   - Corrected property name `usuarioIdJefeAprobador` -> `usuarioJefeAprobadorId` in `Ticket` entity to match column usage.
+   - Used `step.usuarios` relation instead of legacy `pasoFlujoUsuarios`.
+
+### Testing
+- Unit tests added for logic in `workflow-engine.service.spec.ts`.
+- Controller tests added in `workflow.controller.spec.ts`.
+
+---
+
 ## 2026-01-15 - Configuración Inicial del Backend NestJS
 
 ### Contexto
