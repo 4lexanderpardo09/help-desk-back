@@ -133,6 +133,26 @@ Implemented dynamic field logic matching legacy `CampoPlantilla.php` capabilitie
 - **Logic**: Retrieves JSON content stored in `tm_data_excel` linked to workflows.
 - **Usage**: Used to load regional Excel files dynamically during flow execution.
 
+### 4. TicketError Module (Tickets)
+- **Controller**: `TicketErrorController` (`src/modules/tickets/controllers/ticket-error.controller.ts`)
+- **Service**: `TicketErrorService` (`src/modules/tickets/services/ticket-error.service.ts`)
+- **Endpoints**:
+    - `POST /tickets/errors`: Report an error on a ticket.
+    - `GET /tickets/errors/received`: List errors reported to me.
+    - `GET /tickets/errors/reported`: List errors reported by me.
+    - `GET /tickets/errors/stats`: Error statistics by type.
+- **Relations**: Linked to `Ticket`, `User` (reporter/responsible), and `FastAnswer` (error type).
+
+### 5. Tags Module (Etiquetas)
+- **Controller**: `TagsController` (`src/modules/tags/tags.controller.ts`)
+- **Service**: `TagsService` (`src/modules/tags/tags.service.ts`)
+- **Endpoints**:
+    - `GET /tags`: List my tags.
+    - `POST /tags`: Create personal tag.
+    - `PATCH /tags/:id`: Update tag.
+    - `DELETE /tags/:id`: Delete tag.
+- **Scope**: Tags are currently user-specific (`usuarioId`).
+
 ---
 
 ## 2026-01-15 - Configuración Inicial del Backend NestJS

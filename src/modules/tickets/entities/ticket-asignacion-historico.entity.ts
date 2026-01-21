@@ -2,7 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 't
 import { Ticket } from './ticket.entity';
 import { User } from '../../users/entities/user.entity';
 import { PasoFlujo } from '../../workflows/entities/paso-flujo.entity';
-import { FastAnswer } from './fast-answer.entity';
+import { FastAnswer } from '../../fast-answers/entities/fast-answer.entity';
 
 @Entity('th_ticket_asignacion')
 export class TicketAsignacionHistorico {

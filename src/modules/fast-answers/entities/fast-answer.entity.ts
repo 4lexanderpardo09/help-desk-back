@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { TicketError } from '../../tickets/entities/ticket-error.entity';
+import { TicketAsignacionHistorico } from '../../tickets/entities/ticket-asignacion-historico.entity';
 
 @Entity('tm_fast_answer')
 export class FastAnswer {
@@ -17,4 +19,10 @@ export class FastAnswer {
 
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
+
+    @OneToMany(() => TicketError, (te) => te.answer)
+    ticketErrors: TicketError[];
+
+    @OneToMany(() => TicketAsignacionHistorico, (th) => th.errorCode)
+    historiales: TicketAsignacionHistorico[];
 }

@@ -28,6 +28,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { DocumentsModule } from './modules/documents/documents.module';
 import { FastAnswersModule } from './modules/fast-answers/fast-answers.module';
 import { ImportsModule } from './modules/imports/imports.module';
+import { TagsModule } from './modules/tags/tags.module';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { ImportsModule } from './modules/imports/imports.module';
     DocumentsModule,
     FastAnswersModule,
     ImportsModule,
+    TagsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

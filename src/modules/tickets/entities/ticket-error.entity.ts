@@ -1,7 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Ticket } from './ticket.entity';
 import { User } from '../../users/entities/user.entity';
-import { FastAnswer } from './fast-answer.entity';
+import { FastAnswer } from '../../fast-answers/entities/fast-answer.entity';
 
 @Entity('tm_ticket_error')
 export class TicketError {
