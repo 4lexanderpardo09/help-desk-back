@@ -38,4 +38,15 @@ export class StatisticsController {
     ): Promise<StepMetricDto[]> {
         return this.statisticsService.getPerformanceMetrics(id);
     }
+    @Get('median-response-time')
+    @CheckPolicies((ability: AppAbility) => ability.can('read', 'Report'))
+    @ApiOperation({ summary: 'Obtener mediana de tiempo de respuesta (minutos)' })
+    @ApiResponse({ status: 200, type: Number })
+    async getMedianResponseTime(
+        @User() user: JwtPayload,
+        @Query() filters: DashboardFiltersDto
+    ): Promise<{ minutes: number }> {
+        const median = await this.statisticsService.getMedianResponseTime(user, filters);
+        return { minutes: median };
+    }
 }

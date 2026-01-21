@@ -7,6 +7,8 @@ import { TicketStatisticsService } from './services/ticket-statistics.service';
 import { Consulta } from './entities/consulta.entity';
 import { Ticket } from '../tickets/entities/ticket.entity';
 import { TicketAsignacionHistorico } from '../tickets/entities/ticket-asignacion-historico.entity';
+import { Organigrama } from '../positions/entities/organigrama.entity';
+import { User } from '../users/entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
@@ -14,7 +16,9 @@ import { AuthModule } from '../auth/auth.module';
         TypeOrmModule.forFeature([
             Consulta,
             Ticket,
-            TicketAsignacionHistorico
+            TicketAsignacionHistorico,
+            Organigrama,
+            User
         ]),
         AuthModule,
     ],

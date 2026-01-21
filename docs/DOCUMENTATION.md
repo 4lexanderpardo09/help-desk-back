@@ -54,6 +54,39 @@ Backfilled missing functionality in `TicketListingService` and `TicketHistorySer
 
 ---
 
+## 2026-01-20: KPI & Statistics System (Completed)
+
+### Summary
+Implemented robust statistical analysis and hierarchical scoping for the Dashboard.
+
+### Technical Detail
+1. **Hierarchical Scope (`getScope`)**:
+   - **Recursive Logic**: If user has Subordinates (checked via `Organigrama` entity), recursively fetches all cargo IDs in the subtree.
+   - **Boss View**: Managers see tickets from all users in their hierarchy tree.
+   - **Agent/Client View**: Fallback to self-only (Agent sees assigned, Client sees created).
+
+2. **Median Response Time (`getMedianResponseTime`)**:
+   - Implemented Median calculation (not Average) to exclude outliers.
+   - Computes time difference (Minutes) between `Creation` and `Closure` for closed tickets.
+   - Sorts values and picks the middle element (or average of two middle elements).
+
+3. **Dynamic Grouping (`getGroupedStats`)**:
+   - Added `cargo` grouping to existing `department`, `category`, and `user`.
+   - Supports aggregation for charts.
+
+4. **API Endpoints**:
+   - `GET /statistics/dashboard`: Main endpoint for charts and counters.
+   - `GET /statistics/median-response-time`: Specific endpoint for the median metric.
+   - `GET /statistics/ticket/:id/performance`: Granular step-by-step metrics.
+
+### Testing
+- **Unit Logic**: `ticket-statistics.service.spec.ts` verifies:
+  - Recursive ID fetching (simulated 3-level depth).
+  - Median calculation algorithm with odd/even datasets.
+  - Basic role scope.
+
+---
+
 ## 2026-01-15 - Configuración Inicial del Backend NestJS
 
 ### Contexto

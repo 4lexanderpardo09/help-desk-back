@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Brackets, SelectQueryBuilder } from 'typeorm';
+import { Repository, Brackets, SelectQueryBuilder, In } from 'typeorm';
 import { Ticket } from '../../tickets/entities/ticket.entity';
 import { TicketAsignacionHistorico } from '../../tickets/entities/ticket-asignacion-historico.entity';
 import { User } from '../../users/entities/user.entity';
+import { Organigrama } from '../../positions/entities/organigrama.entity';
 import { DashboardFiltersDto } from '../dto/dashboard-filters.dto';
 import { DashboardStatsDto, DatasetItemDto } from '../dto/dashboard-stats.dto';
 import { StepMetricDto } from '../dto/step-metric.dto';
@@ -16,6 +17,10 @@ export class TicketStatisticsService {
         private readonly ticketRepository: Repository<Ticket>,
         @InjectRepository(TicketAsignacionHistorico)
         private readonly historyRepository: Repository<TicketAsignacionHistorico>,
+        @InjectRepository(Organigrama)
+        private readonly organigramaRepository: Repository<Organigrama>,
+        @InjectRepository(User)
+        private readonly userRepository: Repository<User>
     ) { }
 
     /**
@@ -37,8 +42,48 @@ export class TicketStatisticsService {
 
         // Logic for Agent/Client is handled via WHERE clauses in the query builder
         // related to "created_by" or "assigned_to", not just a list of IDs.
-        // But for "Users I can see stats for", it's usually just themselves.
+
+        // Check if user is a Boss (has subordinates in Organigrama)
+        if (user.car_id) {
+            const subordinateCargoIds = await this.getRecursiveSubordinateCargoIds(user.car_id);
+
+            if (subordinateCargoIds.length > 0) {
+                // Find all users with these cargo IDs
+                const subordinateUsers = await this.userRepository.find({
+                    where: { cargoId: In(subordinateCargoIds), estado: 1 },
+                    select: ['id']
+                });
+
+                const ids = subordinateUsers.map(u => u.id);
+                // Include self
+                if (!ids.includes(user.usu_id)) ids.push(user.usu_id);
+                return ids;
+            }
+        }
+
+        // If not a boss or no subordinates, return self for basic filtering
         return [user.usu_id];
+    }
+
+    /**
+     * Recursive function to get all subordinate cargo IDs
+     */
+    private async getRecursiveSubordinateCargoIds(cargoId: number): Promise<number[]> {
+        const subordinates = await this.organigramaRepository.find({
+            where: { jefeCargoId: cargoId, estado: 1 },
+            select: ['cargoId']
+        });
+
+        let allSubIds: number[] = [];
+
+        for (const sub of subordinates) {
+            allSubIds.push(sub.cargoId);
+            // Recursion
+            const children = await this.getRecursiveSubordinateCargoIds(sub.cargoId);
+            allSubIds = [...allSubIds, ...children];
+        }
+
+        return allSubIds;
     }
 
     /**
@@ -209,5 +254,36 @@ export class TicketStatisticsService {
         }
 
         return metrics;
+    }
+
+    /**
+     * Calculate Median Response Time (in Minutes)
+     * Defined as: time from creation to close.
+     * Excludes outliers using simple median logic.
+     */
+    async getMedianResponseTime(user: JwtPayload, filters: DashboardFiltersDto): Promise<number> {
+        const qb = this.ticketRepository.createQueryBuilder('t')
+            .select('TIMESTAMPDIFF(MINUTE, t.fechaCreacion, t.fechaCierre)', 'duration')
+            .where('t.ticketEstado = :state', { state: 'Cerrado' })
+            .andWhere('t.estado = 1')
+            .andWhere('t.fechaCierre IS NOT NULL');
+
+        await this.applyScope(qb, user);
+        await this.applyFilters(qb, filters);
+
+        const results = await qb.getRawMany();
+        const durations: number[] = results
+            .map(r => Number(r.duration))
+            .filter(d => d >= 0) // Sanity check
+            .sort((a, b) => a - b);
+
+        if (durations.length === 0) return 0;
+
+        const mid = Math.floor(durations.length / 2);
+        if (durations.length % 2 !== 0) {
+            return durations[mid];
+        } else {
+            return (durations[mid - 1] + durations[mid]) / 2;
+        }
     }
 }
