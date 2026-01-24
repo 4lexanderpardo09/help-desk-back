@@ -5,7 +5,7 @@ import { Categoria } from './entities/categoria.entity';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { ApiQueryDto } from 'src/common/dto/api-query.dto';
-import { ApiQueryHelper } from 'src/common/utils/api-query-helper';
+import { ApiQueryHelper, PaginatedResult } from 'src/common/utils/api-query-helper';
 
 @Injectable()
 export class CategoriesService {
@@ -26,7 +26,7 @@ export class CategoriesService {
         page?: number;
         included?: string;
         filter?: Record<string, any>;
-    }) {
+    }):Promise<PaginatedResult<Categoria>>{
         const qb = this.categoryRepo.createQueryBuilder('category');
 
         // Filtro base: solo activos
@@ -48,9 +48,7 @@ export class CategoriesService {
         qb.orderBy('category.nombre', 'ASC');
 
         // Paginación
-        ApiQueryHelper.applyPagination(qb, { limit: options?.limit, page: options?.page });
-
-        return qb.getMany();
+        return ApiQueryHelper.paginate(qb, { limit: options?.limit, page: options?.page });
     }
 
     /**

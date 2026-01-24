@@ -1,4 +1,4 @@
-import { SelectQueryBuilder } from 'typeorm';
+import { SelectQueryBuilder, ObjectLiteral } from 'typeorm';
 import { BadRequestException } from '@nestjs/common';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -197,4 +197,42 @@ export class ApiQueryHelper {
             limit: query.limit
         };
     }
+
+    /**
+     * Ejecuta la consulta paginada y devuelve el resultado con metadatos (incluyendo total)
+     * 
+     * @param qb Instancia de SelectQueryBuilder
+     * @param options Opciones de paginación (page, limit)
+     */
+    static async paginate<T extends ObjectLiteral>(
+        qb: SelectQueryBuilder<T>,
+        options: { limit?: number; page?: number } | undefined
+    ): Promise<PaginatedResult<T>> {
+        const page = Number(options?.page) > 0 ? Number(options?.page) : 1;
+        const limit = Number(options?.limit) > 0 ? Number(options?.limit) : 20;
+
+        qb.take(limit).skip((page - 1) * limit);
+
+        const [data, total] = await qb.getManyAndCount();
+
+        return {
+            data,
+            meta: {
+                total,
+                page,
+                limit,
+                lastPage: Math.ceil(total / limit)
+            }
+        };
+    }
+}
+
+export interface PaginatedResult<T> {
+    data: T[];
+    meta: {
+        total: number;
+        page: number;
+        limit: number;
+        lastPage: number;
+    };
 }

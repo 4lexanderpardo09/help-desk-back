@@ -51,7 +51,7 @@ export class RegionsController {
     @ApiResponse({ status: 200, description: 'Lista de regionales.' })
     @ApiResponse({ status: 401, description: 'No autorizado.' })
     @ApiResponse({ status: 403, description: 'Permisos insuficientes.' })
-    findAll(@Query() query: ApiQueryDto): Promise<Regional[]> {
+    findAll(@Query() query: ApiQueryDto): Promise<import('../../common/utils/api-query-helper').PaginatedResult<Regional>> {
         return this.regionsService.list({
             limit: query.limit,
             page: query.page,

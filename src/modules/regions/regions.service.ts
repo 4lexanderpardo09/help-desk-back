@@ -30,7 +30,7 @@ export class RegionsService {
         page?: number;
         included?: string;
         filter?: Record<string, any>;
-    }): Promise<Regional[]> {
+    }): Promise<import('../../common/utils/api-query-helper').PaginatedResult<Regional>> {
         const qb = this.regionalRepository.createQueryBuilder('regional');
 
         ApiQueryHelper.applyIncludes(qb, options?.included, this.allowedIncludes, 'regional');
@@ -38,9 +38,7 @@ export class RegionsService {
 
         qb.orderBy('regional.id', 'ASC');
 
-        ApiQueryHelper.applyPagination(qb, { limit: options?.limit, page: options?.page });
-
-        return qb.getMany();
+        return ApiQueryHelper.paginate(qb, { limit: options?.limit, page: options?.page });
     }
 
     /**

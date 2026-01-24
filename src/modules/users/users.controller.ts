@@ -19,6 +19,7 @@ import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiQueryDto } from '../../common/dto/api-query.dto';
+import { PaginatedResult } from 'src/common/utils/api-query-helper';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -50,12 +51,13 @@ export class UsersController {
     @ApiResponse({ status: 403, description: 'Permisos insuficientes.' })
     async list(
         @Query() query: ApiQueryDto,
-    ): Promise<User[] | Record<string, unknown>[]> {
+    ): Promise<PaginatedResult<User>> {
         return this.usersService.list({
             limit: query.limit,
+            page: query.page,
             included: query.included,
             filter: query.filter,
-        }) as Promise<User[] | Record<string, unknown>[]>;
+        });
     }
 
     /**

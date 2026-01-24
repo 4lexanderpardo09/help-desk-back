@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Departamento } from './entities/departamento.entity';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
-import { ApiQueryHelper } from 'src/common/utils/api-query-helper';
+import { ApiQueryHelper, PaginatedResult } from 'src/common/utils/api-query-helper';
 
 @Injectable()
 export class DepartmentsService {
@@ -25,7 +25,7 @@ export class DepartmentsService {
         page?: number;
         included?: string;
         filter?: Record<string, any>;
-    }) {
+    }):Promise<PaginatedResult<Departamento>> {
         const qb = this.departmentRepo.createQueryBuilder('department');
 
         // Filtro base: solo activos
@@ -39,11 +39,9 @@ export class DepartmentsService {
         qb.orderBy('department.nombre', 'ASC');
 
         // Paginación
-        ApiQueryHelper.applyPagination(qb, { limit: options?.limit, page: options?.page });
-
-        return qb.getMany();
+        return ApiQueryHelper.paginate(qb, { limit: options?.limit, page: options?.page });
     }
-
+    
     /**
      * Busca un departamento por su ID.
      */

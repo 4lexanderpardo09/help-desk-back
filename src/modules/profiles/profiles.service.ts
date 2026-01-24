@@ -31,7 +31,7 @@ export class ProfilesService {
         page?: number;
         included?: string;
         filter?: Record<string, any>;
-    }): Promise<Perfil[]> {
+    }): Promise<import('../../common/utils/api-query-helper').PaginatedResult<Perfil>> {
         const qb = this.profilesRepository.createQueryBuilder('perfil');
 
         // Filtro especial: usuarioId (JOIN con tabla pivot)
@@ -49,9 +49,7 @@ export class ProfilesService {
 
         qb.orderBy('perfil.id', 'ASC');
 
-        ApiQueryHelper.applyPagination(qb, { limit: options?.limit, page: options?.page });
-
-        return qb.getMany();
+        return ApiQueryHelper.paginate(qb, { limit: options?.limit, page: options?.page });
     }
 
     /**

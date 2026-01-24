@@ -45,7 +45,7 @@ export class ProfilesController {
     @ApiQuery({ name: 'filter[nombre]', required: false, type: String, description: 'Filtrar por nombre (LIKE).' })
     @ApiQuery({ name: 'filter[estado]', required: false, type: Number, description: 'Filtrar por estado (1=Activo, 0=Inactivo).' })
     @CheckPolicies((ability: AppAbility) => ability.can('read', 'Profile'))
-    findAll(@Query() query: ApiQueryDto) {
+    findAll(@Query() query: ApiQueryDto): Promise<import('../../common/utils/api-query-helper').PaginatedResult<import('./entities/perfil.entity').Perfil>> {
         return this.profilesService.list({
             limit: query.limit,
             page: query.page,
@@ -142,7 +142,7 @@ export class ProfilesController {
     @ApiOperation({ summary: 'Perfiles de usuario', description: 'Lista los perfiles asignados a un usuario. Para sincronizar, usar perfilIds en PUT /users/:id' })
     @ApiResponse({ status: 200, description: 'Lista de perfiles del usuario.' })
     @CheckPolicies((ability: AppAbility) => ability.can('read', 'Profile'))
-    listByUser(@Param('userId', ParseIntPipe) userId: number) {
+    listByUser(@Param('userId', ParseIntPipe) userId: number): Promise<import('../../common/utils/api-query-helper').PaginatedResult<import('./entities/perfil.entity').Perfil>> {
         return this.profilesService.list({ filter: { usuarioId: userId } });
     }
 }

@@ -45,7 +45,7 @@ export class PositionsController {
     @ApiQuery({ name: 'filter[nombre]', required: false, type: String, description: 'Filtrar por nombre (LIKE).' })
     @ApiQuery({ name: 'filter[estado]', required: false, type: Number, description: 'Filtrar por estado (1=Activo, 0=Inactivo).' })
     @CheckPolicies((ability: AppAbility) => ability.can('read', 'Position'))
-    findAll(@Query() query: ApiQueryDto) {
+    findAll(@Query() query: ApiQueryDto): Promise<import('../../common/utils/api-query-helper').PaginatedResult<import('./entities/cargo.entity').Cargo>> {
         return this.positionsService.list({
             limit: query.limit,
             page: query.page,

@@ -42,7 +42,7 @@ export class SubcategoriasController {
     @ApiQuery({ name: 'page', required: false, type: Number, description: 'Número de página' })
     @ApiQuery({ name: 'filter', required: false, type: Object, description: 'Filtros dinámicos' })
     @ApiQuery({ name: 'included', required: false, type: String, description: 'Relaciones a incluir (categoria, prioridad)' })
-    list(@Query() query: ApiQueryDto) {
+    list(@Query() query: ApiQueryDto): Promise<import('../../common/utils/api-query-helper').PaginatedResult<Subcategoria>> {
         return this.subcategoriasService.list({
             limit: query.limit,
             page: query.page,

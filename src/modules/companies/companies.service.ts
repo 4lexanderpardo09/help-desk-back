@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Empresa } from './entities/empresa.entity';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
-import { ApiQueryHelper } from 'src/common/utils/api-query-helper';
+import { ApiQueryHelper, PaginatedResult } from 'src/common/utils/api-query-helper';
 
 @Injectable()
 export class CompaniesService {
@@ -26,7 +26,7 @@ export class CompaniesService {
         page?: number;
         included?: string;
         filter?: Record<string, any>;
-    }) {
+    }):Promise<PaginatedResult<Empresa>> {
         const qb = this.companyRepo.createQueryBuilder('company');
 
         // Filtro base: solo activos
@@ -40,9 +40,8 @@ export class CompaniesService {
         qb.orderBy('company.nombre', 'ASC');
 
         // Paginación
-        ApiQueryHelper.applyPagination(qb, { limit: options?.limit, page: options?.page });
+        return ApiQueryHelper.paginate(qb, { limit: options?.limit, page: options?.page });
 
-        return qb.getMany();
     }
 
     /**

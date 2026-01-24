@@ -30,7 +30,7 @@ export class PositionsService {
         page?: number;
         included?: string;
         filter?: Record<string, any>;
-    }): Promise<Cargo[]> {
+    }): Promise<import('../../common/utils/api-query-helper').PaginatedResult<Cargo>> {
         const qb = this.positionsRepository.createQueryBuilder('cargo');
 
         ApiQueryHelper.applyIncludes(qb, options?.included, this.allowedIncludes, 'cargo');
@@ -38,9 +38,7 @@ export class PositionsService {
 
         qb.orderBy('cargo.id', 'ASC');
 
-        ApiQueryHelper.applyPagination(qb, { limit: options?.limit, page: options?.page });
-
-        return qb.getMany();
+        return ApiQueryHelper.paginate(qb, { limit: options?.limit, page: options?.page });
     }
 
     /**

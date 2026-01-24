@@ -22,9 +22,10 @@ export class ZonesService {
      */
     async list(options?: {
         limit?: number;
+        page?: number;
         included?: string;
         filter?: Record<string, unknown>;
-    }): Promise<Zona[]> {
+    }): Promise<import('../../common/utils/api-query-helper').PaginatedResult<Zona>> {
         const qb = this.zonaRepository.createQueryBuilder('zona');
 
         // Estado por defecto: activos (si no se especifica filtro de estado)
@@ -41,12 +42,7 @@ export class ZonesService {
         // Ordenamiento default
         qb.orderBy('zona.nombre', 'ASC');
 
-        // Límite
-        if (options?.limit) {
-            qb.take(options.limit);
-        }
-
-        return qb.getMany();
+        return ApiQueryHelper.paginate(qb, { limit: options?.limit, page: options?.page });
     }
 
     /**

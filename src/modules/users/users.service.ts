@@ -7,7 +7,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { DataSource } from 'typeorm';
 import { UsuarioPerfil } from '../profiles/entities/usuario-perfil.entity';
-import { ApiQueryHelper } from 'src/common/utils/api-query-helper';
+import { ApiQueryHelper, PaginatedResult } from 'src/common/utils/api-query-helper';
 
 @Injectable()
 export class UsersService {
@@ -138,9 +138,10 @@ export class UsersService {
      */
     async list(options?: {
         limit?: number;
+        page?: number;
         included?: string;
         filter?: Record<string, any>;
-    }): Promise<User[] | Record<string, unknown>[]> {
+    }): Promise<PaginatedResult<User>> {
         const qb = this.userRepository.createQueryBuilder('user');
 
         // Filtros base (Primero, para que applyFilters use andWhere sobre esto)
@@ -155,10 +156,8 @@ export class UsersService {
         // Ordenamiento default
         qb.orderBy('user.nombre', 'ASC');
 
-        // Paginación Standard
-        ApiQueryHelper.applyPagination(qb, { limit: options?.limit });
-
-        return qb.getMany();
+        // Paginación Standard con Total
+        return ApiQueryHelper.paginate(qb, { limit: options?.limit, page: options?.page });
     }
 
     /**

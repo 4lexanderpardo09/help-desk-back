@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Subcategoria } from './entities/subcategoria.entity';
 import { CreateSubcategoriaDto } from './dto/create-subcategoria.dto';
 import { UpdateSubcategoriaDto } from './dto/update-subcategoria.dto';
-import { ApiQueryHelper } from '../../common/utils/api-query-helper';
+import { ApiQueryHelper, PaginatedResult } from '../../common/utils/api-query-helper';
 
 @Injectable()
 export class SubcategoriasService {
@@ -50,19 +50,18 @@ export class SubcategoriasService {
         included?: string;
         filter?: Record<string, any>;
         page?: number;
-    }): Promise<Subcategoria[]> {
+    }): Promise<PaginatedResult<Subcategoria>> {
         const qb = this.subcategoriaRepository.createQueryBuilder('subcategoria');
 
         qb.where('subcategoria.estado = :estado', { estado: 1 });
 
         ApiQueryHelper.applyIncludes(qb, options?.included, this.allowedIncludes, 'subcategoria');
         ApiQueryHelper.applyFilters(qb, options?.filter, this.allowedFilters, 'subcategoria');
-        ApiQueryHelper.applyPagination(qb, { limit: options?.limit, page: options?.page });
 
         // Ordenamiento por defecto
         qb.orderBy('subcategoria.nombre', 'ASC');
 
-        return qb.getMany();
+        return ApiQueryHelper.paginate(qb, { limit: options?.limit, page: options?.page });
     }
 
     /**

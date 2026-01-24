@@ -37,9 +37,10 @@ export class ZonesController {
     @ApiQuery({ name: 'included', required: false, description: 'Relaciones: regionales' })
     @ApiQuery({ name: 'filter[nombre]', required: false, description: 'Filtrar por nombre' })
     @ApiResponse({ status: 200, description: 'Lista de zonas.' })
-    async list(@Query() query: ApiQueryDto): Promise<Zona[]> {
+    async list(@Query() query: ApiQueryDto): Promise<import('../../common/utils/api-query-helper').PaginatedResult<Zona>> {
         return this.zonesService.list({
             limit: query.limit,
+            page: query.page,
             included: query.included,
             filter: query.filter,
         });
