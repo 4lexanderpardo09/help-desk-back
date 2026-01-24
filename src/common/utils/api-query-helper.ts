@@ -168,6 +168,30 @@ export class ApiQueryHelper {
     }
 
     /**
+     * Aplica ordenamiento dinámico
+     * @param qb Instancia de SelectQueryBuilder
+     * @param sort String de ordenamiento (ej: 'nombre,-id')
+     * @param mainAlias Alias de la entidad principal
+     */
+    static applySort(qb: SelectQueryBuilder<any>, sort: string | undefined, mainAlias: string) {
+        if (!sort) return;
+
+        const sorts = sort.split(',');
+        sorts.forEach((s) => {
+            const trimmed = s.trim();
+            if (!trimmed) return;
+
+            const isDesc = trimmed.startsWith('-');
+            const field = isDesc ? trimmed.substring(1) : trimmed;
+
+            // Simple validation to ensure field contains only alphanumeric and underscores
+            if (/^[a-zA-Z0-9_\.]+$/.test(field)) {
+                qb.addOrderBy(`${mainAlias}.${field}`, isDesc ? 'DESC' : 'ASC');
+            }
+        });
+    }
+
+    /**
      * Aplica paginación standard (take/skip)
      * 
      * @param qb Instancia de SelectQueryBuilder

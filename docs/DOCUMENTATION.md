@@ -3,10 +3,21 @@
 ## 2026-01-23: Organigrama & Pagination Improvements
 
 ### Summary
-Implemented the `Organigrama` module and refactored pagination across core catalog modules (`Users`, `Regions`, `Subcategories`, `Zones`, `Positions`, `Profiles`) to return total record counts.
+Implemented the `Organigrama` module, `Fast Answers` module CRUD, and refactored pagination across core catalog modules (`Users`, `Regions`, `Subcategories`, `Zones`, `Positions`, `Profiles`) to return total record counts.
 
 ### Technical Detail
-1.  **Pagination Refactor (`PaginatedResult`)**:
+1.  **Fast Answers Module**:
+    - **Entity**: `FastAnswer` (mapeada a `tm_fast_answer`).
+    - **Features**: CRUD completo para gestionar respuestas rápidas y soluciones comunes.
+    - **Endpoints**:
+        - `GET /fast-answers`: Listado paginado con filtros y ordenamiento.
+        - `GET /fast-answers/:id`: Detalle.
+        - `POST /fast-answers`: Crear respuesta rápida.
+        - `PUT /fast-answers/:id`: Actualizar.
+        - `DELETE /fast-answers/:id`: Soft delete.
+    - **Security**: Requiere permisos `read Ticket` para ver, `manage Ticket` para administrar.
+
+2.  **Pagination Refactor (`PaginatedResult`)**:
     - Updated `ApiQueryHelper` to include a `paginate<T>` method.
     - Standardized return type `PaginatedResult<T>`:
         ```typescript
