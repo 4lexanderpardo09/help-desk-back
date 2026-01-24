@@ -35,6 +35,12 @@ export class AuthService {
             throw new UnauthorizedException('Credenciales inválidas');
         }
 
+        // Obtener perfiles del usuario
+        const usuarioPerfiles = user.usuarioPerfiles || [];
+        const perfilIds = usuarioPerfiles
+            .filter(up => up.estado === 1) // Solo activos
+            .map(up => up.perfilId);
+
         const payload: JwtPayload = {
             usu_id: user.id,
             usu_correo: user.email,
@@ -42,7 +48,8 @@ export class AuthService {
             reg_id: user.regionalId,
             car_id: user.cargoId,
             dp_id: user.departamentoId,
-            es_nacional: user.esNacional
+            es_nacional: user.esNacional,
+            perfil_ids: perfilIds
         };
 
         return {

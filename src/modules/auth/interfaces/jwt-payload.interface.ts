@@ -6,4 +6,5 @@ export interface JwtPayload {
     car_id: number | null;
     dp_id: number | null;
     es_nacional: boolean;
+    perfil_ids?: number[];
 }

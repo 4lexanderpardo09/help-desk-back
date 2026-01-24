@@ -24,6 +24,7 @@ export class UsersService {
         return this.userRepository
             .createQueryBuilder('user')
             .addSelect('user.password')
+            .leftJoinAndSelect('user.usuarioPerfiles', 'usuarioPerfiles')
             .where('user.email = :email', { email })
             .andWhere('user.estado = :estado', { estado: 1 })
             .getOne();

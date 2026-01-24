@@ -106,4 +106,29 @@ export class SubcategoriasService {
 
         return { deleted: true, id };
     }
+
+    /**
+     * Lista subcategorías permitidas para el usuario (según ReglaMapeo)
+     * Filtra por categoría y verifica si el usuario tiene permiso por Cargo o Perfil.
+     */
+    async findAllowed(categoryId: number, user: any): Promise<Subcategoria[]> {
+        const qb = this.subcategoriaRepository.createQueryBuilder('s');
+
+        qb.innerJoin('s.reglaMapeo', 'rm', 'rm.estado = 1')
+            .leftJoin('rm.creadores', 'rc')
+            .leftJoin('rm.creadoresPerfil', 'rcp')
+            .where('s.categoriaId = :categoryId', { categoryId })
+            .andWhere('s.estado = :estado', { estado: 1 })
+            .andWhere(
+                '(rc.creadorCargoId = :cargoId OR rcp.creadorPerfilId IN (:...perfilIds))',
+                {
+                    cargoId: user.car_id || 0, // car_id from JWT
+                    perfilIds: (user.perfil_ids && user.perfil_ids.length > 0) ? user.perfil_ids : [0]
+                }
+            )
+            .orderBy('s.nombre', 'ASC');
+
+        // Ensure distinct in case user matches multiple rules (cargo + profile)
+        return await qb.getMany();
+    }
 }

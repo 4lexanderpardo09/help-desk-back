@@ -9,6 +9,7 @@ import {
     UseGuards,
     Query,
     ParseIntPipe,
+    Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { SubcategoriasService } from './subcategorias.service';
@@ -49,6 +50,20 @@ export class SubcategoriasController {
             filter: query.filter,
             included: query.included,
         });
+    }
+
+    /**
+     * GET /subcategorias/allowed
+     * Obtiene subcategorías permitidas para el usuario actual (basado en Reglas de Mapeo).
+     */
+    @Get('allowed')
+    @ApiOperation({ summary: 'Listar subcategorías permitidas', description: 'Devuelve subcategorías filtradas por Regla Mapeo para el usuario actual.' })
+    @ApiQuery({ name: 'categoryId', required: true, type: Number })
+    listAllowed(
+        @Query('categoryId', ParseIntPipe) categoryId: number,
+        @Request() req: any
+    ) {
+        return this.subcategoriasService.findAllowed(categoryId, req.user);
     }
 
     /**
