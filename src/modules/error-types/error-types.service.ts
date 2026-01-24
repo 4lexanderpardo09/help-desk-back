@@ -44,6 +44,7 @@ export class ErrorTypesService {
         const { sort, ...filters } = query;
 
         ApiQueryHelper.applyFilters(qb, filters, ['title', 'category', 'isActive'], 'et');
+        ApiQueryHelper.applyIncludes(qb, query.included, ['subtypes'], 'et');
         ApiQueryHelper.applySort(qb, sort, 'et');
 
         return await ApiQueryHelper.paginate(qb, query);
