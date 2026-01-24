@@ -26,7 +26,7 @@ import jwtConfig from './config/jwt.config';
 import { AssignmentModule } from './modules/assignments/assignment.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { DocumentsModule } from './modules/documents/documents.module';
-import { FastAnswersModule } from './modules/fast-answers/fast-answers.module';
+import { ErrorTypesModule } from './modules/error-types/error-types.module';
 import { ImportsModule } from './modules/imports/imports.module';
 import { TagsModule } from './modules/tags/tags.module';
 
@@ -71,7 +71,7 @@ import { TagsModule } from './modules/tags/tags.module';
     NotificationsModule,
     NotificationsModule,
     DocumentsModule,
-    FastAnswersModule,
+    ErrorTypesModule,
     ImportsModule,
     TagsModule,
   ],

@@ -1,7 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Ticket } from './ticket.entity';
 import { User } from '../../users/entities/user.entity';
-import { FastAnswer } from '../../fast-answers/entities/fast-answer.entity';
+import { ErrorType } from '../../error-types/entities/error-type.entity';
 
 @Entity('tm_ticket_error')
 export class TicketError {
@@ -18,7 +18,7 @@ export class TicketError {
     usuarioResponsableId: number;
 
     @Column({ name: 'answer_id', type: 'int' })
-    answerId: number;
+    errorTypeId: number;
 
     @Column({ name: 'error_descrip', type: 'text', nullable: true })
     descripcion: string | null;
@@ -44,7 +44,7 @@ export class TicketError {
     @JoinColumn({ name: 'usu_id_responsable' })
     usuarioResponsable: User;
 
-    @ManyToOne(() => FastAnswer, (fa) => fa.ticketErrors)
+    @ManyToOne(() => ErrorType, (et) => et.ticketErrors)
     @JoinColumn({ name: 'answer_id' })
-    answer: FastAnswer;
+    errorType: ErrorType;
 }

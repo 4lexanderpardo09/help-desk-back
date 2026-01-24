@@ -8,13 +8,16 @@ Implemented the `Organigrama` module, `Fast Answers` module CRUD, and refactored
 ### Technical Detail
 1.  **Fast Answers Module**:
     - **Entity**: `FastAnswer` (mapeada a `tm_fast_answer`).
-    - **Features**: CRUD completo para gestionar respuestas rápidas y soluciones comunes.
-    - **Endpoints**:
-        - `GET /fast-answers`: Listado paginado con filtros y ordenamiento.
-        - `GET /fast-answers/:id`: Detalle.
-        - `POST /fast-answers`: Crear respuesta rápida.
-        - `PUT /fast-answers/:id`: Actualizar.
-        - `DELETE /fast-answers/:id`: Soft delete.
+    - **Properties**:
+        - `id` (PK) -> `answer_id`
+        - `titulo` -> `answer_nom`
+        - `descripcion` -> `answer_descrip`
+        - `tipo` -> `es_error_proceso` (Enum: `0=INFO`, `1=PROCESS_ERROR`)
+        - `estado` -> `est`
+    - **Features**: CRUD completo para gestionar respuestas rápidas.
+    - **Enum `FastAnswerType`**:
+        - `INFO = 0`: Informativo.
+        - `PROCESS_ERROR = 1`: Error de proceso (Retorna el ticket).
     - **Security**: Requiere permisos `read Ticket` para ver, `manage Ticket` para administrar.
 
 2.  **Pagination Refactor (`PaginatedResult`)**:

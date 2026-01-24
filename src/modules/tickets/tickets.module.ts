@@ -34,7 +34,7 @@ import { WorkflowsModule } from '../workflows/workflows.module';
 import { TemplatesModule } from '../templates/templates.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { DocumentsModule } from '../documents/documents.module';
-import { FastAnswersModule } from '../fast-answers/fast-answers.module';
+import { ErrorTypesModule } from '../error-types/error-types.module';
 import { ReglasMapeoModule } from '../rules/reglas-mapeo.module';
 
 @Module({
@@ -57,7 +57,7 @@ import { ReglasMapeoModule } from '../rules/reglas-mapeo.module';
         TemplatesModule,
         NotificationsModule,
         DocumentsModule,
-        FastAnswersModule,
+        ErrorTypesModule,
         forwardRef(() => UsersModule)
     ],
     controllers: [

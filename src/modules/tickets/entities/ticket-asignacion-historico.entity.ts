@@ -2,7 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 't
 import { Ticket } from './ticket.entity';
 import { User } from '../../users/entities/user.entity';
 import { PasoFlujo } from '../../workflows/entities/paso-flujo.entity';
-import { FastAnswer } from '../../fast-answers/entities/fast-answer.entity';
+import { ErrorType } from '../../error-types/entities/error-type.entity';
 
 @Entity('th_ticket_asignacion')
 export class TicketAsignacionHistorico {
@@ -55,7 +55,7 @@ export class TicketAsignacionHistorico {
     @JoinColumn({ name: 'paso_id' })
     paso: PasoFlujo;
 
-    @ManyToOne(() => FastAnswer, (fa) => fa.historiales)
+    @ManyToOne(() => ErrorType, (et) => et.historiales)
     @JoinColumn({ name: 'error_code_id' })
-    errorCode: FastAnswer;
+    errorCode: ErrorType;
 }
