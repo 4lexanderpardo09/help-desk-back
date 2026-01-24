@@ -1,5 +1,44 @@
 # Help Desk API - Documentación
 
+## 2026-01-23: Organigrama & Pagination Improvements
+
+### Summary
+Implemented the `Organigrama` module and refactored pagination across core catalog modules (`Users`, `Regions`, `Subcategories`, `Zones`, `Positions`, `Profiles`) to return total record counts.
+
+### Technical Detail
+1.  **Pagination Refactor (`PaginatedResult`)**:
+    - Updated `ApiQueryHelper` to include a `paginate<T>` method.
+    - Standardized return type `PaginatedResult<T>`:
+        ```typescript
+        {
+          data: T[],
+          meta: {
+            total: number,
+            page: number,
+            limit: number,
+            lastPage: number
+          }
+        }
+        ```
+    - Applied to: `UsersService`, `RegionsService`, `SubcategoriasService`, `ZonesService`, `PositionsService`, `ProfilesService`.
+
+2.  **Organigrama Module**:
+    - **Entity**: `Organigrama` (mapeada a `tm_organigrama`).
+    - **Features**: CRUD completo para gestionar jerarquías de cargos (`cargoId`, `jefeCargoId`).
+    - **Endpoints**:
+        - `GET /organigrama`: Listado paginado.
+        - `GET /organigrama/:id`: Detalle.
+        - `POST /organigrama`: Crear relación.
+        - `PUT /organigrama/:id`: Actualizar relación.
+        - `DELETE /organigrama/:id`: Eliminar relación (soft delete).
+    - **Security**: Requiere permisos sobre subject `Organigrama`.
+
+### Benefits
+- **Better UX**: Frontend can now display accurate page counts and total results.
+- **Hierarchy Management**: Enables management of organizational reporting lines via API.
+
+---
+
 ## 2026-01-21: Security Improvements (Ticket Creation)
 
 ### Summary

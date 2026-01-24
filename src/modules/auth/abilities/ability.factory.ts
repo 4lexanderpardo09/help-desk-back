@@ -42,6 +42,7 @@ export type Subjects =
     | 'Position'
     | 'Rule'
     | 'Report'
+    | 'Organigrama'
     | 'all';
 
 export type AppAbility = Ability<[Actions, Subjects]>;

@@ -3656,6 +3656,74 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Organigrama",
+            "description": "Gestión de organigrama (jerarquías)",
+            "item": [
+                {
+                    "name": "List Organigrama",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/organigrama",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "organigrama"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Organigrama",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"cargoId\": 1,\n    \"jefeCargoId\": 2\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/organigrama",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "organigrama"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }
