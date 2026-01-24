@@ -67,7 +67,7 @@ export class TicketService {
 
         // 4. Start Workflow (Resolves Initial Step + Assignee + History)
         // This will update the ticket with the correct PasoFlujo and Assignee based on rules
-        const ticketWithWorkflow = await this.workflowEngine.startTicketFlow(savedTicket);
+        const ticketWithWorkflow = await this.workflowEngine.startTicketFlow(savedTicket, dto.usuarioAsignadoId);
 
         // 5. Generate Initial PDF (if applicable)
         await this.generateInitialPdf(ticketWithWorkflow, user);
