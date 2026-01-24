@@ -3957,6 +3957,41 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Subcategories",
+            "item": [
+                {
+                    "name": "List Allowed Subcats by Dept",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/subcategorias/allowed/by-department?departmentId=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "subcategorias",
+                                "allowed",
+                                "by-department"
+                            ],
+                            "query": [
+                                {
+                                    "key": "departmentId",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }

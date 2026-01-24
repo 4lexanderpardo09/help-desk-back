@@ -67,6 +67,20 @@ export class SubcategoriasController {
     }
 
     /**
+     * GET /subcategorias/allowed/by-department
+     * Filtra por departamento y reglas de mapeo. Develve objeto completo (incluye categoria).
+     */
+    @Get('allowed/by-department')
+    @ApiOperation({ summary: 'Listar subcategorías por Depto + Reglas', description: 'Filtra subcategorías por Departamento y aplica reglas de mapeo.' })
+    @ApiQuery({ name: 'departmentId', required: true, type: Number })
+    listAllowedByDepartment(
+        @Query('departmentId', ParseIntPipe) departmentId: number,
+        @Request() req: any
+    ) {
+        return this.subcategoriasService.findAllowedByDepartment(departmentId, req.user);
+    }
+
+    /**
      * POST /subcategorias
      * Crea una nueva subcategoría.
      */

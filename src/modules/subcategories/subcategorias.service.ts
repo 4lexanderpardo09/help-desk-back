@@ -131,4 +131,30 @@ export class SubcategoriasService {
         // Ensure distinct in case user matches multiple rules (cargo + profile)
         return await qb.getMany();
     }
+
+    /**
+     * Lista subcategorías permitidas filtradas por Departamento (saltando Categoría)
+     */
+    async findAllowedByDepartment(departmentId: number, user: any): Promise<Subcategoria[]> {
+        const qb = this.subcategoriaRepository.createQueryBuilder('s');
+
+        qb.innerJoinAndSelect('s.categoria', 'c')
+            .innerJoin('c.departamentos', 'd')
+            .innerJoin('s.reglaMapeo', 'rm', 'rm.estado = 1')
+            .leftJoin('rm.creadores', 'rc')
+            .leftJoin('rm.creadoresPerfil', 'rcp')
+            .where('d.id = :departmentId', { departmentId })
+            .andWhere('s.estado = :estado', { estado: 1 })
+            .andWhere('c.estado = :estado', { estado: 1 })
+            .andWhere(
+                '(rc.creadorCargoId = :cargoId OR rcp.creadorPerfilId IN (:...perfilIds))',
+                {
+                    cargoId: user.car_id || 0,
+                    perfilIds: (user.perfil_ids && user.perfil_ids.length > 0) ? user.perfil_ids : [0]
+                }
+            )
+            .orderBy('s.nombre', 'ASC');
+
+        return await qb.getMany();
+    }
 }

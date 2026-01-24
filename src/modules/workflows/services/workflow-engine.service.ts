@@ -152,10 +152,9 @@ export class WorkflowEngineService {
         }
 
         // If specific users are configured in `usuarios` (mapped via PasoFlujoUsuario)
-        if (step.usuarios && step.usuarios.length > 0) {
-            // If there's only one, maybe auto-assign? But usually frontend wants to confirm.
-            // Let's assume if specific users are listed, user MUST pick one (or we return them to let UI decide).
-            const candidates: UserCandidateDto[] = step.usuarios.map(pfu => ({
+        const candidates: UserCandidateDto[] = step.usuarios
+            .filter(pfu => pfu.usuario) // Filter out incomplete relations
+            .map(pfu => ({
                 id: pfu.usuario.id,
                 nombre: pfu.usuario.nombre || '',
                 apellido: pfu.usuario.apellido || '',
@@ -163,6 +162,8 @@ export class WorkflowEngineService {
                 cargo: pfu.usuario.cargo?.nombre
             }));
 
+        // Only return here if we actually found valid candidates
+        if (candidates.length > 0) {
             return {
                 requiresManualSelection: true,
                 candidates,
@@ -170,6 +171,7 @@ export class WorkflowEngineService {
                 initialStepName: step.nombre
             };
         }
+        // If candidates is empty (e.g. all relations broken), fall through to Role checks
 
         // If Cargo is configured but NOT Approval (which implies Boss), it implies a Pool or Manual Pick from Role
         if (step.cargoAsignadoId) {
