@@ -1,6 +1,7 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { TicketError } from '../../tickets/entities/ticket-error.entity';
 import { TicketAsignacionHistorico } from '../../tickets/entities/ticket-asignacion-historico.entity';
+import { ErrorSubtype } from './error-subtype.entity';
 
 export enum ErrorTypeCategory {
     INFO = 0,
@@ -22,18 +23,12 @@ export class ErrorType {
     @Column({ name: 'is_process_error', type: 'tinyint', default: ErrorTypeCategory.INFO })
     category: ErrorTypeCategory;
 
-    @Column({ name: 'is_active', type: 'tinyint', default: 1 })
+    @Column({ name: 'est', type: 'tinyint', default: 1 })
     isActive: boolean;
 
-    @Column({ name: 'parent_id', type: 'int', nullable: true })
-    parentId: number | null;
-
-    @ManyToOne(() => ErrorType, (type) => type.children)
-    @JoinColumn({ name: 'parent_id' })
-    parent: ErrorType;
-
-    @OneToMany(() => ErrorType, (type) => type.parent)
-    children: ErrorType[];
+    // Subtypes Relation (Master-Detail)
+    @OneToMany(() => ErrorSubtype, (subtype) => subtype.errorType)
+    subtypes: ErrorSubtype[];
 
     @OneToMany(() => TicketError, (te) => te.errorType)
     ticketErrors: TicketError[];

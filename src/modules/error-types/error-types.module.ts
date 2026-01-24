@@ -3,11 +3,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ErrorTypesService } from './error-types.service';
 import { ErrorTypesController } from './error-types.controller';
 import { ErrorType } from './entities/error-type.entity';
+import { ErrorSubtype } from './entities/error-subtype.entity';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([ErrorType]),
+        TypeOrmModule.forFeature([ErrorType, ErrorSubtype]),
         AuthModule
     ],
     controllers: [ErrorTypesController],

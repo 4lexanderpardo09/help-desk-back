@@ -7,17 +7,20 @@ Implemented the `Organigrama` module, `Fast Answers` module CRUD, and refactored
 
 ### Technical Detail
 1.  **Fast Answers Module**:
-    - **Entity**: `FastAnswer` (mapeada a `tm_fast_answer`).
-    - **Properties**:
-        - `id` (PK) -> `answer_id`
-        - `titulo` -> `answer_nom`
-        - `descripcion` -> `answer_descrip`
-        - `tipo` -> `es_error_proceso` (Enum: `0=INFO`, `1=PROCESS_ERROR`)
-        - `estado` -> `est`
-    - **Features**: CRUD completo para gestionar respuestas rápidas.
-    - **Enum `FastAnswerType`**:
-        - `INFO = 0`: Informativo.
-        - `PROCESS_ERROR = 1`: Error de proceso (Retorna el ticket).
+    - **Entities**:
+        - `ErrorType` (`tm_error_type`): Categoría principal (ej. Hardware, Software).
+        - `ErrorSubtype` (`tm_error_subtype`): Opción específica (ej. Mouse, Teclado).
+    - **Properties (Master)**:
+        - `id` -> `error_type_id`
+        - `title`, `description`, `is_process_error` (`0=INFO`, `1=ERROR`)
+    - **Properties (Detail)**:
+        - `id` -> `subtype_id`
+        - `errorTypeId` -> `error_type_id`
+        - `title`, `description`, `isActive` -> `est`
+    - **Features**:
+        - `GET /error-types`: Lista categorías.
+        - `GET /error-types/:id/subtypes`: Lista opciones para esa categoría.
+        - `POST /error-types/subtypes`: Crea una nueva opción.
     - **Security**: Requiere permisos `read Ticket` para ver, `manage Ticket` para administrar.
 
 2.  **Pagination Refactor (`PaginatedResult`)**:

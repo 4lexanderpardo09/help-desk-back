@@ -15,7 +15,7 @@ ALTER TABLE `tm_error_type`
 CHANGE `es_error_proceso` `is_process_error` TINYINT(1) DEFAULT 0;
 
 ALTER TABLE `tm_error_type`
-CHANGE `est` `is_active` TINYINT(1) DEFAULT 1;
+CHANGE `est` `est TINYINT(1) DEFAULT 1;
 
 -- Add Parent Column for Hierarchy
 ALTER TABLE `tm_error_type`

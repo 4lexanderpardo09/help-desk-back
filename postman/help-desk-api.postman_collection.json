@@ -3464,8 +3464,8 @@
             ]
         },
         {
-            "name": "Fast Answers",
-            "description": "Respuestas rápidas y Tipos de error (tm_fast_answer)",
+            "name": "Error Types",
+            "description": "Gestión de Tipos de Errores (Master-Detail). Requiere autenticación y permisos sobre Ticket.",
             "item": [
                 {
                     "name": "List All",
@@ -3487,6 +3487,239 @@
                             ]
                         },
                         "description": "Listado de respuestas rápidas."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "List Error Types (Master)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/error-types",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "error-types"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Error Type (Master)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/error-types",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "error-types"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"New Hardware Error\",\n    \"description\": \"Issues related to physical hardware\",\n    \"category\": 1,\n    \"isActive\": true\n}"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Error Type",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/error-types/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "error-types",
+                                "1"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"Hardware Error Updated\",\n    \"category\": 1\n}"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Error Type",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/error-types/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "error-types",
+                                "1"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Error Subtype",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/error-types/subtypes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "error-types",
+                                "subtypes"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"errorTypeId\": 1,\n    \"title\": \"Broken Mouse\",\n    \"description\": \"Mouse not responsive\",\n    \"isActive\": true\n}"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "List Subtypes of Error Type",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/error-types/1/subtypes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "error-types",
+                                "1",
+                                "subtypes"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Error Subtype",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/error-types/subtypes/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "error-types",
+                                "subtypes",
+                                "1"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"Broken Mouse (Updated)\",\n    \"description\": \"Mouse connector damaged\"\n}"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Error Subtype",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/error-types/subtypes/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "error-types",
+                                "subtypes",
+                                "1"
+                            ]
+                        }
                     },
                     "response": []
                 }
