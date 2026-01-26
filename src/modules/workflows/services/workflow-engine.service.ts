@@ -377,7 +377,9 @@ export class WorkflowEngineService {
         // 3. Resolve Assignee (The core complexity)
         // If transitioning manually, we typically don't pass manualAssigneeId unless the DTO supports it.
         // For now, rely on auto-resolution.
-        const assigneeId = await this.resolveStepAssignee(nextStep, ticket);
+        // 3. Resolve Assignee (The core complexity)
+        // If transitioning manually, we typically don't pass manualAssigneeId unless the DTO supports it.
+        const assigneeId = await this.resolveStepAssignee(nextStep, ticket, dto.targetUserId);
 
         // 4. Update Ticket
         ticket.pasoActualId = nextStep.id;

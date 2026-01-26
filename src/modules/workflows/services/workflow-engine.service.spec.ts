@@ -137,6 +137,42 @@ describe('WorkflowEngineService', () => {
                 pasoActualId: 11,
                 usuarioAsignadoIds: [88]
             }));
+            expect(ticketRepo.save).toHaveBeenCalledWith(expect.objectContaining({
+                pasoActualId: 11,
+                usuarioAsignadoIds: [88]
+            }));
+        });
+
+        it('should respect targetUserId for manual assignment override', async () => {
+            const mockTicket = {
+                id: 1,
+                pasoActual: { id: 10, orden: 1, flujoId: 100 },
+                usuarioId: 50,
+                usuarioAsignadoIds: []
+            };
+
+            const mockNextStep = { id: 11, orden: 2, nombre: 'Paso 2', cargoAsignadoId: 5 }; // Ambiguous Step
+
+            ticketRepo.findOne.mockResolvedValue(mockTicket);
+
+            // Mock Next Step Query
+            const queryBuilder = pasoRepo.createQueryBuilder();
+            queryBuilder.getOne.mockResolvedValue(mockNextStep);
+            jest.spyOn(pasoRepo, 'createQueryBuilder').mockReturnValue(queryBuilder);
+
+            // Mock candidates (multiple)
+            mockAssignmentService.getCandidatesForStep.mockResolvedValue([
+                { id: 88, nombre: 'A' }, { id: 99, nombre: 'B' }
+            ]);
+
+            // User explicitly picks "99"
+            const dto = { ticketId: 1, actorId: 99, transitionKeyOrStepId: 'NEXT', targetUserId: 99 };
+            await service.transitionStep(dto);
+
+            expect(ticketRepo.save).toHaveBeenCalledWith(expect.objectContaining({
+                pasoActualId: 11,
+                usuarioAsignadoIds: [99] // Should be 99, ignoring auto-resolution or pool fallback
+            }));
         });
 
         it('should assign to creator if configured via getCandidates', async () => {

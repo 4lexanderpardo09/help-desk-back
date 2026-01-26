@@ -21,6 +21,11 @@ export class TransitionTicketDto {
     @IsInt()
     actorId?: number;
 
+    @ApiProperty({ required: false, description: 'ID del usuario objetivo (selección manual)' })
+    @IsOptional()
+    @IsInt()
+    targetUserId?: number;
+
     @ApiProperty({ required: false, description: 'Firma en Base64 o ID de archivo' })
     @IsOptional()
     @IsString()
