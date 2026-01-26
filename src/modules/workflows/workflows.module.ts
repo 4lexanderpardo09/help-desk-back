@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
-import { TemplatesModule } from '../templates/templates.module'; // Import TemplatesModule
+import { TemplatesModule } from '../templates/templates.module';
+import { DocumentsModule } from '../documents/documents.module';
 import { WorkflowController } from './controllers/workflow.controller';
 import { WorkflowEngineService } from './services/workflow-engine.service';
 import { SlaService } from './services/sla.service';
@@ -35,6 +36,7 @@ import { PasoFlujoFirma } from './entities/paso-flujo-firma.entity';
         NotificationsModule,
         ScheduleModule.forRoot(),
         TemplatesModule,
+        DocumentsModule,
     ],
     controllers: [WorkflowController],
     providers: [WorkflowEngineService, SlaService, SlaSchedulerService, SignatureStampingService],

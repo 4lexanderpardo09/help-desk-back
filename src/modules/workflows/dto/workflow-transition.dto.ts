@@ -19,6 +19,11 @@ export class TransitionTicketDto {
     @IsOptional()
     @IsInt()
     actorId?: number;
+
+    @ApiProperty({ required: false, description: 'Firma en Base64 o ID de archivo' })
+    @IsOptional()
+    @IsString()
+    signature?: string;
 }
 
 export class NextStepCandidateDto {

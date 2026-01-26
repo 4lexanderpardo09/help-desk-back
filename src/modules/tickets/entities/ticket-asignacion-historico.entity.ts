@@ -39,6 +39,9 @@ export class TicketAsignacionHistorico {
     @Column({ name: 'est', type: 'int', default: 1 })
     estado: number;
 
+    @Column({ name: 'firma_path', type: 'varchar', length: 255, nullable: true, comment: 'Ruta del archivo de firma adjunta' })
+    firmaPath: string | null;
+
     @ManyToOne(() => Ticket, (t) => t.historiales)
     @JoinColumn({ name: 'tick_id' })
     ticket: Ticket;

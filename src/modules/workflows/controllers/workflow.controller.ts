@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagg
 import { WorkflowEngineService } from '../services/workflow-engine.service';
 import { TransitionTicketDto } from '../dto/workflow-transition.dto';
 import { CheckStartFlowResponseDto } from '../dto/start-flow-check.dto';
+import { CheckNextStepResponseDto } from '../dto/check-next-step.dto';
 import { JwtAuthGuard } from 'src/modules/auth/jwt.guard';
 import { PoliciesGuard } from '../../../common/guards/policies.guard';
 import { CheckPolicies } from 'src/modules/auth/decorators/check-policies.decorator';
@@ -38,6 +39,18 @@ export class WorkflowController {
     @CheckPolicies((ability: AppAbility) => ability.can('create', 'Ticket'))
     async checkStartFlow(@Param('subcategoriaId') subcategoriaId: number) {
         return this.workflowService.checkStartFlow(Number(subcategoriaId));
+    }
+
+    /**
+     * Checks the next step for a ticket and determines if manual selection is required.
+     * @param ticketId - The ID of the ticket.
+     */
+    @Get('check-next-step/:ticketId')
+    @ApiOperation({ summary: 'Verificar siguiente paso y candidatos' })
+    @ApiResponse({ status: 200, description: 'Retorna requerimientos y candidatos', type: CheckNextStepResponseDto })
+    @CheckPolicies((ability: AppAbility) => ability.can('update', 'Ticket'))
+    async checkNextStep(@Param('ticketId') ticketId: number) {
+        return this.workflowService.checkNextStep(Number(ticketId));
     }
 
     /**

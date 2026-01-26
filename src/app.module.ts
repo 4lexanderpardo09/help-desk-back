@@ -30,6 +30,7 @@ import { ErrorTypesModule } from './modules/error-types/error-types.module';
 import { ImportsModule } from './modules/imports/imports.module';
 import { TagsModule } from './modules/tags/tags.module';
 
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -69,11 +70,12 @@ import { TagsModule } from './modules/tags/tags.module';
     AuthModule,
     AssignmentModule,
     NotificationsModule,
-    NotificationsModule,
+
     DocumentsModule,
     ErrorTypesModule,
     ImportsModule,
     TagsModule,
+
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -4,6 +4,7 @@ import { CampoPlantilla } from './entities/campo-plantilla.entity';
 import { TemplatesService } from './services/templates.service';
 import { PdfStampingService } from './services/pdf-stamping.service';
 import { FlujoPlantilla } from '../workflows/entities/flujo-plantilla.entity';
+import { PasoFlujo } from '../workflows/entities/paso-flujo.entity';
 import { Consulta } from '../reports/entities/consulta.entity';
 import { TicketCampoValor } from '../tickets/entities/ticket-campo-valor.entity';
 import { TemplatesController } from './templates.controller';
@@ -14,6 +15,7 @@ import { AuthModule } from '../auth/auth.module';
         TypeOrmModule.forFeature([
             CampoPlantilla,
             FlujoPlantilla,
+            PasoFlujo,
             Consulta,
             TicketCampoValor
         ]),

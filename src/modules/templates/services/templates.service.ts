@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { CampoPlantilla } from '../entities/campo-plantilla.entity';
 import { FlujoPlantilla } from '../../workflows/entities/flujo-plantilla.entity';
+import { PasoFlujo } from '../../workflows/entities/paso-flujo.entity';
 import { Consulta } from '../../reports/entities/consulta.entity';
 import { TicketCampoValor } from '../../tickets/entities/ticket-campo-valor.entity';
 
@@ -15,6 +16,8 @@ export class TemplatesService {
         private readonly campoRepo: Repository<CampoPlantilla>,
         @InjectRepository(FlujoPlantilla)
         private readonly plantillaRepo: Repository<FlujoPlantilla>,
+        @InjectRepository(PasoFlujo)
+        private readonly pasoRepo: Repository<PasoFlujo>,
         @InjectRepository(Consulta)
         private readonly consultaRepo: Repository<Consulta>,
         @InjectRepository(TicketCampoValor)
@@ -31,6 +34,8 @@ export class TemplatesService {
             order: { id: 'ASC' }
         });
     }
+
+
 
     /**
      * Obtiene los campos para estampado PDF (con coordenadas).

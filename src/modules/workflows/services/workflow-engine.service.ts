@@ -12,6 +12,8 @@ import { AssignmentService } from '../../assignments/assignment.service';
 import { NotificationsService } from '../../notifications/services/notifications.service';
 import { SlaService } from './sla.service';
 import { CheckStartFlowResponseDto, UserCandidateDto } from '../dto/start-flow-check.dto';
+import { CheckNextStepResponseDto } from '../dto/check-next-step.dto';
+import { DocumentsService } from '../../documents/services/documents.service';
 
 @Injectable()
 export class WorkflowEngineService {
@@ -33,6 +35,7 @@ export class WorkflowEngineService {
         private readonly assignmentService: AssignmentService,
         private readonly notificationsService: NotificationsService,
         private readonly slaService: SlaService,
+        private readonly documentsService: DocumentsService,
     ) { }
 
     /**
@@ -210,6 +213,131 @@ export class WorkflowEngineService {
     }
 
     /**
+     * Checks the next step for a ticket and determines if manual selection is required.
+     * Prioritizes linear progression (Strategy C) as the default "next step".
+     * 
+     * @param ticketId - The ID of the ticket.
+     * @returns DTO with requirements and candidates.
+     */
+    async checkNextStep(ticketId: number): Promise<CheckNextStepResponseDto> {
+        const ticket = await this.ticketRepo.findOne({
+            where: { id: ticketId },
+            relations: ['pasoActual']
+        });
+
+        if (!ticket) throw new NotFoundException(`Ticket ${ticketId} not found`);
+        const currentStep = ticket.pasoActual;
+        if (!currentStep) throw new BadRequestException('Ticket has no current step');
+
+        // Determine Next Step (Strategy C: Linear Sequence)
+        // Note: This logic mirrors transitionStep's fallback.
+        const nextStep = await this.pasoRepo.createQueryBuilder('p')
+            .where('p.flujoId = :flujoId', { flujoId: currentStep.flujoId })
+            .andWhere('p.orden > :orden', { orden: currentStep.orden })
+            .andWhere('p.estado = 1')
+            .orderBy('p.orden', 'ASC')
+            .getOne();
+
+        if (!nextStep) {
+            // No next step found - End of flow?
+            return {
+                requiresManualSelection: false,
+                candidates: [],
+                nextStepId: -1,
+                nextStepName: 'Fin del Flujo',
+                isFinal: true
+            };
+        }
+
+        // Logic for Assignment Candidates
+
+        // 1. Assign to Creator
+        if (nextStep.asignarCreador) {
+            const creator = await this.userRepo.findOne({ where: { id: ticket.usuarioId } });
+            const candidates = creator ? [{
+                id: creator.id,
+                nombre: creator.nombre || '',
+                apellido: creator.apellido || '',
+                email: creator.email,
+                cargo: creator.cargo?.nombre || 'Creador'
+            }] : [];
+
+            return {
+                requiresManualSelection: false, // Deterministic
+                candidates,
+                nextStepId: nextStep.id,
+                nextStepName: nextStep.nombre,
+                isFinal: false
+            };
+        }
+
+        // 2. Immediate Boss (Approval)
+        if (nextStep.necesitaAprobacionJefe || nextStep.campoReferenciaJefeId === -1) {
+            const bossId = await this.assignmentService.resolveJefeInmediato(ticket.usuarioId);
+            let candidates: UserCandidateDto[] = [];
+
+            if (bossId) {
+                const boss = await this.userRepo.findOne({ where: { id: bossId } });
+                if (boss) {
+                    candidates.push({
+                        id: boss.id,
+                        nombre: boss.nombre || '',
+                        apellido: boss.apellido || '',
+                        email: boss.email,
+                        cargo: boss.cargo?.nombre || 'Jefe Inmediato'
+                    });
+                }
+            }
+
+            return {
+                requiresManualSelection: false, // Deterministic
+                candidates,
+                nextStepId: nextStep.id,
+                nextStepName: nextStep.nombre,
+                isFinal: false
+            };
+        }
+
+        // 3. Role Based (Potential Manual Selection)
+        if (nextStep.cargoAsignadoId) {
+            // Return all users with this role (filtered by region if possible, but keeping it broad for now like checkStartFlow)
+            // Ideally we should filter by ticket creator's region, similar to transitionStep logic
+            const user = await this.userRepo.findOne({ where: { id: ticket.usuarioId } });
+            const regionalId = user?.regionalId || 1;
+
+            const users = await this.userRepo.find({
+                where: { cargoId: nextStep.cargoAsignadoId, estado: 1, regionalId: regionalId }, // Added regional filter for better accuracy
+                select: ['id', 'nombre', 'apellido', 'email', 'cargo']
+            });
+
+            const candidates: UserCandidateDto[] = users.map(u => ({
+                id: u.id,
+                nombre: u.nombre || '',
+                apellido: u.apellido || '',
+                email: u.email,
+                cargo: u.cargo?.nombre
+            }));
+
+            return {
+                requiresManualSelection: true, // Role based usually implies selection or pool
+                candidates,
+                nextStepId: nextStep.id,
+                nextStepName: nextStep.nombre,
+                isFinal: false
+            };
+        }
+
+        // 4. Fallback
+        return {
+            requiresManualSelection: false,
+            candidates: [],
+            nextStepId: nextStep.id,
+            nextStepName: nextStep.nombre,
+            isFinal: false
+        };
+    }
+
+    /**
      * Executes a state transition for a ticket.
      * This core method handles the movement of a ticket from one step to another,
      * resolving the destination step and the responsible agent automatically.
@@ -297,6 +425,26 @@ export class WorkflowEngineService {
 
         const savedTicket = await this.ticketRepo.save(ticket);
 
+
+
+        // 4.5. Handle Signature
+        let signaturePath: string | null = null;
+        if (dto.signature) {
+            try {
+                // Remove prefix if present
+                const base64Data = dto.signature.replace(/^data:image\/\w+;base64,/, "");
+                const buffer = Buffer.from(base64Data, 'base64');
+                // Use distinct filename
+                const filename = `signature_transition_${Date.now()}.png`;
+
+                await this.documentsService.saveTicketFile(ticket.id, buffer, filename);
+                // Store path relative to documents root or just filename as known convention
+                signaturePath = `${filename}`;
+            } catch (e) {
+                this.logger.error(`Failed to save signature for ticket ${ticket.id}`, e);
+            }
+        }
+
         // 5. Record History
         const history = this.historyRepo.create({
             ticketId: ticket.id,
@@ -306,7 +454,8 @@ export class WorkflowEngineService {
             fechaAsignacion: new Date(),
             comentario: dto.comentario || (transitionUsed?.condicionNombre ? `Transición: ${transitionUsed.condicionNombre}` : `Avanzó al paso: ${nextStep.nombre}`),
             estado: 1,
-            estadoTiempoPaso: 'A Tiempo'
+            estadoTiempoPaso: 'A Tiempo',
+            firmaPath: signaturePath
         });
         await this.historyRepo.save(history);
 

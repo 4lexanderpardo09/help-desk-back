@@ -20,6 +20,8 @@ export class TemplatesController {
         return this.templatesService.getFieldsByStep(stepId);
     }
 
+
+
     @Get('query/:fieldId')
     @ApiOperation({ summary: 'Ejecuta la query dinámica de un campo (Autocomplete)' })
     @ApiQuery({ name: 'term', required: false, description: 'Término de búsqueda' })
