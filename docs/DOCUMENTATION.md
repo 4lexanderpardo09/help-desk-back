@@ -37,6 +37,36 @@ GET /workflows/steps?filter[flujo.id]=5&sort=orden:ASC&included=cargoAsignado
 
 // Get Transitions of a Flow
 GET /workflows/transitions?filter[pasoOrigen.flujo.id]=5
+
+4.  **Routes Management (`RutasService`)**:
+    - **Endpoint**: `GET /workflows/routes`
+    - **Features**: Manage paths/routes within a flow.
+    - **Filters**: `filter[flujo.id]`.
+    - **Includes**: `flujo`, `rutaPasos`, `transiciones`.
+
+5.  **Route Steps Management (`RutaPasosService`)**:
+    - **Endpoint**: `GET /workflows/route-steps`
+    - **Features**: Link steps to a route and define their order.
+    - **Filters**: `filter[ruta.id]`.
+    - **Ordering**: `sort=orden:ASC`.
+    - **Includes**: `ruta`, `paso`.
+
+### API Usage Example
+```typescript
+// Get Flows (Active)
+GET /workflows?page=1&limit=10&included=subcategoria
+
+// Get Steps of a Flow
+GET /workflows/steps?filter[flujo.id]=5&sort=orden:ASC&included=cargoAsignado
+
+// Get Transitions of a Flow
+GET /workflows/transitions?filter[pasoOrigen.flujo.id]=5
+
+// Get Routes of a Flow
+GET /workflows/routes?filter[flujo.id]=5&included=rutaPasos
+
+// Get Steps of a Route (Ordered)
+GET /workflows/route-steps?filter[ruta.id]=10&sort=orden:ASC&included=paso
 ```
 
 ---

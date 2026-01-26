@@ -4295,6 +4295,150 @@
                             "response": []
                         }
                     ]
+                },
+                {
+                    "name": "Routes",
+                    "item": [
+                        {
+                            "name": "List Routes of Flow",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/workflows/routes?filter[flujo.id]=1&included=rutaPasos",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "workflows",
+                                        "routes"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "filter[flujo.id]",
+                                            "value": "1",
+                                            "description": "Filtrar por ID del Flujo"
+                                        },
+                                        {
+                                            "key": "included",
+                                            "value": "rutaPasos"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Create Route",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"flujoId\": 1,\n    \"nombre\": \"Ruta Estandar\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/workflows/routes",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "workflows",
+                                        "routes"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Route Steps",
+                    "item": [
+                        {
+                            "name": "List Steps of Route",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/workflows/route-steps?filter[ruta.id]=10&sort=orden:ASC",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "workflows",
+                                        "route-steps"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "filter[ruta.id]",
+                                            "value": "10",
+                                            "description": "Filtrar por Ruta"
+                                        },
+                                        {
+                                            "key": "sort",
+                                            "value": "orden:ASC"
+                                        },
+                                        {
+                                            "key": "included",
+                                            "value": "paso"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Add Step to Route",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"rutaId\": 10,\n    \"pasoId\": 5,\n    \"orden\": 1\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/workflows/route-steps",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "workflows",
+                                        "route-steps"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
                 }
             ]
         }

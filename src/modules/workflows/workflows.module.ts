@@ -27,6 +27,12 @@ import { FlowsService } from './services/flows.service';
 
 import { TransitionsController } from './controllers/transitions.controller';
 import { TransitionsService } from './services/transitions.service';
+import { RutasController } from './controllers/rutas.controller';
+import { RutasService } from './services/rutas.service';
+import { RutaPasosController } from './controllers/ruta-pasos.controller';
+import { RutaPasosService } from './services/ruta-pasos.service';
+import { Ruta } from './entities/ruta.entity';
+import { RutaPaso } from './entities/ruta-paso.entity';
 
 @Module({
     imports: [
@@ -40,7 +46,9 @@ import { TransitionsService } from './services/transitions.service';
             Ticket,
             TicketAsignacionHistorico,
             User,
-            TicketCampoValor
+            TicketCampoValor,
+            Ruta,
+            RutaPaso
         ]),
         AuthModule,
         AuthModule,
@@ -50,8 +58,8 @@ import { TransitionsService } from './services/transitions.service';
         TemplatesModule,
         DocumentsModule,
     ],
-    controllers: [WorkflowController, StepsController, FlowsController, TransitionsController],
-    providers: [WorkflowEngineService, SlaService, SlaSchedulerService, SignatureStampingService, StepsService, FlowsService, TransitionsService],
+    controllers: [WorkflowController, StepsController, FlowsController, TransitionsController, RutasController, RutaPasosController],
+    providers: [WorkflowEngineService, SlaService, SlaSchedulerService, SignatureStampingService, StepsService, FlowsService, TransitionsService, RutasService, RutaPasosService],
     exports: [WorkflowEngineService, SignatureStampingService, StepsService, FlowsService]
 })
 export class WorkflowsModule { }
