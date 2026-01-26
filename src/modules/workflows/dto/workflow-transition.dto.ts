@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString } from 'class-validator';
+import { IsInt, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class TransitionTicketDto {
     @ApiProperty({ description: 'ID del ticket a transicionar' })
@@ -24,6 +25,22 @@ export class TransitionTicketDto {
     @IsOptional()
     @IsString()
     signature?: string;
+
+    @ApiProperty({ required: false, isArray: true, description: 'Valores de campos dinámicos de la plantilla' })
+    @IsOptional()
+    @ValidateNested({ each: true })
+    @Type(() => TemplateValueDto)
+    templateValues?: TemplateValueDto[];
+}
+
+export class TemplateValueDto {
+    @ApiProperty({ description: 'ID del campo de la plantilla (tm_campo_plantilla)' })
+    @IsInt()
+    campoId: number;
+
+    @ApiProperty({ description: 'Valor ingresado por el usuario' })
+    @IsString()
+    valor: string;
 }
 
 export class NextStepCandidateDto {

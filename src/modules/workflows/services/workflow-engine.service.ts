@@ -14,6 +14,7 @@ import { SlaService } from './sla.service';
 import { CheckStartFlowResponseDto, UserCandidateDto } from '../dto/start-flow-check.dto';
 import { CheckNextStepResponseDto } from '../dto/check-next-step.dto';
 import { DocumentsService } from '../../documents/services/documents.service';
+import { TicketCampoValor } from '../../tickets/entities/ticket-campo-valor.entity';
 
 @Injectable()
 export class WorkflowEngineService {
@@ -36,6 +37,8 @@ export class WorkflowEngineService {
         private readonly notificationsService: NotificationsService,
         private readonly slaService: SlaService,
         private readonly documentsService: DocumentsService,
+        @InjectRepository(TicketCampoValor)
+        private readonly ticketCampoValorRepo: Repository<TicketCampoValor>,
     ) { }
 
     /**
@@ -429,6 +432,18 @@ export class WorkflowEngineService {
             if (assignee) {
                 await this.notificationsService.notifyAssignment(savedTicket, assignee);
             }
+        }
+
+        // 6. Save Dynamic Fields (Bulk Insert)
+        if (dto.templateValues && dto.templateValues.length > 0) {
+            const valuesToSave = dto.templateValues.map(tv => this.ticketCampoValorRepo.create({
+                ticketId: ticket.id,
+                campoId: tv.campoId,
+                valor: tv.valor,
+                estado: 1
+            }));
+
+            await this.ticketCampoValorRepo.save(valuesToSave);
         }
 
         return savedTicket;

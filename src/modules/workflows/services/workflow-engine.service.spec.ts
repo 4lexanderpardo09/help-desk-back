@@ -12,6 +12,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { NotificationsService } from '../../notifications/services/notifications.service';
 import { SlaService } from './sla.service';
 import { DocumentsService } from '../../documents/services/documents.service';
+import { TicketCampoValor } from '../../tickets/entities/ticket-campo-valor.entity';
 
 describe('WorkflowEngineService', () => {
     let service: WorkflowEngineService;
@@ -66,6 +67,7 @@ describe('WorkflowEngineService', () => {
                         saveTicketFile: jest.fn(),
                     }
                 },
+                { provide: getRepositoryToken(TicketCampoValor), useValue: { ...mockRepo } },
             ],
         }).compile();
 
@@ -160,6 +162,45 @@ describe('WorkflowEngineService', () => {
             expect(ticketRepo.save).toHaveBeenCalledWith(expect.objectContaining({
                 usuarioAsignadoIds: [50]
             }));
+        });
+
+        it('should save dynamic template values if provided', async () => {
+            const mockTicket = {
+                id: 1,
+                pasoActual: { id: 10, orden: 1, flujoId: 100 },
+                usuarioId: 50
+            };
+            const mockNextStep = { id: 11, orden: 2 };
+
+            ticketRepo.findOne.mockResolvedValue(mockTicket);
+
+            const queryBuilder = pasoRepo.createQueryBuilder();
+            queryBuilder.getOne.mockResolvedValue(mockNextStep);
+            jest.spyOn(pasoRepo, 'createQueryBuilder').mockReturnValue(queryBuilder);
+            mockAssignmentService.getCandidatesForStep.mockResolvedValue([]);
+
+            const templateValues = [
+                { campoId: 101, valor: 'Value 1' },
+                { campoId: 102, valor: 'Value 2' }
+            ];
+
+            const dto = {
+                ticketId: 1,
+                actorId: 99,
+                transitionKeyOrStepId: 'NEXT',
+                templateValues
+            };
+
+            // Mock Repo Save
+            const ticketCampoValorRepo = module.get(getRepositoryToken(TicketCampoValor));
+            ticketCampoValorRepo.create.mockImplementation((dto) => dto);
+
+            await service.transitionStep(dto);
+
+            expect(ticketCampoValorRepo.save).toHaveBeenCalledWith(expect.arrayContaining([
+                expect.objectContaining({ ticketId: 1, campoId: 101, valor: 'Value 1' }),
+                expect.objectContaining({ ticketId: 1, campoId: 102, valor: 'Value 2' })
+            ]));
         });
     });
 
