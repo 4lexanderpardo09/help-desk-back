@@ -25,6 +25,9 @@ import { StepsService } from './services/steps.service';
 import { FlowsController } from './controllers/flows.controller';
 import { FlowsService } from './services/flows.service';
 
+import { TransitionsController } from './controllers/transitions.controller';
+import { TransitionsService } from './services/transitions.service';
+
 @Module({
     imports: [
         TypeOrmModule.forFeature([
@@ -47,8 +50,8 @@ import { FlowsService } from './services/flows.service';
         TemplatesModule,
         DocumentsModule,
     ],
-    controllers: [WorkflowController, StepsController, FlowsController],
-    providers: [WorkflowEngineService, SlaService, SlaSchedulerService, SignatureStampingService, StepsService, FlowsService],
+    controllers: [WorkflowController, StepsController, FlowsController, TransitionsController],
+    providers: [WorkflowEngineService, SlaService, SlaSchedulerService, SignatureStampingService, StepsService, FlowsService, TransitionsService],
     exports: [WorkflowEngineService, SignatureStampingService, StepsService, FlowsService]
 })
 export class WorkflowsModule { }

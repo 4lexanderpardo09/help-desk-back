@@ -34,6 +34,9 @@ GET /workflows?page=1&limit=10&included=subcategoria
 
 // Get Steps of a Flow
 GET /workflows/steps?filter[flujo.id]=5&sort=orden:ASC&included=cargoAsignado
+
+// Get Transitions of a Flow
+GET /workflows/transitions?filter[pasoOrigen.flujo.id]=5
 ```
 
 ---

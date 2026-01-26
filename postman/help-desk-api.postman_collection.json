@@ -4225,6 +4225,76 @@
                             "response": []
                         }
                     ]
+                },
+                {
+                    "name": "Transitions",
+                    "item": [
+                        {
+                            "name": "List Transitions of Flow",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/workflows/transitions?filter[pasoOrigen.flujo.id]=1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "workflows",
+                                        "transitions"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "filter[pasoOrigen.flujo.id]",
+                                            "value": "1",
+                                            "description": "Filtrar por ID del Flujo"
+                                        },
+                                        {
+                                            "key": "included",
+                                            "value": "pasoOrigen,pasoDestino"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Create Transition",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"pasoOrigenId\": 1,\n    \"pasoDestinoId\": 2,\n    \"condicionNombre\": \"Aprobar\",\n    \"condicionClave\": \"aprobado\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/workflows/transitions",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "workflows",
+                                        "transitions"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
                 }
             ]
         }
