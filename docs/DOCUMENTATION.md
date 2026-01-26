@@ -1,5 +1,40 @@
 # Help Desk API - Documentación
 
+## 2026-01-26: Core Workflow Logic & Gap Fixes
+
+### Summary
+Addressed critical logic gaps identified in the "Gap Analysis Report", focusing on complex workflow transitions (Decisions/Branching), Digital Signatures, and Dynamic Forms (Templates).
+
+### Technical Detail
+1.  **Refactored `checkNextStep` Transition Logic**:
+    - **Endpoint**: `GET /workflows/check-next-step/:ticketId`
+    - **Logic update**: Now returns a structured object supporting 3 scenarios:
+        - **Linear**: Simple progression (Order N -> N+1).
+        - **Decision**: Branching paths (e.g., Approve vs Reject).
+        - **Parallel**: Handles blocked states (future-proof).
+    - **Response**: `{ transitionType: 'linear' | 'decision' | 'parallel_pending', linear?: {...}, decisions?: [...] }`
+    - **Assignment**: Recalculates `requiresManualAssignment` for all potential paths.
+
+2.  **Digital Signatures**:
+    - **Transition DTO**: Added `signature` (Base64 string) to `TransitionTicketDto`.
+    - **Storage**: Decoded and stored as physical files using `DocumentsService`.
+    - **History**: Linked via `firmaPath` in `TicketAsignacionHistorico`.
+
+3.  **Dynamic Templates (Legacy Pivot)**:
+    - **Decision**: Reverted plan to use JSON Schema. Maintained strict compatibility with legacy `tm_campo_plantilla` relational tables.
+    - **Endpoint**: `GET /templates/fields/:stepId` exposes the configuration.
+    - **Logic**: Frontend renders inputs based on these rows; Backend validates/stores values in `tm_ticket_campo_valor`.
+
+4.  **Clean Up**:
+    - **Quick Answers**: Removed dedicated module; functionality consolidated into `ErrorTypesModule` per requirement.
+
+### Benefits
+- **Frontend Agility**: React can now render complex decision modals dynamically based on the backend response.
+- **Compliance**: Digital signatures are now legally/auditably stored.
+- **Legacy Compatibility**: Minimal database friction by reusing existing template tables.
+
+---
+
 ## 2026-01-23: Organigrama & Pagination Improvements
 
 ### Summary

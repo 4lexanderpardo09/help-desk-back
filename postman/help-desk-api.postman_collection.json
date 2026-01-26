@@ -3003,7 +3003,32 @@
             "description": "Motor de Flujos y Transiciones",
             "item": [
                 {
-                    "name": "Execute Transition",
+                    "name": "Check Next Step",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/workflows/check-next-step/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "workflows",
+                                "check-next-step",
+                                "1"
+                            ]
+                        },
+                        "description": "Determina el siguiente paso y su tipo de transición.\n\n**Response Variants:**\n1. **Linear**: `{ transitionType: 'linear', linear: { targetStepId: 2, candidates: [...] } }`\n2. **Decision**: `{ transitionType: 'decision', decisions: [{ label: 'Aprobar', ...}, { label: 'Rechazar', ...}] }`\n3. **Parallel**: `{ transitionType: 'parallel_pending', ... }`"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Execute Transition (w/ Signature)",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -3018,7 +3043,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"ticketId\": 1400,\n    \"transitionKeyOrStepId\": \"20\",\n    \"comentario\": \"Aprobado por jefatura\"\n}"
+                            "raw": "{\n    \"ticketId\": 1400,\n    \"transitionKeyOrStepId\": \"aprobado\",\n    \"comentario\": \"Aprobado por jefatura\",\n    \"signature\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...\" \n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/workflows/transition",
@@ -3030,7 +3055,32 @@
                                 "transition"
                             ]
                         },
-                        "description": "Ejecuta una transición de estado para un ticket.\n\nPayload:\n- `ticketId`: ID del ticket\n- `transitionKeyOrStepId`: ID del paso destino o clave de transición\n- `comentario`: Opcional"
+                        "description": "Ejecuta una transición de estado.\n\nPayload:\n- `ticketId`: ID del ticket\n- `transitionKeyOrStepId`: Clave de transición (ej: 'aprobado') o ID del paso\n- `signature`: (Opcional) Firma digital en Base64"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Template Fields",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/templates/fields/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "templates",
+                                "fields",
+                                "1"
+                            ]
+                        },
+                        "description": "Obtiene los campos dinámicos configurados para el paso de flujo especificado."
                     },
                     "response": []
                 }
