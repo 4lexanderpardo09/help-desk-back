@@ -4042,6 +4042,191 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Workflows Management",
+            "description": "Gestión de Flujos y Pasos",
+            "item": [
+                {
+                    "name": "Flows",
+                    "item": [
+                        {
+                            "name": "List Flows",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/workflows?included=subcategoria",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "workflows"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "page",
+                                            "value": "1"
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "10"
+                                        },
+                                        {
+                                            "key": "included",
+                                            "value": "subcategoria"
+                                        },
+                                        {
+                                            "key": "filter[nombre]",
+                                            "value": "",
+                                            "description": "Filtro por nombre"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Create Flow",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"nombre\": \"Nuevo Flujo\",\n    \"descripcion\": \"Descripción del flujo\",\n    \"subcategoriaId\": 1,\n    \"esMultiple\": false\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/workflows",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "workflows"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Flow",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/workflows/1?included=subcategoria",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "workflows",
+                                        "1"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "included",
+                                            "value": "subcategoria"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Steps",
+                    "item": [
+                        {
+                            "name": "List Steps of Flow",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/workflows/steps?filter[flujo.id]=1&sort=orden:ASC",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "workflows",
+                                        "steps"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "filter[flujo.id]",
+                                            "value": "1",
+                                            "description": "ID del Flujo"
+                                        },
+                                        {
+                                            "key": "sort",
+                                            "value": "orden:ASC"
+                                        },
+                                        {
+                                            "key": "included",
+                                            "value": "cargoAsignado"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Create Step",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"flujoId\": 1,\n    \"nombre\": \"Paso 1\",\n    \"orden\": 1,\n    \"cargoAsignadoId\": 2,\n    \"esAprobacion\": false\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/workflows/steps",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "workflows",
+                                        "steps"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                }
+            ]
         }
     ]
 }

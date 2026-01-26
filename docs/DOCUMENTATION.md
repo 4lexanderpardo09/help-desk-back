@@ -1,5 +1,44 @@
 # Help Desk API - Documentación
 
+## 2026-01-26: Workflows Management (Flows & Steps)
+
+### Summary
+Complete refactor of Workflow Management inputs directly into `WorkflowsModule`, separating CRUD logic for Flows (`Flujos`) and Steps (`Pasos`) into dedicated controllers/services using the standardized `ApiQueryHelper` pattern.
+
+### Technical Detail
+1.  **Flows Management (`FlowsService`)**:
+    - **Endpoint**: `GET /workflows`
+    - **Features**: List flows with pagination, filtering, and dynamic relationships.
+    - **Standardization**: Adopts `ApiQueryHelper` pattern (same as Users/Categories).
+    - **Filters**: `filter[nombre]`, `filter[estado]`, `filter[subcategoria.id]`.
+    - **Includes**: `subcategoria`, `subcategoria.categoria`.
+
+2.  **Steps Management (`StepsService`)**:
+    - **Endpoint**: `GET /workflows/steps`
+    - **Features**: List steps, filter by flow ID, CRUD.
+    - **Refactor**: Replaced legacy specific endpoints with a unified REST resource.
+    - **Usage**: To list steps of a flow: `GET /workflows/steps?filter[flujo.id]=123&sort=orden:ASC`
+    - **Includes**: `flujo`, `cargoAsignado`.
+
+3.  **Architecture**:
+    - **Separation of Concerns**: Moved administrative CRUD logic out of `WorkflowEngineService`. `WorkflowEngineService` remains focused purely on execution logic (transitions, start, approvals).
+    - **Security**: Protected via `PoliciesGuard` and `CheckPolicies` (CASL).
+
+4.  **Legacy Compatibility**:
+    - Internal legacy methods (`findStepsByFlujo`) preserved in service layer if needed, but Controller exposes only the standard API.
+
+### API Usage Example
+```typescript
+// Get Flows (Active)
+GET /workflows?page=1&limit=10&included=subcategoria
+
+// Get Steps of a Flow
+GET /workflows/steps?filter[flujo.id]=5&sort=orden:ASC&included=cargoAsignado
+```
+
+---
+
+
 ## 2026-01-26: Core Workflow Logic & Gap Fixes
 
 ### Summary
