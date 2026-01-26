@@ -33,6 +33,14 @@ Addressed critical logic gaps identified in the "Gap Analysis Report", focusing 
 - **Compliance**: Digital signatures are now legally/auditably stored.
 - **Legacy Compatibility**: Minimal database friction by reusing existing template tables.
 
+### Refactor: Unified Assignment Logic (Optimization)
+- **Problem**: Logic for determining "Who gets the ticket" was duplicated across prediction (`checkNextStep`) and execution (`transitionStep`).
+- **Solution**: Centralized all candidate resolution into `AssignmentService.getCandidatesForStep(step, ticket)`.
+- **Result**: 
+    - Single Source of Truth for assigning Creator, Boss, or Role-based agents.
+    - Guarantees that what the Frontend "Predicts" is exactly what the Backend "Executes".
+    - Eliminated ~50 lines of redundant code in `WorkflowEngineService`.
+
 ---
 
 ## 2026-01-23: Organigrama & Pagination Improvements

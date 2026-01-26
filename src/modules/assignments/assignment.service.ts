@@ -86,19 +86,69 @@ export class AssignmentService {
      * @param regionalId ID de la regional preferente
      * @returns ID del agente encontrado o null
      */
-    async resolveRegionalAgent(cargoId: number, regionalId: number): Promise<number | null> {
-        const agent = await this.userRepo.findOne({
-            where: {
-                cargoId: cargoId,
-                regionalId: regionalId,
-                estado: 1
+    /**
+     * Resuelve los candidatos posibles para un paso de flujo.
+     * Centraliza la lógica de "Quién debería tener este ticket".
+     * 
+     * @param step Configuración del paso (PasoFlujo)
+     * @param ticket Contexto del ticket (para saber creador, regional, etc.)
+     * @returns User[] - Lista de posibles asignados. Si es vacío, puede ir a un Pool.
+     */
+    async getCandidatesForStep(step: any, ticket: any): Promise<User[]> {
+        // 1. Asignar al Creador
+        if (step.asignarCreador) {
+            const creator = await this.userRepo.findOne({ where: { id: ticket.usuarioId } });
+            return creator ? [creator] : [];
+        }
+
+        // 2. Requiere Aprobación de Jefe (o Jefe Inmediato)
+        if (step.necesitaAprobacionJefe || step.campoReferenciaJefeId === -1) {
+            const jefeId = await this.resolveJefeInmediato(ticket.usuarioId);
+            if (jefeId) {
+                const jefe = await this.userRepo.findOne({ where: { id: jefeId } });
+                return jefe ? [jefe] : [];
             }
-        });
+            return [];
+        }
 
-        if (agent) return agent.id;
+        // 3. Asignación por Rol (Cargo) + Regional del Ticket
+        if (step.cargoAsignadoId) {
+            // Obtener datos del creador para saber su regional (si el ticket no tiene el creator cargado, buscarlo)
+            let regionalId = 1; // Default Central
+            if (ticket.usuario?.regionalId) {
+                regionalId = ticket.usuario.regionalId;
+            } else {
+                const creator = await this.userRepo.findOne({ where: { id: ticket.usuarioId } });
+                regionalId = creator?.regionalId || 1;
+            }
 
-        // Fallback: Buscar en Sede Central (asumiendo ID 1 es Nacional/Central si no encuentra local)
-        // O simplemente devolver null y dejar que el Workflow decida (ej. asignar pool general).
-        return null;
+            // Buscar usuarios con ese cargo en la regional
+            const agents = await this.userRepo.find({
+                where: {
+                    cargoId: step.cargoAsignadoId,
+                    regionalId: regionalId,
+                    estado: 1
+                },
+                relations: ['cargo']
+            });
+
+            if (agents.length > 0) return agents;
+
+            // Fallback: Si no hay nadie en la regional, buscar en Sede Central (o todos si no hay restricción)
+            return this.userRepo.find({
+                where: { cargoId: step.cargoAsignadoId, estado: 1 },
+                relations: ['cargo']
+            });
+        }
+
+        // 4. Asignación Explícita (Usuarios específicos en PasoFlujoUsuario)
+        // La entidad paso debe venir con relations ['usuarios', 'usuarios.usuario']
+        if (step.usuarios && step.usuarios.length > 0) {
+            return step.usuarios
+                .map((pfu: any) => pfu.usuario)
+                .filter((u: User) => u && u.estado === 1);
+        }
+
+        return [];
     }
 }

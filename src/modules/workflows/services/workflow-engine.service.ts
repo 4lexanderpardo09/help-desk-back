@@ -143,70 +143,52 @@ export class WorkflowEngineService {
     async checkStartFlow(subcategoriaId: number): Promise<CheckStartFlowResponseDto> {
         const step = await this.getInitialStep(subcategoriaId);
 
-        // Auto-assign logic check
-        if (step.asignarCreador || step.necesitaAprobacionJefe || step.campoReferenciaJefeId === -1) {
-            // Fully automatic
-            return {
-                requiresManualSelection: false,
-                candidates: [],
-                initialStepId: step.id,
-                initialStepName: step.nombre
-            };
+        // Use unified assignment logic (Passing mock ticket shell with just usuarioId for context if needed, 
+        // but here we might not have a ticket yet. We need a way to pass context.
+        // Usually Start Flow is checked BEFORE ticket creation, so we might only have the potential creator (User ID from Token).
+        // Let's assume for this check we return ALL candidates or require context.
+        // Since this endpoint is usually public/auth, we can't easily guess the creator for regional logic 
+        // unless we passed the user ID to this service method.
+        // For now, let's keep it simple: Resolve candidates broadly.
+
+        // FIXME: Ideally pass the current user from Controller to improve accuracy.
+        // For now creating a dummy object for compatibility
+        const dummyTicketContext = { usuarioId: -1, usuario: null };
+
+        const candidates = await this.assignmentService.getCandidatesForStep(step, dummyTicketContext);
+
+        if (candidates.length === 0) {
+            // Auto assign (e.g. pool) or just no candidates found? 
+            // If strictly automatic (creator/boss) and found 1, returns 1.
+            // If Role based and found 0, returns 0.
+
+            // Check if it was meant to be automatic but failed (e.g. Boss not found)
+            if (step.asignarCreador || step.necesitaAprobacionJefe) {
+                return {
+                    requiresManualSelection: false,
+                    candidates: [],
+                    initialStepId: step.id,
+                    initialStepName: step.nombre
+                };
+            }
         }
 
-        // If specific users are configured in `usuarios` (mapped via PasoFlujoUsuario)
-        const candidates: UserCandidateDto[] = step.usuarios
-            .filter(pfu => pfu.usuario) // Filter out incomplete relations
-            .map(pfu => ({
-                id: pfu.usuario.id,
-                nombre: pfu.usuario.nombre || '',
-                apellido: pfu.usuario.apellido || '',
-                email: pfu.usuario.email,
-                cargo: pfu.usuario.cargo?.nombre
-            }));
+        const candidateDtos: UserCandidateDto[] = candidates.map(u => ({
+            id: u.id,
+            nombre: u.nombre || '',
+            apellido: u.apellido || '',
+            email: u.email,
+            cargo: u.cargo?.nombre
+        }));
 
-        // Only return here if we actually found valid candidates
-        if (candidates.length > 0) {
-            return {
-                requiresManualSelection: true,
-                candidates,
-                initialStepId: step.id,
-                initialStepName: step.nombre
-            };
-        }
-        // If candidates is empty (e.g. all relations broken), fall through to Role checks
+        // If explicitly > 1 candidate, or it's a Role assignment (which we treat as manual selection usually)
+        // logic:
+        const isRoleAssignment = !!step.cargoAsignadoId; // Role implies selection pool
+        const requiresManual = isRoleAssignment || candidateDtos.length > 1;
 
-        // If Cargo is configured but NOT Approval (which implies Boss), it implies a Pool or Manual Pick from Role
-        if (step.cargoAsignadoId) {
-            // Need to return users with this Role (and maybe restricted by Region?)
-            // For checking start flow, we don't have the creator's region easily available unless we pass userId.
-            // But let's assume we return all users with that role for now.
-            const users = await this.userRepo.find({
-                where: { cargoId: step.cargoAsignadoId, estado: 1 },
-                select: ['id', 'nombre', 'apellido', 'email', 'cargo']
-            });
-
-            const candidates: UserCandidateDto[] = users.map(u => ({
-                id: u.id,
-                nombre: u.nombre || '',
-                apellido: u.apellido || '',
-                email: u.email,
-                cargo: u.cargo?.nombre
-            }));
-
-            return {
-                requiresManualSelection: true,
-                candidates,
-                initialStepId: step.id,
-                initialStepName: step.nombre
-            };
-        }
-
-        // Fallback: No specific assignment rule -> Auto assign to pool? 
-        // For now, return false.
         return {
-            requiresManualSelection: false,
-            candidates: [],
+            requiresManualSelection: requiresManual,
+            candidates: candidateDtos,
             initialStepId: step.id,
             initialStepName: step.nombre
         };
@@ -219,46 +201,91 @@ export class WorkflowEngineService {
      * @param ticketId - The ID of the ticket.
      * @returns DTO with requirements and candidates.
      */
+    /**
+     * Helper to find the next step based on current step and transition key (or linear fallback).
+     * Centralizes logic for strategies A, B, and C.
+     */
+    private async resolveNextStep(currentStep: PasoFlujo, transitionKeyOrId?: string): Promise<{ nextStep: PasoFlujo | null, transitionUsed: FlujoTransicion | null }> {
+        let nextStep: PasoFlujo | null = null;
+        let transitionUsed: FlujoTransicion | null = null;
+
+        // Strategy A: Explicit Transition by Condition Key
+        if (transitionKeyOrId && isNaN(Number(transitionKeyOrId))) {
+            const transition = await this.transicionRepo.findOne({
+                where: {
+                    pasoOrigenId: currentStep.id,
+                    condicionClave: transitionKeyOrId,
+                    estado: 1
+                },
+                relations: ['pasoDestino']
+            });
+            if (transition && transition.pasoDestino) {
+                nextStep = transition.pasoDestino;
+                transitionUsed = transition;
+            }
+        }
+
+        // Strategy B: Explicit Target Step ID
+        if (!nextStep && transitionKeyOrId && !isNaN(Number(transitionKeyOrId))) {
+            nextStep = await this.pasoRepo.findOne({ where: { id: Number(transitionKeyOrId) } });
+        }
+
+        // Strategy C: Linear Sequence (Next Order)
+        if (!nextStep) {
+            nextStep = await this.pasoRepo.createQueryBuilder('p')
+                .where('p.flujoId = :flujoId', { flujoId: currentStep.flujoId })
+                .andWhere('p.orden > :orden', { orden: currentStep.orden })
+                .andWhere('p.estado = 1')
+                .orderBy('p.orden', 'ASC')
+                .getOne();
+        }
+
+        return { nextStep, transitionUsed };
+    }
+
+    /**
+     * Checks the next step for a ticket and determines if manual selection is required.
+     */
     async checkNextStep(ticketId: number): Promise<CheckNextStepResponseDto> {
         const ticket = await this.ticketRepo.findOne({
             where: { id: ticketId },
-            relations: ['pasoActual']
+            relations: ['pasoActual', 'usuario'] // Load 'usuario' for context
         });
 
         if (!ticket) throw new NotFoundException(`Ticket ${ticketId} not found`);
         const currentStep = ticket.pasoActual;
         if (!currentStep) throw new BadRequestException('Ticket has no current step');
 
-        // 0. Check Parallel Status (Placeholder for now - assuming no parallel blocking)
-        // In future: check sub-tickets or parallel activities
-        const parallelStatus = { isBlocked: false, pendingTasks: [] };
-        if (parallelStatus.isBlocked) {
-            return {
-                transitionType: 'parallel_pending',
-                parallelStatus
-            };
-        }
-
         // 1. Check for Explicit Decisions (FlujoTransicion)
-        // These take precedence if they exist relative to the current step (e.g. Approved/Rejected)
         const decisions = await this.transicionRepo.find({
             where: { pasoOrigenId: currentStep.id, estado: 1 },
             relations: ['pasoDestino']
         });
 
         if (decisions.length > 0) {
-            // We have a Decision Branch
+            // Decision Branch
             const decisionOptions = await Promise.all(decisions.map(async (d) => {
-                // Check assignment requirement for each target step
                 const targetStep = d.pasoDestino;
-                const assignmentCheck = await this.checkManualAssignmentRequirement(targetStep, ticket);
+                // Unified candidate check
+                const candidates = await this.assignmentService.getCandidatesForStep(targetStep, ticket);
+                // Convert to DTO
+                const candidateDtos: UserCandidateDto[] = candidates.map(u => ({
+                    id: u.id,
+                    nombre: u.nombre || '',
+                    apellido: u.apellido || '',
+                    email: u.email,
+                    cargo: u.cargo?.nombre
+                }));
+
+                // Determine manual requirement (Role = manual, Multiple = manual)
+                const isRoleAssignment = !!targetStep.cargoAsignadoId;
+                const requiresManual = isRoleAssignment || candidateDtos.length > 1;
 
                 return {
                     decisionId: d.condicionClave || '',
                     label: d.condicionNombre || d.condicionClave || 'Opción',
                     targetStepId: targetStep.id,
-                    requiresManualAssignment: assignmentCheck.requiresManualSelection
-                    // Note: Front-end will fetch candidates if this decision is selected
+                    requiresManualAssignment: requiresManual
                 };
             }));
 
@@ -269,13 +296,8 @@ export class WorkflowEngineService {
         }
 
         // 2. Linear Progression (Fallback)
-        // Fallback to "Next Step by Order"
-        const nextStep = await this.pasoRepo.createQueryBuilder('p')
-            .where('p.flujoId = :flujoId', { flujoId: currentStep.flujoId })
-            .andWhere('p.orden > :orden', { orden: currentStep.orden })
-            .andWhere('p.estado = 1')
-            .orderBy('p.orden', 'ASC')
-            .getOne();
+        // Use central resolver (without key implies linear)
+        const { nextStep } = await this.resolveNextStep(currentStep);
 
         if (!nextStep) {
             return {
@@ -283,67 +305,31 @@ export class WorkflowEngineService {
             };
         }
 
-        // Check assignment for this linear step
-        const assignmentCheck = await this.checkManualAssignmentRequirement(nextStep, ticket);
+        // Check assignment for linear step
+        const candidates = await this.assignmentService.getCandidatesForStep(nextStep, ticket);
+        const candidateDtos: UserCandidateDto[] = candidates.map(u => ({
+            id: u.id,
+            nombre: u.nombre || '',
+            apellido: u.apellido || '',
+            email: u.email,
+            cargo: u.cargo?.nombre
+        }));
+        const isRoleAssignment = !!nextStep.cargoAsignadoId;
+        const requiresManual = isRoleAssignment || candidateDtos.length > 1;
+
 
         return {
             transitionType: 'linear',
             linear: {
                 targetStepId: nextStep.id,
                 targetStepName: nextStep.nombre,
-                requiresManualAssignment: assignmentCheck.requiresManualSelection,
-                candidates: assignmentCheck.candidates
+                requiresManualAssignment: requiresManual,
+                candidates: candidateDtos
             }
         };
     }
 
-    /**
-     * Helper to determine if a target step needs manual assignment
-     * Reuse logic from previous checkStartFlow/checkNextStep
-     */
-    private async checkManualAssignmentRequirement(step: PasoFlujo, ticket: Ticket): Promise<{ requiresManualSelection: boolean, candidates: UserCandidateDto[] }> {
-        // 1. Creator
-        if (step.asignarCreador) {
-            return { requiresManualSelection: false, candidates: [] };
-        }
 
-        // 2. Boss
-        if (step.necesitaAprobacionJefe || step.campoReferenciaJefeId === -1) {
-            // Logic to verify boss exists could go here, but roughly it's automatic
-            return { requiresManualSelection: false, candidates: [] };
-        }
-
-        // 3. Role
-        if (step.cargoAsignadoId) {
-            // Fetch candidates
-            const user = await this.userRepo.findOne({ where: { id: ticket.usuarioId } });
-            const regionalId = user?.regionalId || 1;
-
-            const users = await this.userRepo.find({
-                where: { cargoId: step.cargoAsignadoId, estado: 1, regionalId: regionalId },
-                select: ['id', 'nombre', 'apellido', 'email', 'cargo']
-            });
-
-            const candidates = users.map(u => ({
-                id: u.id,
-                nombre: u.nombre || '',
-                apellido: u.apellido || '',
-                email: u.email,
-                cargo: u.cargo?.nombre
-            }));
-
-            // If candidates > 1 (or even 1 if we want explicit confirmation), return true
-            // If candidates = 1, maybe auto-assign? For safety, let's say Role always implies manual check unless strict pool.
-            return { requiresManualSelection: true, candidates };
-        }
-
-        // 4. Specific Users (Direct assignment in PasoFlujoUsuario)
-        // Note: The entity needs 'usuarios' relation loaded. createQueryBuilder in getOne needed.
-        // For optimization, assume if not role/creator/boss, we might look up directly.
-        // (Simplified for this refactor to avoid N+1 complexities without more context)
-
-        return { requiresManualSelection: false, candidates: [] };
-    }
 
     /**
      * Executes a state transition for a ticket.
@@ -378,39 +364,10 @@ export class WorkflowEngineService {
         if (!currentStep) throw new BadRequestException('Ticket has no current step');
 
         // 2. Determine Next Step
-        let nextStep: PasoFlujo | null = null;
-        let transitionUsed: FlujoTransicion | null = null;
+        // Use Unified Resolver
+        const { nextStep, transitionUsed } = await this.resolveNextStep(currentStep, dto.transitionKeyOrStepId);
 
-        // Strategy A: Explicit Transition by Condition Key
-        if (dto.transitionKeyOrStepId && isNaN(Number(dto.transitionKeyOrStepId))) {
-            const transition = await this.transicionRepo.findOne({
-                where: {
-                    pasoOrigenId: currentStep.id,
-                    condicionClave: dto.transitionKeyOrStepId,
-                    estado: 1
-                },
-                relations: ['pasoDestino']
-            });
-            if (transition && transition.pasoDestino) {
-                nextStep = transition.pasoDestino;
-                transitionUsed = transition;
-            }
-        }
-
-        // Strategy B: Explicit Target Step ID (Admin overrides or simple transitions)
-        if (!nextStep && !isNaN(Number(dto.transitionKeyOrStepId))) {
-            nextStep = await this.pasoRepo.findOne({ where: { id: Number(dto.transitionKeyOrStepId) } });
-        }
-
-        // Strategy C: Linear Sequence (Next Order)
-        if (!nextStep) {
-            nextStep = await this.pasoRepo.createQueryBuilder('p')
-                .where('p.flujoId = :flujoId', { flujoId: currentStep.flujoId })
-                .andWhere('p.orden > :orden', { orden: currentStep.orden })
-                .andWhere('p.estado = 1')
-                .orderBy('p.orden', 'ASC')
-                .getOne();
-        }
+        // Note: Strategies A, B, C are now inside resolveNextStep
 
         if (!nextStep) throw new BadRequestException(`No se encontró un paso siguiente válido.`);
 
@@ -547,33 +504,39 @@ export class WorkflowEngineService {
      * @param manualAssigneeId - Optional override.
      * @returns The User ID of the assignee, or `null` if unassigned (pool).
      */
+    /**
+     * Resolves the user ID that should be assigned to the ticket in a specific step.
+     */
     private async resolveStepAssignee(step: PasoFlujo, ticket: Ticket, manualAssigneeId?: number): Promise<number | null> {
         // 0. Manual Override
         if (manualAssigneeId) {
             return manualAssigneeId;
         }
 
-        // 1. Assign to Creator?
-        if (step.asignarCreador) {
-            return ticket.usuarioId;
+        // 1. Get Candidates via unified service
+        const candidates = await this.assignmentService.getCandidatesForStep(step, ticket);
+
+        // 2. Logic to pick one
+        if (candidates.length === 0) return null;
+
+        // If exactly one candidate, auto-assign
+        if (candidates.length === 1) return candidates[0].id;
+
+        // If multiple candidates... 
+        // In a transition flow (not prediction), if we reached here without a manualAssigneeId,
+        // it means the user sent "Execute" without picking one, OR it's an automatic system transition.
+        // We can:
+        // A) Pick the first one (Round Robin? Random?)
+        // B) Leave Unassigned (Pool)
+
+        // For legacy compatibility, if it's a Role step, we often leave it unassigned (null) so it goes to the pool.
+        // But if it was Creator/Boss, we resolved it.
+
+        if (step.asignarCreador || step.necesitaAprobacionJefe) {
+            return candidates[0].id;
         }
 
-        // 2. Assign to Immediate Boss? (Approval Flow)
-        if (step.necesitaAprobacionJefe || step.campoReferenciaJefeId === -1) {
-            return this.assignmentService.resolveJefeInmediato(ticket.usuarioId);
-        }
-
-        // 3. Specific Role + Regional Logic
-        if (step.cargoAsignadoId) {
-            // Use the ticket creator's regional to find the local agent
-            const user = await this.userRepo.findOne({ where: { id: ticket.usuarioId } });
-            const regionalId = user?.regionalId || 1; // Default to 1 if unknown
-
-            return this.assignmentService.resolveRegionalAgent(step.cargoAsignadoId, regionalId);
-        }
-
-        // 4. Round Robin / Pool? (Future impl)
-
+        // For Roles with multiple people, return null => Pool
         return null;
     }
 }

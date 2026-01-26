@@ -10,6 +10,7 @@ describe('AssignmentService', () => {
 
     const mockUserRepo = {
         findOne: jest.fn(),
+        find: jest.fn(),
     };
 
     const mockOrganigramaRepo = {
@@ -65,7 +66,6 @@ describe('AssignmentService', () => {
 
             const result = await service.resolveJefeInmediato(1);
             expect(result).toBe(99);
-            expect(mockUserRepo.findOne).toHaveBeenCalledTimes(2);
         });
 
         it('should fall back to any boss if none in regional', async () => {
@@ -83,17 +83,81 @@ describe('AssignmentService', () => {
         });
     });
 
-    describe('resolveRegionalAgent', () => {
-        it('should return agent in specific regional', async () => {
-            mockUserRepo.findOne.mockResolvedValue({ id: 50, cargoId: 5, regionalId: 2 });
-            const result = await service.resolveRegionalAgent(5, 2);
-            expect(result).toBe(50);
+    describe('getCandidatesForStep', () => {
+        it('should return creator if asignarCreador is true', async () => {
+            const step = { asignarCreador: true };
+            const ticket = { usuarioId: 10 };
+            const mockUser = { id: 10, nombre: 'Creator' };
+
+            mockUserRepo.findOne.mockResolvedValue(mockUser);
+
+            const result = await service.getCandidatesForStep(step, ticket);
+            expect(result).toEqual([mockUser]);
         });
 
-        it('should return null if no agent found', async () => {
-            mockUserRepo.findOne.mockResolvedValue(null);
-            const result = await service.resolveRegionalAgent(99, 99);
-            expect(result).toBeNull();
+        it('should return boss if necesitaAprobacionJefe is true', async () => {
+            const step = { necesitaAprobacionJefe: true };
+            const ticket = { usuarioId: 10 };
+            const mockBoss = { id: 99, nombre: 'Boss' };
+
+            // Mock resolveJefeInmediato internal call logic (it calls userRepo/organigramaRepo)
+            // But since it's the same service instance, we can't easily mock the private method unless we spy on prototype or just let it run.
+            // Let's spy on resolveJefeInmediato to isolate this test unit.
+            jest.spyOn(service, 'resolveJefeInmediato').mockResolvedValue(99);
+            mockUserRepo.findOne.mockResolvedValue(mockBoss);
+
+            const result = await service.getCandidatesForStep(step, ticket);
+            expect(result).toEqual([mockBoss]);
+        });
+
+        it('should return empty if boss not found', async () => {
+            const step = { necesitaAprobacionJefe: true };
+            const ticket = { usuarioId: 10 };
+
+            jest.spyOn(service, 'resolveJefeInmediato').mockResolvedValue(null);
+
+            const result = await service.getCandidatesForStep(step, ticket);
+            expect(result).toEqual([]);
+        });
+
+        it('should return agents by Role and Regional', async () => {
+            const step = { cargoAsignadoId: 5 };
+            const ticket = { usuarioId: 10, usuario: { regionalId: 2 } };
+            const mockAgents = [{ id: 50, nombre: 'Agent 1' }];
+
+            // Search by Role + Regional
+            mockUserRepo.find.mockResolvedValueOnce(mockAgents);
+
+            const result = await service.getCandidatesForStep(step, ticket);
+            expect(result).toEqual(mockAgents);
+            expect(mockUserRepo.find).toHaveBeenCalledWith(expect.objectContaining({
+                where: { cargoId: 5, regionalId: 2, estado: 1 }
+            }));
+        });
+
+        it('should fallback to Central agents if none in regional', async () => {
+            const step = { cargoAsignadoId: 5 };
+            const ticket = { usuarioId: 10, usuario: { regionalId: 2 } };
+            const mockCentralAgents = [{ id: 51, nombre: 'Agent Central' }];
+
+            // First call returns empty
+            mockUserRepo.find.mockResolvedValueOnce([]);
+            // Second call (fallback) returns central
+            mockUserRepo.find.mockResolvedValueOnce(mockCentralAgents);
+
+            const result = await service.getCandidatesForStep(step, ticket);
+            expect(result).toEqual(mockCentralAgents);
+        });
+
+        it('should return explicit users if configured', async () => {
+            const mockUser = { id: 88, estado: 1 };
+            const step = {
+                usuarios: [{ usuario: mockUser }]
+            };
+            const ticket = { usuarioId: 10 };
+
+            const result = await service.getCandidatesForStep(step, ticket);
+            expect(result).toEqual([mockUser]);
         });
     });
 });

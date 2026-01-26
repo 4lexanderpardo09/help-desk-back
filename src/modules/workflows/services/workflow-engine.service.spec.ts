@@ -11,6 +11,7 @@ import { AssignmentService } from '../../assignments/assignment.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { NotificationsService } from '../../notifications/services/notifications.service';
 import { SlaService } from './sla.service';
+import { DocumentsService } from '../../documents/services/documents.service';
 
 describe('WorkflowEngineService', () => {
     let service: WorkflowEngineService;
@@ -35,7 +36,7 @@ describe('WorkflowEngineService', () => {
 
     const mockAssignmentService = {
         resolveJefeInmediato: jest.fn(),
-        resolveRegionalAgent: jest.fn(),
+        getCandidatesForStep: jest.fn(),
     };
 
     const mockNotificationsService = {
@@ -59,6 +60,12 @@ describe('WorkflowEngineService', () => {
                 { provide: AssignmentService, useValue: mockAssignmentService },
                 { provide: NotificationsService, useValue: mockNotificationsService },
                 { provide: SlaService, useValue: mockSlaService },
+                {
+                    provide: DocumentsService,
+                    useValue: {
+                        saveTicketFile: jest.fn(),
+                    }
+                },
             ],
         }).compile();
 
@@ -109,6 +116,7 @@ describe('WorkflowEngineService', () => {
             };
 
             const mockNextStep = { id: 11, orden: 2, nombre: 'Paso 2', cargoAsignadoId: 5 }; // Requires Agent
+            const mockCandidate = { id: 88, nombre: 'Agent 88' };
 
             ticketRepo.findOne.mockResolvedValue(mockTicket);
 
@@ -117,8 +125,8 @@ describe('WorkflowEngineService', () => {
             queryBuilder.getOne.mockResolvedValue(mockNextStep);
             jest.spyOn(pasoRepo, 'createQueryBuilder').mockReturnValue(queryBuilder);
 
-            // Mock Assignment
-            mockAssignmentService.resolveRegionalAgent.mockResolvedValue(88); // Agent ID 88
+            // Mock Assignment: Return one candidate so it auto-assigns
+            mockAssignmentService.getCandidatesForStep.mockResolvedValue([mockCandidate]);
 
             const dto = { ticketId: 1, actorId: 99, transitionKeyOrStepId: 'NEXT' };
             await service.transitionStep(dto);
@@ -129,19 +137,23 @@ describe('WorkflowEngineService', () => {
             }));
         });
 
-        it('should assign to creator if configured', async () => {
+        it('should assign to creator if configured via getCandidates', async () => {
             const mockTicket = {
                 id: 2,
                 pasoActual: { id: 10, orden: 1, flujoId: 100 },
                 usuarioId: 50
             };
             const mockNextStep = { id: 12, orden: 2, asignarCreador: true };
+            const mockCreator = { id: 50, nombre: 'Creator' };
 
             ticketRepo.findOne.mockResolvedValue(mockTicket);
 
             const queryBuilder = pasoRepo.createQueryBuilder();
             queryBuilder.getOne.mockResolvedValue(mockNextStep);
             jest.spyOn(pasoRepo, 'createQueryBuilder').mockReturnValue(queryBuilder);
+
+            // Mock assignment service returning creator
+            mockAssignmentService.getCandidatesForStep.mockResolvedValue([mockCreator]);
 
             await service.transitionStep({ ticketId: 2, actorId: 99, transitionKeyOrStepId: 'NEXT' });
 
@@ -181,8 +193,14 @@ describe('WorkflowEngineService', () => {
 
             jest.spyOn(service, 'getInitialStep').mockResolvedValue(mockStep as any);
 
+            // Mock Assignment Service to return the user from the step
+            mockAssignmentService.getCandidatesForStep.mockResolvedValue([
+                { id: 10, nombre: 'A', apellido: 'B', email: 'a@b.com', cargo: { nombre: 'C' } }
+            ]);
+
             const result = await service.checkStartFlow(2);
-            expect(result.requiresManualSelection).toBe(true);
+            // Updated logic: if only 1 candidate, it is auto-assigned (false)
+            expect(result.requiresManualSelection).toBe(false);
             expect(result.candidates).toHaveLength(1);
             expect(result.candidates[0].id).toBe(10);
         });
