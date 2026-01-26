@@ -17,6 +17,8 @@ import { Ticket } from '../../tickets/entities/ticket.entity';
 export class WorkflowController {
     constructor(private readonly workflowService: WorkflowEngineService) { }
 
+
+
     @Post('transition')
     @ApiOperation({ summary: 'Ejecutar transición de paso de un ticket' })
     @ApiResponse({ status: 200, description: 'Transición exitosa, retorna el ticket actualizado', type: Ticket })

@@ -18,6 +18,12 @@ import { AssignmentModule } from '../assignments/assignment.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { FlujoTransicion } from './entities/flujo-transicion.entity';
 import { PasoFlujoFirma } from './entities/paso-flujo-firma.entity';
+import { TicketCampoValor } from '../tickets/entities/ticket-campo-valor.entity';
+import { StepsController } from './controllers/steps.controller';
+import { StepsService } from './services/steps.service';
+
+import { FlowsController } from './controllers/flows.controller';
+import { FlowsService } from './services/flows.service';
 
 @Module({
     imports: [
@@ -28,7 +34,10 @@ import { PasoFlujoFirma } from './entities/paso-flujo-firma.entity';
             PasoFlujoFirma,
             Ticket,
             TicketAsignacionHistorico,
-            User
+            Ticket,
+            TicketAsignacionHistorico,
+            User,
+            TicketCampoValor
         ]),
         AuthModule,
         AuthModule,
@@ -38,8 +47,8 @@ import { PasoFlujoFirma } from './entities/paso-flujo-firma.entity';
         TemplatesModule,
         DocumentsModule,
     ],
-    controllers: [WorkflowController],
-    providers: [WorkflowEngineService, SlaService, SlaSchedulerService, SignatureStampingService],
-    exports: [WorkflowEngineService, SignatureStampingService]
+    controllers: [WorkflowController, StepsController, FlowsController],
+    providers: [WorkflowEngineService, SlaService, SlaSchedulerService, SignatureStampingService, StepsService, FlowsService],
+    exports: [WorkflowEngineService, SignatureStampingService, StepsService, FlowsService]
 })
 export class WorkflowsModule { }
