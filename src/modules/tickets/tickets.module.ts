@@ -36,11 +36,13 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { ErrorTypesModule } from '../error-types/error-types.module';
 import { ReglasMapeoModule } from '../rules/reglas-mapeo.module';
+import { TicketAsignado } from './entities/ticket-asignado.entity';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([
             Ticket,
+            TicketAsignado,
             TicketDetalle,
             TicketAsignacionHistorico,
             TicketEtiqueta,

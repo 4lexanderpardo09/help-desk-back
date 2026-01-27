@@ -41,4 +41,11 @@ export class TicketController {
     async findOne(@Param('id') id: string) {
         return this.ticketService.findOne(+id);
     }
+
+    @Post('admin/migrate-assignments')
+    @ApiOperation({ summary: 'Migrar asignaciones legacy a nueva tabla' })
+    @CheckPolicies((ability: AppAbility) => ability.can('manage', 'all')) // Only Admins
+    async migrateAssignments() {
+        return this.ticketService.migrateLegacyAssignments();
+    }
 }

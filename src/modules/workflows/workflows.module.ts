@@ -11,6 +11,7 @@ import { SignatureStampingService } from './services/signature-stamping.service'
 import { PasoFlujo } from './entities/paso-flujo.entity';
 import { Flujo } from './entities/flujo.entity';
 import { Ticket } from '../tickets/entities/ticket.entity';
+import { TicketAsignado } from '../tickets/entities/ticket-asignado.entity';
 import { TicketAsignacionHistorico } from '../tickets/entities/ticket-asignacion-historico.entity';
 import { User } from '../users/entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
@@ -52,7 +53,8 @@ import { TicketParalelo } from '../tickets/entities/ticket-paralelo.entity';
             TicketCampoValor,
             Ruta,
             RutaPaso,
-            TicketParalelo
+            TicketParalelo,
+            TicketAsignado
         ]),
         AuthModule,
         AuthModule,

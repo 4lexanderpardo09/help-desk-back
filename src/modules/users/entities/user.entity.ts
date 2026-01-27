@@ -20,6 +20,7 @@ import { DocumentoFlujo } from 'src/modules/documents/entities/documento-flujo.e
 import { PasoFlujoFirma } from 'src/modules/workflows/entities/paso-flujo-firma.entity';
 import { PasoFlujoUsuario } from 'src/modules/workflows/entities/paso-flujo-usuario.entity';
 import { Flujo } from '../../workflows/entities/flujo.entity';
+import { TicketAsignado } from '../../tickets/entities/ticket-asignado.entity';
 
 @Entity('tm_usuario')
 export class User {
@@ -148,6 +149,9 @@ export class User {
 
     @OneToMany(() => PasoFlujoUsuario, (pfu) => pfu.usuario)
     pasosFlujoAsignados: PasoFlujoUsuario[];
+
+    @OneToMany(() => TicketAsignado, (ta) => ta.usuario)
+    asignaciones: TicketAsignado[];
 
     @ManyToMany(() => Flujo, (flujo) => flujo.usuariosObservadores)
     flujosObservados: Flujo[];

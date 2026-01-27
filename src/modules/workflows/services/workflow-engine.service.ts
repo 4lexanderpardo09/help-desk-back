@@ -16,6 +16,7 @@ import { CheckNextStepResponseDto } from '../dto/check-next-step.dto';
 import { DocumentsService } from '../../documents/services/documents.service';
 import { TicketCampoValor } from '../../tickets/entities/ticket-campo-valor.entity';
 import { TicketParalelo } from '../../tickets/entities/ticket-paralelo.entity';
+import { TicketAsignado } from '../../tickets/entities/ticket-asignado.entity';
 import { TemplatesService } from '../../templates/services/templates.service';
 import { SignatureStampingService } from './signature-stamping.service';
 import { PasoFlujoFirma } from '../entities/paso-flujo-firma.entity';
@@ -49,6 +50,8 @@ export class WorkflowEngineService {
         private readonly signatureStampingService: SignatureStampingService,
         @InjectRepository(TicketParalelo)
         private readonly ticketParaleloRepo: Repository<TicketParalelo>,
+        @InjectRepository(TicketAsignado)
+        private readonly ticketAsignadoRepo: Repository<TicketAsignado>,
     ) { }
 
     /**
@@ -78,6 +81,16 @@ export class WorkflowEngineService {
         // 3. Update Ticket
         ticket.pasoActualId = initialStep.id;
         ticket.usuarioAsignadoIds = assigneeId ? [assigneeId] : [];
+
+        // --- NEW: Create assignment in normalized table ---
+        if (assigneeId) {
+            const assignment = this.ticketAsignadoRepo.create({
+                ticketId: ticket.id,
+                usuarioId: assigneeId,
+                tipo: 'Principal'
+            });
+            await this.ticketAsignadoRepo.save(assignment);
+        }
 
         if (assigneeId && initialStep.necesitaAprobacionJefe) {
             // If it's an approval step, store the approver as "Jefe Aprobador"
@@ -526,6 +539,26 @@ export class WorkflowEngineService {
             ticket.usuarioAsignadoIds = parallelAssignees; // Assign to ALL parallel signers
         } else {
             ticket.usuarioAsignadoIds = assigneeId ? [assigneeId] : [];
+        }
+
+        // --- NEW: Sync with normalized table ---
+        // 1. Clear existing assignments
+        await this.ticketAsignadoRepo.delete({ ticketId: ticket.id });
+
+        // 2. Determine new user IDs
+        const newUserIds = (nextStep.esParalelo && parallelAssignees.length > 0)
+            ? parallelAssignees
+            : (assigneeId ? [assigneeId] : []);
+
+        // 3. Create new entries
+        const newAssignmentEntities = newUserIds.map(uid => this.ticketAsignadoRepo.create({
+            ticketId: ticket.id,
+            usuarioId: uid,
+            tipo: nextStep.esParalelo ? 'Paralelo' : 'Principal'
+        }));
+
+        if (newAssignmentEntities.length > 0) {
+            await this.ticketAsignadoRepo.save(newAssignmentEntities);
         }
 
         if (assigneeId || parallelAssignees.length > 0) {

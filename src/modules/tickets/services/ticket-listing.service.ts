@@ -235,7 +235,9 @@ export class TicketListingService {
                 qb.andWhere('t.usuarioId = :userId', { userId: user.usu_id });
                 break;
             case TicketView.ASSIGNED:
-                qb.andWhere(`FIND_IN_SET(:agentId, t.usu_asig) > 0`, { agentId: user.usu_id });
+                // Updated: use normalized query on 'ticket_usuarios_asig' via 'asignados' relation
+                qb.innerJoin('t.asignados', 'ta_assigned', 'ta_assigned.usuarioId = :agentId', { agentId: user.usu_id });
+                // qb.andWhere(`FIND_IN_SET(:agentId, t.usu_asig) > 0`, { agentId: user.usu_id }); // Legacy logic kept for reference but disabled
                 break;
             case TicketView.OBSERVED:
                 // Los observadores están asociados al FLUJO, no al ticket directamente

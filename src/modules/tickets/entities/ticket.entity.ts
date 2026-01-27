@@ -17,6 +17,7 @@ import { TicketCampoValor } from './ticket-campo-valor.entity';
 import { Documento } from '../../documents/entities/documento.entity';
 import { DocumentoCierre } from '../../documents/entities/documento-cierre.entity';
 import { DocumentoFlujo } from '../../documents/entities/documento-flujo.entity';
+import { TicketAsignado } from './ticket-asignado.entity';
 
 @Entity('tm_ticket')
 export class Ticket {
@@ -160,6 +161,9 @@ export class Ticket {
 
     @OneToMany(() => DocumentoFlujo, (df) => df.ticket)
     documentosFlujo: DocumentoFlujo[];
+
+    @OneToMany(() => TicketAsignado, (ta) => ta.ticket)
+    asignados: TicketAsignado[];
 
     @ManyToOne('PasoFlujo', { nullable: true })
     @JoinColumn({ name: 'paso_actual_id' })

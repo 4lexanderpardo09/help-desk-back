@@ -12,6 +12,7 @@ import { PdfStampingService, TextStampConfig } from '../../templates/services/pd
 import { NotificationsService } from '../../notifications/services/notifications.service';
 import { DocumentsService } from '../../documents/services/documents.service';
 import { TicketCampoValor } from '../entities/ticket-campo-valor.entity';
+import { TicketAsignado } from '../entities/ticket-asignado.entity';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
@@ -35,6 +36,8 @@ export class TicketService {
         private readonly documentsService: DocumentsService,
         @InjectRepository(TicketCampoValor)
         private readonly ticketCampoValorRepo: Repository<TicketCampoValor>,
+        @InjectRepository(TicketAsignado)
+        private readonly ticketAsignadoRepo: Repository<TicketAsignado>,
     ) { }
 
     /**
@@ -202,5 +205,52 @@ export class TicketService {
         });
         if (!ticket) throw new NotFoundException(`Ticket ${id} no encontrado`);
         return ticket;
+    }
+
+    /**
+     * Helper to migrate legacy comma-separated assignments to the new many-to-many table.
+     * Can be triggered via a temporary endpoint.
+     */
+    async migrateLegacyAssignments(): Promise<{ processed: number; created: number }> {
+        this.logger.log('Starting migration of legacy assignments...');
+
+        // Fetch tickets with potential legacy assignments
+        const tickets = await this.ticketRepo.createQueryBuilder('t')
+            .where('t.usu_asig IS NOT NULL')
+            .andWhere('t.usu_asig != ""')
+            .getMany();
+
+        let processed = 0;
+        let created = 0;
+
+        for (const ticket of tickets) {
+            processed++;
+            // The transformer already converts "1,2,3" string to number[]
+            const legacyIds = ticket.usuarioAsignadoIds || [];
+
+            if (legacyIds.length === 0) continue;
+
+            for (const uid of legacyIds) {
+                // Check existance
+                const exists = await this.ticketAsignadoRepo.findOne({
+                    where: { ticketId: ticket.id, usuarioId: uid }
+                });
+
+                if (!exists) {
+                    const assignment = this.ticketAsignadoRepo.create({
+                        ticketId: ticket.id,
+                        usuarioId: uid,
+                        tipo: 'Principal', // Assume usage was principal
+                        // Use ticket creation date if assignment date unavailable, or current
+                        fechaAsignacion: ticket.fechaCreacion || new Date()
+                    });
+                    await this.ticketAsignadoRepo.save(assignment);
+                    created++;
+                }
+            }
+        }
+
+        this.logger.log(`Migration finished. Tickets scanned: ${processed}, Assignments created: ${created}`);
+        return { processed, created };
     }
 }
