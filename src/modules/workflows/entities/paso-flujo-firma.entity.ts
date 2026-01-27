@@ -23,6 +23,9 @@ export class PasoFlujoFirma {
     @Column({ name: 'coord_y', type: 'float' })
     coordY: number;
 
+    @Column({ name: 'etiqueta', type: 'varchar', length: 100, nullable: true })
+    etiqueta: string | null;
+
     @Column({ name: 'pagina', type: 'int', default: 1, nullable: true })
     pagina: number | null;
 

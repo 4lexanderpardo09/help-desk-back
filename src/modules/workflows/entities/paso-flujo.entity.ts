@@ -93,13 +93,13 @@ export class PasoFlujo {
     @OneToMany(() => TicketAsignacionHistorico, (th) => th.paso)
     historiales: TicketAsignacionHistorico[];
 
-    @OneToMany(() => CampoPlantilla, (cp) => cp.paso)
+    @OneToMany(() => CampoPlantilla, (cp) => cp.paso, { cascade: true })
     campos: CampoPlantilla[];
 
     @OneToMany(() => DocumentoFlujo, (df) => df.paso)
     documentosFlujo: DocumentoFlujo[];
 
-    @OneToMany(() => PasoFlujoFirma, (pff) => pff.paso)
+    @OneToMany(() => PasoFlujoFirma, (pff) => pff.paso, { cascade: true })
     firmas: PasoFlujoFirma[];
 
     @OneToMany(() => PasoFlujoUsuario, (pfu) => pfu.paso)

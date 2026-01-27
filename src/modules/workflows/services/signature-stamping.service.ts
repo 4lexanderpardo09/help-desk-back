@@ -97,6 +97,7 @@ export class SignatureStampingService {
                 page: config.pagina || 1,
                 width: 100, // Default width, can be adjusted or added to entity later
                 height: 50, // Default height
+                tag: config.etiqueta || undefined, // Smart Tag
             });
         }
 

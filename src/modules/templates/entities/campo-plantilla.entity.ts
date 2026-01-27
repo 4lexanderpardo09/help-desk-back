@@ -25,6 +25,9 @@ export class CampoPlantilla {
     @Column({ name: 'coord_y', type: 'decimal', precision: 10, scale: 2 })
     coordY: number;
 
+    @Column({ name: 'etiqueta', type: 'varchar', length: 100, nullable: true })
+    etiqueta: string | null;
+
     @Column({ name: 'pagina', type: 'int', default: 1 })
     pagina: number;
 

@@ -93,4 +93,12 @@ export class CreatePasoFlujoDto {
     @IsOptional()
     @IsBoolean()
     permiteDespachoMasivo?: boolean;
+
+    @ApiProperty({ required: false, type: [Object] })
+    @IsOptional()
+    firmas?: any[];
+
+    @ApiProperty({ required: false, type: [Object] })
+    @IsOptional()
+    campos?: any[];
 }
