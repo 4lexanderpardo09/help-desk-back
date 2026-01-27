@@ -242,4 +242,48 @@ export class TemplatesService {
 
         return enrichedValues;
     }
+
+    /**
+     * Crea una nueva plantilla de flujo para una empresa.
+     * Guarda el archivo en el sistema de archivos y crea el registro en BD.
+     */
+    async createTemplate(flujoId: number, empresaId: number, file: Express.Multer.File): Promise<FlujoPlantilla> {
+        // 1. Validate Flow existence (Optional but good)
+        // 2. Save File
+        // Using standard path convention: public/document/formato/{filename}
+        const fs = require('fs/promises');
+        const path = require('path');
+        const UPLOAD_DIR = path.resolve(process.cwd(), 'public', 'document', 'formato');
+
+        // Ensure directory exists
+        try {
+            await fs.access(UPLOAD_DIR);
+        } catch {
+            await fs.mkdir(UPLOAD_DIR, { recursive: true });
+        }
+
+        // Generate filename: flow_{id}_emp_{id}_{timestamp}.pdf to avoid collisions
+        const filename = `flow_${flujoId}_emp_${empresaId}_${Date.now()}.pdf`;
+        const filePath = path.join(UPLOAD_DIR, filename);
+
+        await fs.writeFile(filePath, file.buffer);
+
+        // 3. Create Entity
+        const template = this.plantillaRepo.create({
+            flujoId,
+            empresaId,
+            nombrePlantilla: filename, // Storing just filename as per legacy convention in DocumentsService
+            estado: 1
+        });
+
+        return this.plantillaRepo.save(template);
+    }
+
+    /**
+     * Elimina soft-delete una plantilla.
+     * Opcional: Eliminar archivo físico (por ahora solo soft-delete en BD).
+     */
+    async removeTemplate(id: number): Promise<void> {
+        await this.plantillaRepo.update(id, { estado: 0 });
+    }
 }

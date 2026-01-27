@@ -19,7 +19,7 @@ export interface ImageStampConfig {
     page: number; // 1-based index
     width?: number;
     height?: number;
-    tag?: string; // Smart Tag
+    tag?: string; // Smart Tag: Name of the PDF Form Field to target (Refreshed)
 }
 
 @Injectable()

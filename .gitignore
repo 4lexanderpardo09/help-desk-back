@@ -3,3 +3,4 @@ dist
 .env
 legacy_models
 legacy_services
+public/*

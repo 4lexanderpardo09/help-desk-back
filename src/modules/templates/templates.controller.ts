@@ -1,5 +1,6 @@
-import { Controller, Get, Param, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Param, Query, UseGuards, ParseIntPipe, Post, Delete, Body, UploadedFile, UseInterceptors, BadRequestException } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags, ApiResponse, ApiConsumes } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { PoliciesGuard } from '../../common/guards/policies.guard';
 import { CheckPolicies } from '../auth/decorators/check-policies.decorator';
@@ -54,5 +55,27 @@ export class TemplatesController {
     @CheckPolicies((ability: AppAbility) => ability.can('read', 'Ticket'))
     async getValuesByTicket(@Param('ticketId', ParseIntPipe) ticketId: number) {
         return this.templatesService.getValuesByTicket(ticketId);
+    }
+
+    @UseGuards(JwtAuthGuard, PoliciesGuard)
+    @CheckPolicies((ability: AppAbility) => ability.can('create', 'all')) // Assuming admin creates templates
+    @Post()
+    @UseInterceptors(FileInterceptor('file'))
+    @ApiOperation({ summary: 'Crea una nueva plantilla para un flujo y empresa' })
+    @ApiConsumes('multipart/form-data')
+    async create(
+        @Body() body: { flujoId: string; empresaId: string },
+        @UploadedFile() file: Express.Multer.File,
+    ) {
+        if (!file) throw new BadRequestException('Archivo requerido');
+        return this.templatesService.createTemplate(Number(body.flujoId), Number(body.empresaId), file);
+    }
+
+    @UseGuards(JwtAuthGuard, PoliciesGuard)
+    @CheckPolicies((ability: AppAbility) => ability.can('delete', 'all'))
+    @Delete(':id')
+    @ApiOperation({ summary: 'Elimina una plantilla (Soft Delete)' })
+    async remove(@Param('id', ParseIntPipe) id: number) {
+        return this.templatesService.removeTemplate(id);
     }
 }

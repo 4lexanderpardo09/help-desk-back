@@ -29,6 +29,7 @@ import { DocumentsModule } from './modules/documents/documents.module';
 import { ErrorTypesModule } from './modules/error-types/error-types.module';
 import { ImportsModule } from './modules/imports/imports.module';
 import { TagsModule } from './modules/tags/tags.module';
+import { TemplatesModule } from './modules/templates/templates.module';
 
 
 @Module({
@@ -75,6 +76,7 @@ import { TagsModule } from './modules/tags/tags.module';
     ErrorTypesModule,
     ImportsModule,
     TagsModule,
+    TemplatesModule,
 
   ],
   controllers: [AppController],
