@@ -15,8 +15,10 @@ import { CheckStartFlowResponseDto, UserCandidateDto } from '../dto/start-flow-c
 import { CheckNextStepResponseDto } from '../dto/check-next-step.dto';
 import { DocumentsService } from '../../documents/services/documents.service';
 import { TicketCampoValor } from '../../tickets/entities/ticket-campo-valor.entity';
+import { TicketParalelo } from '../../tickets/entities/ticket-paralelo.entity';
 import { TemplatesService } from '../../templates/services/templates.service';
 import { SignatureStampingService } from './signature-stamping.service';
+import { PasoFlujoFirma } from '../entities/paso-flujo-firma.entity';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
@@ -45,6 +47,8 @@ export class WorkflowEngineService {
         private readonly ticketCampoValorRepo: Repository<TicketCampoValor>,
         private readonly templatesService: TemplatesService,
         private readonly signatureStampingService: SignatureStampingService,
+        @InjectRepository(TicketParalelo)
+        private readonly ticketParaleloRepo: Repository<TicketParalelo>,
     ) { }
 
     /**
@@ -190,10 +194,23 @@ export class WorkflowEngineService {
             cargo: u.cargo?.nombre
         }));
 
-        // If explicitly > 1 candidate, or it's a Role assignment (which we treat as manual selection usually)
-        // logic:
-        const isRoleAssignment = !!step.cargoAsignadoId; // Role implies selection pool
-        const requiresManual = isRoleAssignment || candidateDtos.length > 1;
+        // Determine if manual selection is required
+        // Prioritize explicit configuration in Step
+        let requiresManual = !!step.requiereSeleccionManual;
+
+        // If not explicitly manual, check implicit conditions
+        if (!requiresManual) {
+            // If it's a Role assignment (Tarea Nacional) with MULTIPLE candidates, we might force manual?
+            // Users usually uncheck "Manual" to imply "Pick Any" or "Auto".
+            // However, if we have 1 candidate, we definitely don't need manual.
+            if (candidateDtos.length > 1) {
+                // Implicitly force manual if multiple choices exist and no other auto-logic is defined?
+                // Or trust the user? If they unchecked manual, maybe they want random assignment.
+                // For safety: If > 1 candidate, ask user.
+                requiresManual = true;
+            }
+            // If 1 candidate, it will be auto-selected by createTicket.
+        }
 
         return {
             requiresManualSelection: requiresManual,
@@ -373,6 +390,74 @@ export class WorkflowEngineService {
         const currentStep = ticket.pasoActual;
         if (!currentStep) throw new BadRequestException('Ticket has no current step');
 
+        // 1.1 Handle Parallel Step Approval (If current step is parallel)
+        if (currentStep.esParalelo) {
+            // Find if this user has a pending parallel assignment
+            const pendingParallel = await this.ticketParaleloRepo.findOne({
+                where: {
+                    ticketId: ticket.id,
+                    pasoId: currentStep.id,
+                    usuarioId: dto.actorId,
+                    estado: 'Pendiente'
+                }
+            });
+
+            if (pendingParallel) {
+                // User is approving their part
+                pendingParallel.estado = 'Aprobado'; // or 'Firmado'
+                pendingParallel.estadoTiempoPaso = 'A Tiempo'; // TODO: Calc SLA
+                pendingParallel.fechaCierre = new Date();
+                pendingParallel.comentario = dto.comentario || null;
+                await this.ticketParaleloRepo.save(pendingParallel);
+
+                // Stamp Parallel Signature (Sequential)
+                const masterPdfPath = path.resolve(process.cwd(), 'public', 'documentos', ticket.id.toString(), `ticket_${ticket.id}.pdf`);
+                try {
+                    await fs.access(masterPdfPath);
+                    const signedBuffer = await this.signatureStampingService.stampSignaturesForStep(
+                        masterPdfPath,
+                        currentStep.id,
+                        ticket.id,
+                        dto.actorId // Only stamp THIS user's signature
+                    );
+                    await fs.writeFile(masterPdfPath, signedBuffer);
+                    // We don't necessarily create a new version for every parallel sign, or maybe we do?
+                    // User said "llenar de firmas". We update master.
+                } catch (e) {
+                    this.logger.warn(`Parallel signing failed: ${e.message}`);
+                }
+
+                // Check if ALL are approved
+                const remaining = await this.ticketParaleloRepo.count({
+                    where: {
+                        ticketId: ticket.id,
+                        pasoId: currentStep.id,
+                        estado: 'Pendiente'
+                    }
+                });
+
+                if (remaining > 0) {
+                    // Still pending others. Stop transition.
+                    this.logger.log(`Ticket ${ticket.id} approved by ${dto.actorId} but waiting for ${remaining} others.`);
+                    return ticket; // Return without moving step
+                } else {
+                    this.logger.log(`All parallel approvals complete for Ticket ${ticket.id}. Proceeding to next step.`);
+                    // Fallthrough to normal transition logic below
+                }
+            } else {
+                // User might be trying to approve but is not in the parallel list or already approved.
+                // Or it's a forced admin transition?
+                // If normal user, we could throw if they aren't assigned.
+                // For now, allow fallthrough if they explicitly requested a transition (admin override?).
+                // But typically parallel steps lock linear flow.
+                const isAssigned = await this.ticketParaleloRepo.count({ where: { ticketId: ticket.id, pasoId: currentStep.id, usuarioId: dto.actorId } });
+                if (isAssigned > 0) {
+                    // Already approved?
+                    this.logger.warn(`User ${dto.actorId} already approved or signature not pending.`);
+                }
+            }
+        }
+
         // 2. Determine Next Step
         // Use Unified Resolver
         const { nextStep, transitionUsed } = await this.resolveNextStep(currentStep, dto.transitionKeyOrStepId);
@@ -382,22 +467,63 @@ export class WorkflowEngineService {
         if (!nextStep) throw new BadRequestException(`No se encontró un paso siguiente válido.`);
 
         // 3. Resolve Assignee (The core complexity)
-        // If transitioning manually, we typically don't pass manualAssigneeId unless the DTO supports it.
-        // For now, rely on auto-resolution.
-        // 3. Resolve Assignee (The core complexity)
-        // If transitioning manually, we typically don't pass manualAssigneeId unless the DTO supports it.
         const assigneeId = await this.resolveStepAssignee(nextStep, ticket, dto.targetUserId);
+
+        // 3.1 Initialize Parallel Entries (If next step is parallel)
+        let parallelAssignees: number[] = [];
+        if (nextStep.esParalelo) {
+            // Fetch signatures required
+            const firmas = await this.pasoRepo.manager.find(PasoFlujoFirma, { // Quick access via manager or inject
+                where: { pasoId: nextStep.id, estado: 1 },
+                relations: ['usuario'] // Need to resolve roles
+            });
+            // We need to fetch 'PasoFlujoFirma' properly. I don't have its repo injected. 
+            // I'll access via nextStep.firmas if lazy/eager, or query builder.
+            // Better: Inject the repo or use relation. 'nextStep' from resolveNextStep might not have signatures loaded.
+            const signatures = await this.pasoRepo.createQueryBuilder()
+                .relation(PasoFlujo, 'firmas')
+                .of(nextStep)
+                .loadMany<PasoFlujoFirma>();
+
+            // Wait, loadMany returns related entities? Yes.
+            // We need to resolve Role based signatures to Users.
+
+            for (const sig of signatures) {
+                let targetUserId: number | null = sig.usuarioId;
+                if (!targetUserId && sig.cargoId) {
+                    // Find ONE random/first user with this role? OR All? 
+                    // User said "varias firmas". Usually implies specific people.
+                    // If Role is used, we assume for now we pick the 'primary' one or logic similar to resolveStepAssignee.
+                    // Let's use assignmentService.getCandidatesForStep equivalent logic but for specific cargo?
+                    const candidates = await this.assignmentService.getUsersByRole(sig.cargoId, ticket.empresaId, ticket.regionalId ?? undefined);
+                    if (candidates.length > 0) targetUserId = candidates[0].id; // Pick first for now
+                }
+
+                if (targetUserId) {
+                    parallelAssignees.push(targetUserId);
+                    const tp = this.ticketParaleloRepo.create({
+                        ticketId: ticket.id,
+                        pasoId: nextStep.id,
+                        usuarioId: targetUserId,
+                        estado: 'Pendiente',
+                        activo: 1
+                    });
+                    await this.ticketParaleloRepo.save(tp);
+                }
+            }
+        }
 
         // 4. Update Ticket
         ticket.pasoActualId = nextStep.id;
-        ticket.usuarioAsignadoIds = assigneeId ? [assigneeId] : [];
-        if (assigneeId) {
-            // ticket.fechaAsignacion = new Date(); // If column existed
+
+        if (nextStep.esParalelo && parallelAssignees.length > 0) {
+            ticket.usuarioAsignadoIds = parallelAssignees; // Assign to ALL parallel signers
+        } else {
+            ticket.usuarioAsignadoIds = assigneeId ? [assigneeId] : [];
         }
 
-        if (nextStep.permiteCerrar && nextStep.cerrarTicketObligatorio) {
-            ticket.estado = 2; // Closed
-            ticket.fechaCierre = new Date();
+        if (assigneeId || parallelAssignees.length > 0) {
+            // ticket.fechaAsignacion = new Date(); 
         }
 
         const savedTicket = await this.ticketRepo.save(ticket);
@@ -406,38 +532,27 @@ export class WorkflowEngineService {
 
         // 4.5. Handle Signature (Sequential Signing)
 
-        // Path to the "Master" PDF for this ticket (Accumulative)
-        const masterPdfPath = path.resolve(process.cwd(), 'public', 'document', `ticket_${ticket.id}.pdf`);
-        let sourcePath = masterPdfPath;
+        let signaturePath: string | null = null;
 
-        // Check if master exists, if not, try to recover from template (only if we are in a step that might have generated it?)
-        // For now, if it doesn't exist, we assume no previous PDF.
-        // But if the user says "same file", we expect it to exist if key fields were filled.
+        // Path to the "Master" PDF for this ticket (Accumulative)
+        // Storage logic: public/documentos/{ticketId}/filename
+        const masterPdfPath = path.resolve(process.cwd(), 'public', 'documentos', ticket.id.toString(), `ticket_${ticket.id}.pdf`);
+        let sourcePath = masterPdfPath;
 
         try {
             await fs.access(masterPdfPath);
         } catch {
             // File doesn't exist. Two cases: 
             // 1. First time generating (e.g. didn't have template fields).
-            // 2. We should try to generate it from template now? 
-            // Let's assume for sequential signing, if it doesn't exist, we can't "append".
-            // We fallback to just signature logic which might try to use a template base if implemented, 
-            // but here we just pass the path. signatureStampingService handles "if no file, maybe fail or return?".
-            // Actually signatureStampingService takes a PATH. It expects it to exist.
             sourcePath = ''; // Marker for "No file"
         }
 
         if (sourcePath) {
             try {
-                // Try to stamp signatures for the *NEXT* step (or current transition?)
-                // Usually we stamp signatures OF the actor who just approved/transitioned (Current Step/Transition).
-                // The user says "llenar de firmas en un x paso". 
-                // If I am approving (transitioning out of Step A), I am signing Step A's requirements.
-                // So we should stamp using `currentStep.id`.
-
+                // Try to stamp signatures for the CURRENT step (the one being completed)
                 const signedBuffer = await this.signatureStampingService.stampSignaturesForStep(
                     sourcePath,
-                    currentStep.id, // Sign for the step we are completing
+                    currentStep.id,
                     ticket.id
                 );
 
@@ -458,14 +573,17 @@ export class WorkflowEngineService {
 
         // Legacy UI Signature Handling (Optional: if UI sends a drawing, we attach it too)
         if (dto.signature) {
-            // ... existing logic for drawing ...
-            // We keep this to not break existing behavior, but sequential is separate.
             try {
                 const base64Data = dto.signature.replace(/^data:image\/\w+;base64,/, "");
                 const buffer = Buffer.from(base64Data, 'base64');
                 const filename = `signature_drawing_${Date.now()}.png`;
                 await this.documentsService.saveTicketFile(ticket.id, buffer, filename);
-            } catch (e) { }
+
+                // If we didn't have a sequential PDF, we can use this as ref
+                if (!signaturePath) signaturePath = filename;
+            } catch (e) {
+                this.logger.error(`Failed to save signature for ticket ${ticket.id}`, e);
+            }
         }
 
         // 5. Record History

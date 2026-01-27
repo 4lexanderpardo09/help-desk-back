@@ -33,6 +33,7 @@ import { RutaPasosController } from './controllers/ruta-pasos.controller';
 import { RutaPasosService } from './services/ruta-pasos.service';
 import { Ruta } from './entities/ruta.entity';
 import { RutaPaso } from './entities/ruta-paso.entity';
+import { TicketParalelo } from '../tickets/entities/ticket-paralelo.entity';
 
 @Module({
     imports: [
@@ -48,7 +49,10 @@ import { RutaPaso } from './entities/ruta-paso.entity';
             User,
             TicketCampoValor,
             Ruta,
-            RutaPaso
+            TicketCampoValor,
+            Ruta,
+            RutaPaso,
+            TicketParalelo
         ]),
         AuthModule,
         AuthModule,

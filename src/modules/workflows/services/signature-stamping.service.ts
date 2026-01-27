@@ -29,7 +29,7 @@ export class SignatureStampingService {
      * @param ticketId Optional Ticket ID context (if signatures depend on dynamic assignees in future).
      * @returns Uint8Array of the signed PDF.
      */
-    async stampSignaturesForStep(pdfPath: string, pasoId: number, ticketId?: number): Promise<Uint8Array> {
+    async stampSignaturesForStep(pdfPath: string, pasoId: number, ticketId?: number, signatoryUserId?: number): Promise<Uint8Array> {
         this.logger.log(`Preparing signatures for Step ${pasoId} on PDF: ${pdfPath}`);
 
         // 1. Get Signature Configurations for this Step

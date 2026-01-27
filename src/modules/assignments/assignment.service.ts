@@ -151,4 +151,24 @@ export class AssignmentService {
 
         return [];
     }
+
+    /**
+     * Helper to get users by role and regional (optional)
+     */
+    async getUsersByRole(cargoId: number, empresaId?: number, regionalId?: number): Promise<User[]> {
+        const where: any = { cargoId, estado: 1 };
+        if (regionalId && regionalId !== 1) { // Assuming 1 is Central/All
+            where.regionalId = regionalId;
+        }
+        if (empresaId) {
+            where.empresaId = empresaId;
+        }
+
+        const users = await this.userRepo.find({ where, relations: ['cargo'] });
+        if (users.length > 0) return users;
+
+        // Fallback: If filtered by regional and none found, try just by role?
+        // Depends on business rule. For now return empty or strict.
+        return [];
+    }
 }
