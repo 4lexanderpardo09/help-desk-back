@@ -58,7 +58,7 @@ import { RutaPaso } from './entities/ruta-paso.entity';
         TemplatesModule,
         DocumentsModule,
     ],
-    controllers: [WorkflowController, StepsController, FlowsController, TransitionsController, RutasController, RutaPasosController],
+    controllers: [WorkflowController, StepsController, TransitionsController, RutasController, RutaPasosController, FlowsController],
     providers: [WorkflowEngineService, SlaService, SlaSchedulerService, SignatureStampingService, StepsService, FlowsService, TransitionsService, RutasService, RutaPasosService],
     exports: [WorkflowEngineService, SignatureStampingService, StepsService, FlowsService]
 })
