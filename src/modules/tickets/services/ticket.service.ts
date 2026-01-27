@@ -13,6 +13,7 @@ import { NotificationsService } from '../../notifications/services/notifications
 import { DocumentsService } from '../../documents/services/documents.service';
 import { TicketCampoValor } from '../entities/ticket-campo-valor.entity';
 import { TicketAsignado } from '../entities/ticket-asignado.entity';
+import { TicketParalelo } from '../entities/ticket-paralelo.entity';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
@@ -38,6 +39,8 @@ export class TicketService {
         private readonly ticketCampoValorRepo: Repository<TicketCampoValor>,
         @InjectRepository(TicketAsignado)
         private readonly ticketAsignadoRepo: Repository<TicketAsignado>,
+        @InjectRepository(TicketParalelo)
+        private readonly ticketParaleloRepo: Repository<TicketParalelo>,
     ) { }
 
     /**
@@ -214,24 +217,22 @@ export class TicketService {
     async migrateLegacyAssignments(): Promise<{ processed: number; created: number }> {
         this.logger.log('Starting migration of legacy assignments...');
 
-        // Fetch tickets with potential legacy assignments
+        let processed = 0;
+        let created = 0;
+
+        // 1. Migrate Legacy Comma-Separated Column (Principal)
         const tickets = await this.ticketRepo.createQueryBuilder('t')
             .where('t.usu_asig IS NOT NULL')
             .andWhere('t.usu_asig != ""')
             .getMany();
 
-        let processed = 0;
-        let created = 0;
-
         for (const ticket of tickets) {
             processed++;
-            // The transformer already converts "1,2,3" string to number[]
             const legacyIds = ticket.usuarioAsignadoIds || [];
 
             if (legacyIds.length === 0) continue;
 
             for (const uid of legacyIds) {
-                // Check existance
                 const exists = await this.ticketAsignadoRepo.findOne({
                     where: { ticketId: ticket.id, usuarioId: uid }
                 });
@@ -240,8 +241,8 @@ export class TicketService {
                     const assignment = this.ticketAsignadoRepo.create({
                         ticketId: ticket.id,
                         usuarioId: uid,
-                        tipo: 'Principal', // Assume usage was principal
-                        // Use ticket creation date if assignment date unavailable, or current
+                        tipo: 'Principal',
+                        // Use ticket creation date if assignment date unavailable
                         fechaAsignacion: ticket.fechaCreacion || new Date()
                     });
                     await this.ticketAsignadoRepo.save(assignment);
@@ -250,7 +251,35 @@ export class TicketService {
             }
         }
 
-        this.logger.log(`Migration finished. Tickets scanned: ${processed}, Assignments created: ${created}`);
+        // 2. Migrate Parallel Assignments (From tm_ticket_paralelo)
+        // These might NOT be in usu_asig if they were created before the sync logic came in.
+        this.logger.log('Scanning for legacy parallel assignments...');
+        const parallels = await this.ticketParaleloRepo.find({
+            where: { estado: 'Pendiente', activo: 1 }
+        });
+
+        for (const p of parallels) {
+            processed++;
+            if (!p.ticketId || !p.usuarioId) continue;
+
+            const exists = await this.ticketAsignadoRepo.findOne({
+                where: { ticketId: p.ticketId, usuarioId: p.usuarioId }
+            });
+
+            if (!exists) {
+                // Try to get ticket date for better accuracy, otherwise now
+                const assignment = this.ticketAsignadoRepo.create({
+                    ticketId: p.ticketId,
+                    usuarioId: p.usuarioId,
+                    tipo: 'Paralelo',
+                    fechaAsignacion: p.fechaCreacion || new Date()
+                });
+                await this.ticketAsignadoRepo.save(assignment);
+                created++;
+            }
+        }
+
+        this.logger.log(`Migration finished. Scanned (Items): ${processed}, Created: ${created}`);
         return { processed, created };
     }
 }
