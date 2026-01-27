@@ -101,4 +101,8 @@ export class CreatePasoFlujoDto {
     @ApiProperty({ required: false, type: [Object] })
     @IsOptional()
     campos?: any[];
+
+    @ApiProperty({ required: false, type: [Number], description: 'List of specific User IDs assigned to this step' })
+    @IsOptional()
+    usuariosEspecificos?: number[];
 }

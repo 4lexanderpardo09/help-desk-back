@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PasoFlujo } from '../entities/paso-flujo.entity';
+import { PasoFlujoUsuario } from '../entities/paso-flujo-usuario.entity';
 import { CreatePasoFlujoDto } from '../dto/create-paso-flujo.dto';
 import { UpdatePasoFlujoDto } from '../dto/update-paso-flujo.dto';
 import { ApiQueryHelper, PaginatedResult } from '../../../common/utils/api-query-helper';
@@ -11,6 +12,8 @@ export class StepsService {
     constructor(
         @InjectRepository(PasoFlujo)
         private readonly pasoRepo: Repository<PasoFlujo>,
+        @InjectRepository(PasoFlujoUsuario)
+        private readonly pasoUsuarioRepo: Repository<PasoFlujoUsuario>,
     ) { }
 
     private readonly allowedIncludes = ['flujo', 'cargoAsignado', 'firmas', 'campos', 'usuarios'];
@@ -58,12 +61,43 @@ export class StepsService {
     }
 
     async create(dto: CreatePasoFlujoDto) {
-        const step = this.pasoRepo.create({ ...dto, estado: 1 });
-        return this.pasoRepo.save(step);
+        const { usuariosEspecificos, ...stepData } = dto;
+        const step = this.pasoRepo.create({ ...stepData, estado: 1 });
+        const savedStep = await this.pasoRepo.save(step);
+
+        if (usuariosEspecificos && usuariosEspecificos.length > 0) {
+            const users = usuariosEspecificos.map(uid => this.pasoUsuarioRepo.create({
+                pasoId: savedStep.id,
+                usuarioId: uid,
+            }));
+            await this.pasoUsuarioRepo.save(users);
+        }
+
+        return savedStep;
     }
 
     async update(id: number, dto: UpdatePasoFlujoDto) {
-        await this.pasoRepo.update(id, dto);
+        const { usuariosEspecificos, firmas, campos, ...stepData } = dto;
+
+        // Only update scalar fields (exclude OneToMany relations)
+        await this.pasoRepo.update(id, stepData);
+
+        if (usuariosEspecificos !== undefined) {
+            // Sync users: Delete existing and add new
+            await this.pasoUsuarioRepo.delete({ pasoId: id });
+
+            if (usuariosEspecificos.length > 0) {
+                const users = usuariosEspecificos.map(uid => this.pasoUsuarioRepo.create({
+                    pasoId: id,
+                    usuarioId: uid,
+                }));
+                await this.pasoUsuarioRepo.save(users);
+            }
+        }
+
+        // Note: firmas and campos are handled via cascade in their own services/controllers
+        // If needed, implement similar sync logic here
+
         return this.show(id);
     }
 

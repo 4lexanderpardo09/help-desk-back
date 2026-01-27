@@ -36,6 +36,16 @@ export class TransitionTicketDto {
     @ValidateNested({ each: true })
     @Type(() => TemplateValueDto)
     templateValues?: TemplateValueDto[];
+
+    @ApiProperty({
+        required: false,
+        description: 'Map of RoleId -> UserId for parallel assignments',
+        additionalProperties: { type: 'number' }
+        // Removed type: 'object', as it is inferred or strictly checked. 
+        // If specific type needed, could use type: Object
+    })
+    @IsOptional()
+    manualAssignments?: Record<string, number>;
 }
 
 export class TemplateValueDto {

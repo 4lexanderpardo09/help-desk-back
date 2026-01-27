@@ -13,6 +13,9 @@ export class LinearTransitionDto {
 
     @ApiProperty({ type: [UserCandidateDto] })
     candidates: UserCandidateDto[];
+
+    @ApiProperty({ required: false, isArray: true, description: 'List of roles missing users (for parallel steps)' })
+    missingRoles?: { id: number; name: string }[];
 }
 
 export class DecisionOptionDto {
@@ -27,6 +30,12 @@ export class DecisionOptionDto {
 
     @ApiProperty()
     requiresManualAssignment: boolean;
+
+    @ApiProperty({ type: [UserCandidateDto], required: false })
+    candidates?: UserCandidateDto[];
+
+    @ApiProperty({ required: false, isArray: true, description: 'List of roles missing users (for parallel steps)' })
+    missingRoles?: { id: number; name: string }[];
 }
 
 export class ParallelStatusDto {

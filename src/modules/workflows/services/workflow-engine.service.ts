@@ -20,6 +20,7 @@ import { TicketAsignado } from '../../tickets/entities/ticket-asignado.entity';
 import { TemplatesService } from '../../templates/services/templates.service';
 import { SignatureStampingService } from './signature-stamping.service';
 import { PasoFlujoFirma } from '../entities/paso-flujo-firma.entity';
+import { TicketDetalle } from '../../tickets/entities/ticket-detalle.entity';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
@@ -52,6 +53,8 @@ export class WorkflowEngineService {
         private readonly ticketParaleloRepo: Repository<TicketParalelo>,
         @InjectRepository(TicketAsignado)
         private readonly ticketAsignadoRepo: Repository<TicketAsignado>,
+        @InjectRepository(TicketDetalle)
+        private readonly ticketDetalleRepo: Repository<TicketDetalle>,
     ) { }
 
     /**
@@ -286,6 +289,39 @@ export class WorkflowEngineService {
     /**
      * Checks the next step for a ticket and determines if manual selection is required.
      */
+
+    private async detectMissingRolesForStep(step: PasoFlujo, ticket: Ticket): Promise<{ id: number; name: string }[]> {
+        if (!step.esParalelo) return [];
+
+        const signatures = await this.pasoRepo.createQueryBuilder()
+            .relation(PasoFlujo, 'firmas')
+            .of(step)
+            .loadMany<PasoFlujoFirma>();
+
+        // We also need to load the 'cargo' relation for the signature names? 
+        // PasoFlujoFirma has 'cargoId'. We need the name.
+        // The relation might not be loaded by .relation().loadMany().
+        // Better query:
+        const fullSignatures = await this.pasoRepo.manager.find(PasoFlujoFirma, {
+            where: { pasoId: step.id, estado: 1 },
+            relations: ['cargo']
+        });
+
+        const missing: { id: number; name: string }[] = [];
+
+        for (const sig of fullSignatures) {
+            if (sig.usuarioId) continue; // Specific user assigned, no fallback needed
+            if (sig.cargoId) {
+                const candidates = await this.assignmentService.getUsersByRole(sig.cargoId, ticket.empresaId, ticket.regionalId ?? undefined);
+                if (candidates.length === 0) {
+                    const name = sig.cargoId === -1 ? 'Jefe Inmediato' : (sig.cargo?.nombre || `Cargo ${sig.cargoId}`);
+                    missing.push({ id: sig.cargoId, name });
+                }
+            }
+        }
+        return missing;
+    }
+
     async checkNextStep(ticketId: number): Promise<CheckNextStepResponseDto> {
         const ticket = await this.ticketRepo.findOne({
             where: { id: ticketId },
@@ -319,13 +355,35 @@ export class WorkflowEngineService {
 
                 // Determine manual requirement (Role = manual, Multiple = manual)
                 const isRoleAssignment = !!targetStep.cargoAsignadoId;
-                const requiresManual = isRoleAssignment || candidateDtos.length > 1;
+                const missingRoles = await this.detectMissingRolesForStep(targetStep, ticket);
+                const requiresManual = isRoleAssignment || candidateDtos.length > 1 || missingRoles.length > 0;
+
+                if (missingRoles.length > 0 || (candidates.length === 0 && requiresManual)) {
+                    // Fallback: If we have specific missing roles OR general failure to find assignee,
+                    // we must provide the FULL list of users so the manual selector has options.
+                    const allUsers = await this.userRepo.find({
+                        where: { estado: 1, empresas: { id: ticket.empresaId } },
+                        relations: ['cargo']
+                    });
+                    const fallbackDtos = allUsers.map(u => ({
+                        id: u.id,
+                        nombre: u.nombre || '',
+                        apellido: u.apellido || '',
+                        email: u.email,
+                        cargo: u.cargo?.nombre
+                    }));
+
+                    // Replace/Fill candidate list with all users
+                    candidateDtos.splice(0, candidateDtos.length, ...fallbackDtos);
+                }
 
                 return {
                     decisionId: d.condicionClave || '',
                     label: d.condicionNombre || d.condicionClave || 'Opción',
                     targetStepId: targetStep.id,
-                    requiresManualAssignment: requiresManual
+                    requiresManualAssignment: requiresManual,
+                    candidates: candidateDtos,
+                    missingRoles: missingRoles.length > 0 ? missingRoles : undefined
                 };
             }));
 
@@ -355,8 +413,25 @@ export class WorkflowEngineService {
             cargo: u.cargo?.nombre
         }));
         const isRoleAssignment = !!nextStep.cargoAsignadoId;
-        const requiresManual = isRoleAssignment || candidateDtos.length > 1;
+        const missingRoles = await this.detectMissingRolesForStep(nextStep, ticket);
+        const requiresManual = isRoleAssignment || candidateDtos.length > 1 || missingRoles.length > 0;
 
+        if (missingRoles.length > 0 || (candidates.length === 0 && requiresManual)) {
+            // Fallback for linear/parallel
+            const allUsers = await this.userRepo.find({
+                where: { estado: 1, empresas: { id: ticket.empresaId } },
+                relations: ['cargo']
+            });
+            const fallbackDtos = allUsers.map(u => ({
+                id: u.id,
+                nombre: u.nombre || '',
+                apellido: u.apellido || '',
+                email: u.email,
+                cargo: u.cargo?.nombre
+            }));
+            // Replace/Fill candidate list with all users
+            candidateDtos.splice(0, candidateDtos.length, ...fallbackDtos);
+        }
 
         return {
             transitionType: 'linear',
@@ -364,7 +439,8 @@ export class WorkflowEngineService {
                 targetStepId: nextStep.id,
                 targetStepName: nextStep.nombre,
                 requiresManualAssignment: requiresManual,
-                candidates: candidateDtos
+                candidates: candidateDtos,
+                missingRoles: missingRoles.length > 0 ? missingRoles : undefined
             },
             ...(nextStep.esParalelo ? {
                 parallelStatus: {
@@ -510,12 +586,17 @@ export class WorkflowEngineService {
             for (const sig of signatures) {
                 let targetUserId: number | null = sig.usuarioId;
                 if (!targetUserId && sig.cargoId) {
-                    // Find ONE random/first user with this role? OR All? 
-                    // User said "varias firmas". Usually implies specific people.
-                    // If Role is used, we assume for now we pick the 'primary' one or logic similar to resolveStepAssignee.
-                    // Let's use assignmentService.getCandidatesForStep equivalent logic but for specific cargo?
                     const candidates = await this.assignmentService.getUsersByRole(sig.cargoId, ticket.empresaId, ticket.regionalId ?? undefined);
-                    if (candidates.length > 0) targetUserId = candidates[0].id; // Pick first for now
+
+
+                    if (dto.manualAssignments && dto.manualAssignments[sig.cargoId]) {
+                        targetUserId = dto.manualAssignments[sig.cargoId];
+                    } else if (candidates.length > 0) {
+                        targetUserId = candidates[0].id; // Pick first auto
+                    } else if (dto.targetUserId) {
+                        // [FALLBACK] Manual assignment if auto-resolution fails
+                        targetUserId = dto.targetUserId;
+                    }
                 }
 
                 if (targetUserId) {
@@ -626,18 +707,44 @@ export class WorkflowEngineService {
         }
 
         // 5. Record History
+        // 5a. Primary History Record (Generic for the step move)
         const history = this.historyRepo.create({
             ticketId: ticket.id,
             pasoId: nextStep.id,
-            usuarioAsignadoId: assigneeId || undefined, // Who got the ticket
-            usuarioAsignadorId: dto.actorId, // Who moved the ticket
+            usuarioAsignadoId: assigneeId || undefined,
+            usuarioAsignadorId: dto.actorId,
             fechaAsignacion: new Date(),
-            comentario: dto.comentario || (transitionUsed?.condicionNombre ? `Transición: ${transitionUsed.condicionNombre}` : `Avanzó al paso: ${nextStep.nombre}`),
+            // Log generic action description instead of user comment
+            comentario: transitionUsed?.condicionNombre
+                ? `Transición: ${transitionUsed.condicionNombre}`
+                : (nextStep.esParalelo ? `Asignación Paralela para paso: ${nextStep.nombre}` : `Avanzó al paso: ${nextStep.nombre}`),
             estado: 1,
             estadoTiempoPaso: 'A Tiempo',
             firmaPath: signaturePath
         });
         await this.historyRepo.save(history);
+
+        // 5b. Parallel Assignments History
+        // If next step is parallel, we record an assignment for EACH person involved so it appears in their logs
+        if (nextStep.esParalelo && parallelAssignees.length > 0) {
+            for (const pUid of parallelAssignees) {
+                // Avoid duplicating the primary record if it already covered this user (unlikely if assigneeId is null in parallel)
+                if (pUid !== assigneeId) {
+                    const hPar = this.historyRepo.create({
+                        ticketId: ticket.id,
+                        pasoId: nextStep.id,
+                        usuarioAsignadoId: pUid,
+                        usuarioAsignadorId: dto.actorId, // The person who triggered the flow
+                        fechaAsignacion: new Date(),
+                        comentario: `Asignación Paralela para paso: ${nextStep.nombre}`,
+                        estado: 1,
+                        estadoTiempoPaso: 'Pendiente',
+                        firmaPath: null
+                    });
+                    await this.historyRepo.save(hPar);
+                }
+            }
+        }
 
         if (assigneeId) {
             const assignee = await this.userRepo.findOne({ where: { id: assigneeId } });

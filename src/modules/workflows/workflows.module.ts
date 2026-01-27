@@ -19,6 +19,7 @@ import { AssignmentModule } from '../assignments/assignment.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { FlujoTransicion } from './entities/flujo-transicion.entity';
 import { PasoFlujoFirma } from './entities/paso-flujo-firma.entity';
+import { PasoFlujoUsuario } from './entities/paso-flujo-usuario.entity';
 import { TicketCampoValor } from '../tickets/entities/ticket-campo-valor.entity';
 import { StepsController } from './controllers/steps.controller';
 import { StepsService } from './services/steps.service';
@@ -35,6 +36,7 @@ import { RutaPasosService } from './services/ruta-pasos.service';
 import { Ruta } from './entities/ruta.entity';
 import { RutaPaso } from './entities/ruta-paso.entity';
 import { TicketParalelo } from '../tickets/entities/ticket-paralelo.entity';
+import { TicketDetalle } from '../tickets/entities/ticket-detalle.entity';
 
 @Module({
     imports: [
@@ -43,13 +45,11 @@ import { TicketParalelo } from '../tickets/entities/ticket-paralelo.entity';
             PasoFlujo,
             FlujoTransicion,
             PasoFlujoFirma,
+            PasoFlujoUsuario,
             Ticket,
-            TicketAsignacionHistorico,
-            Ticket,
+            TicketDetalle,
             TicketAsignacionHistorico,
             User,
-            TicketCampoValor,
-            Ruta,
             TicketCampoValor,
             Ruta,
             RutaPaso,
