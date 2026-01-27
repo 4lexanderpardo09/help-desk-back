@@ -117,4 +117,21 @@ export class DocumentsController {
 
         return stream;
     }
+
+    @Get('ticket/:ticketId/master-pdf')
+    @ApiOperation({ summary: 'Descargar PDF Maestro (Acumulativo)' })
+    @CheckPolicies((ability: AppAbility) => ability.can('read', 'Ticket'))
+    async downloadMasterPdf(
+        @Param('ticketId') ticketId: number,
+        @Res({ passthrough: true }) res: Response,
+    ): Promise<StreamableFile> {
+        const { stream, filename, mimeType } = await this.documentsService.getMasterPdf(ticketId);
+
+        res.set({
+            'Content-Type': mimeType,
+            'Content-Disposition': `inline; filename="${filename}"`,
+        });
+
+        return stream;
+    }
 }

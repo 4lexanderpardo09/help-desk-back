@@ -143,4 +143,23 @@ export class DocumentsService {
             mimeType: 'application/octet-stream' // TODO: Detect mime type if needed
         };
     }
+
+    /**
+     * Download the Master PDF (Accumulative) for a ticket
+     */
+    async getMasterPdf(ticketId: number): Promise<{ stream: StreamableFile, filename: string, mimeType: string }> {
+        const filename = `ticket_${ticketId}.pdf`;
+        const relativePath = `documentos/${ticketId}/${filename}`;
+
+        try {
+            const stream = await this.storageService.getStream(relativePath);
+            return {
+                stream,
+                filename,
+                mimeType: 'application/pdf'
+            };
+        } catch (e) {
+            throw new NotFoundException(`No PDF generated yet for Ticket ${ticketId}`);
+        }
+    }
 }
