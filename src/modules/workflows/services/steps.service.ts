@@ -13,7 +13,7 @@ export class StepsService {
         private readonly pasoRepo: Repository<PasoFlujo>,
     ) { }
 
-    private readonly allowedIncludes = ['flujo', 'cargoAsignado'];
+    private readonly allowedIncludes = ['flujo', 'cargoAsignado', 'firmas', 'campos', 'usuarios'];
     private readonly allowedFilters = ['nombre', 'estado', 'flujo.id', 'esAprobacion', 'esTareaNacional'];
 
     /**

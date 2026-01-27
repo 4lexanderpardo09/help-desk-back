@@ -6,6 +6,7 @@ import { FlujoPlantilla } from '../../workflows/entities/flujo-plantilla.entity'
 import { PasoFlujo } from '../../workflows/entities/paso-flujo.entity';
 import { Consulta } from '../../reports/entities/consulta.entity';
 import { TicketCampoValor } from '../../tickets/entities/ticket-campo-valor.entity';
+import { ApiQueryHelper, PaginatedResult } from '../../../common/utils/api-query-helper';
 
 @Injectable()
 export class TemplatesService {
@@ -33,6 +34,26 @@ export class TemplatesService {
             where: { pasoId, estado: 1 },
             order: { id: 'ASC' }
         });
+    }
+
+    async findAll(options?: {
+        limit?: number;
+        page?: number;
+        filter?: Record<string, any>;
+        sort?: string;
+    }): Promise<PaginatedResult<FlujoPlantilla>> {
+        const qb = this.plantillaRepo.createQueryBuilder('plantilla')
+            .leftJoinAndSelect('plantilla.flujo', 'flujo')
+            .leftJoinAndSelect('plantilla.empresa', 'empresa');
+
+        qb.where('plantilla.estado = :estado', { estado: 1 });
+
+        const allowedFilters = ['nombrePlantilla', 'flujo.id', 'empresa.id'];
+        ApiQueryHelper.applyFilters(qb, options?.filter, allowedFilters, 'plantilla');
+
+        ApiQueryHelper.applySort(qb, options?.sort, 'plantilla');
+
+        return ApiQueryHelper.paginate(qb, { limit: options?.limit, page: options?.page });
     }
 
 
