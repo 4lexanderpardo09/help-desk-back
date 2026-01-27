@@ -235,9 +235,18 @@ export class TicketListingService {
                 qb.andWhere('t.usuarioId = :userId', { userId: user.usu_id });
                 break;
             case TicketView.ASSIGNED:
-                // Updated: use normalized query on 'ticket_usuarios_asig' via 'asignados' relation
-                qb.innerJoin('t.asignados', 'ta_assigned', 'ta_assigned.usuarioId = :agentId', { agentId: user.usu_id });
-                // qb.andWhere(`FIND_IN_SET(:agentId, t.usu_asig) > 0`, { agentId: user.usu_id }); // Legacy logic kept for reference but disabled
+                // [HYBRID] Estrategia de Migración:
+                // Consultamos AMBOS orígenes (Pivot Table y Legacy Column) para no perder tickets
+                // mientras se corre la migración en producción.
+
+                // 1. Join "Soft" con la tabla pivot filtrando por el usuario
+                qb.leftJoin('t.asignados', 'ta_assigned', 'ta_assigned.usuarioId = :agentId', { agentId: user.usu_id });
+
+                // 2. Filtramos donde haya match en pivot O match en legacy
+                qb.andWhere(new Brackets(subQb => {
+                    subQb.where('ta_assigned.id IS NOT NULL') // Match en nueva tabla
+                        .orWhere(`FIND_IN_SET(:agentId, t.usu_asig) > 0`, { agentId: user.usu_id }); // Match en legacy ID
+                }));
                 break;
             case TicketView.OBSERVED:
                 // Los observadores están asociados al FLUJO, no al ticket directamente
