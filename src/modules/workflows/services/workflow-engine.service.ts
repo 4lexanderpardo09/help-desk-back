@@ -21,6 +21,7 @@ import { TemplatesService } from '../../templates/services/templates.service';
 import { SignatureStampingService } from './signature-stamping.service';
 import { PasoFlujoFirma } from '../entities/paso-flujo-firma.entity';
 import { TicketDetalle } from '../../tickets/entities/ticket-detalle.entity';
+import { SignParallelTaskDto } from '../dto/sign-parallel-task.dto';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
@@ -708,10 +709,15 @@ export class WorkflowEngineService {
 
         // 5. Record History
         // 5a. Primary History Record (Generic for the step move)
+        // For parallel steps, use the first parallel assignee as the "primary" for history purposes
+        const primaryAssigneeForHistory = nextStep.esParalelo && parallelAssignees.length > 0
+            ? parallelAssignees[0]
+            : assigneeId;
+
         const history = this.historyRepo.create({
             ticketId: ticket.id,
             pasoId: nextStep.id,
-            usuarioAsignadoId: assigneeId || undefined,
+            usuarioAsignadoId: primaryAssigneeForHistory || undefined,
             usuarioAsignadorId: dto.actorId,
             fechaAsignacion: new Date(),
             // Log generic action description instead of user comment
@@ -726,23 +732,22 @@ export class WorkflowEngineService {
 
         // 5b. Parallel Assignments History
         // If next step is parallel, we record an assignment for EACH person involved so it appears in their logs
-        if (nextStep.esParalelo && parallelAssignees.length > 0) {
-            for (const pUid of parallelAssignees) {
-                // Avoid duplicating the primary record if it already covered this user (unlikely if assigneeId is null in parallel)
-                if (pUid !== assigneeId) {
-                    const hPar = this.historyRepo.create({
-                        ticketId: ticket.id,
-                        pasoId: nextStep.id,
-                        usuarioAsignadoId: pUid,
-                        usuarioAsignadorId: dto.actorId, // The person who triggered the flow
-                        fechaAsignacion: new Date(),
-                        comentario: `Asignación Paralela para paso: ${nextStep.nombre}`,
-                        estado: 1,
-                        estadoTiempoPaso: 'Pendiente',
-                        firmaPath: null
-                    });
-                    await this.historyRepo.save(hPar);
-                }
+        // Skip the first one since it's already in the primary record
+        if (nextStep.esParalelo && parallelAssignees.length > 1) {
+            for (let i = 1; i < parallelAssignees.length; i++) {
+                const pUid = parallelAssignees[i];
+                const hPar = this.historyRepo.create({
+                    ticketId: ticket.id,
+                    pasoId: nextStep.id,
+                    usuarioAsignadoId: pUid,
+                    usuarioAsignadorId: dto.actorId,
+                    fechaAsignacion: new Date(),
+                    comentario: `Asignación Paralela para paso: ${nextStep.nombre}`,
+                    estado: 1,
+                    estadoTiempoPaso: 'Pendiente',
+                    firmaPath: null
+                });
+                await this.historyRepo.save(hPar);
             }
         }
 
@@ -872,5 +877,108 @@ export class WorkflowEngineService {
 
         // For Roles with multiple people, return null => Pool
         return null;
+    }
+
+    /**
+     * Signs an individual parallel task.
+     * When the last parallel user signs, automatically advances the ticket.
+     * 
+     * @param dto - Contains ticketId, optional comment and signature
+     * @param userId - ID of the user signing
+     * @returns Updated ticket if auto-advanced, or confirmation message
+     */
+    async signParallelTask(dto: SignParallelTaskDto, userId: number): Promise<{ message: string; autoAdvanced: boolean; ticket?: Ticket }> {
+        const { ticketId, comentario, signature } = dto;
+
+        // 1. Find user's pending parallel task
+        const task = await this.ticketParaleloRepo.findOne({
+            where: {
+                ticketId,
+                usuarioId: userId,
+                estado: 'Pendiente'
+            },
+            relations: ['paso', 'ticket']
+        });
+
+        if (!task) {
+            throw new NotFoundException('No tienes una tarea paralela pendiente para este ticket');
+        }
+
+        // 2. Update task status
+        task.estado = 'Completado';
+        task.fechaCierre = new Date();
+        task.comentario = comentario || null;
+        await this.ticketParaleloRepo.save(task);
+
+        // 3. Save signature if provided
+        if (signature) {
+            try {
+                const base64Data = signature.replace(/^data:image\/\w+;base64,/, "");
+                const buffer = Buffer.from(base64Data, 'base64');
+                const filename = `parallel_signature_user${userId}_${Date.now()}.png`;
+                await this.documentsService.saveTicketFile(ticketId, buffer, filename);
+            } catch (e) {
+                this.logger.error(`Failed to save parallel signature for user ${userId}`, e);
+            }
+        }
+
+        // 4. Record comment if provided
+        if (comentario) {
+            const commentDetails = this.ticketDetalleRepo.create({
+                ticketId,
+                usuarioId: userId,
+                descripcion: comentario,
+                fechaCreacion: new Date(),
+                estado: 1
+            });
+            await this.ticketDetalleRepo.save(commentDetails);
+        }
+
+        // 5. Check if all parallel tasks are completed
+        const allTasks = await this.ticketParaleloRepo.find({
+            where: {
+                ticketId,
+                pasoId: task.pasoId,
+                activo: 1
+            }
+        });
+
+        const pendingTasks = allTasks.filter(t => t.estado !== 'Completado');
+
+        if (pendingTasks.length === 0) {
+            // All tasks completed - auto-advance
+            this.logger.log(`All parallel tasks completed for ticket ${ticketId}. Auto-advancing...`);
+
+            // Find next step
+            const currentStep = task.paso;
+            const { nextStep } = await this.resolveNextStep(currentStep, undefined);
+
+            if (!nextStep) {
+                return {
+                    message: 'Firma registrada. Este es el último paso del flujo.',
+                    autoAdvanced: false
+                };
+            }
+
+            // Auto-transition
+            const updatedTicket = await this.transitionStep({
+                ticketId,
+                actorId: userId,
+                transitionKeyOrStepId: nextStep.id.toString(),
+                comentario: 'Avance automático: Todas las firmas paralelas completadas'
+            });
+
+            return {
+                message: 'Firma registrada. Todas las firmas completadas. Ticket avanzado automáticamente.',
+                autoAdvanced: true,
+                ticket: updatedTicket
+            };
+        }
+
+        // Still waiting for other signatures
+        return {
+            message: `Firma registrada correctamente. Esperando ${pendingTasks.length} firma(s) pendiente(s).`,
+            autoAdvanced: false
+        };
     }
 }

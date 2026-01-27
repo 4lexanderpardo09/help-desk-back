@@ -42,6 +42,14 @@ export class TicketController {
         return this.ticketService.findOne(+id);
     }
 
+    @Get(':id/parallel-tasks')
+    @ApiOperation({ summary: 'Obtener tareas paralelas de un ticket' })
+    @ApiResponse({ status: 200, description: 'Lista de tareas paralelas con estado' })
+    @CheckPolicies((ability: AppAbility) => ability.can('read', 'Ticket'))
+    async getParallelTasks(@Param('id') id: string) {
+        return this.ticketService.getParallelTasks(+id);
+    }
+
     @Post('admin/migrate-assignments')
     @ApiOperation({ summary: 'Migrar asignaciones legacy a nueva tabla' })
     @CheckPolicies((ability: AppAbility) => ability.can('manage', 'all')) // Only Admins

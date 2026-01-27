@@ -282,4 +282,32 @@ export class TicketService {
         this.logger.log(`Migration finished. Scanned (Items): ${processed}, Created: ${created}`);
         return { processed, created };
     }
+
+    /**
+     * Get all parallel tasks for a specific ticket
+     */
+    async getParallelTasks(ticketId: number) {
+        const tasks = await this.ticketParaleloRepo.find({
+            where: { ticketId, activo: 1 },
+            relations: ['usuario'],
+            order: { fechaCreacion: 'ASC' }
+        });
+
+        return tasks.map(task => ({
+            id: task.id,
+            ticketId: task.ticketId,
+            pasoId: task.pasoId,
+            usuarioId: task.usuarioId,
+            estado: task.estado,
+            estadoTiempoPaso: task.estadoTiempoPaso,
+            fechaCreacion: task.fechaCreacion,
+            fechaCierre: task.fechaCierre,
+            comentario: task.comentario,
+            usuario: task.usuario ? {
+                id: task.usuario.id,
+                nombre: task.usuario.nombre,
+                email: task.usuario.email
+            } : undefined
+        }));
+    }
 }

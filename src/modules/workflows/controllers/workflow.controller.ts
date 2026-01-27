@@ -2,6 +2,7 @@ import { Body, Controller, Post, UseGuards, Req, Get, Param } from '@nestjs/comm
 import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { WorkflowEngineService } from '../services/workflow-engine.service';
 import { TransitionTicketDto } from '../dto/workflow-transition.dto';
+import { SignParallelTaskDto } from '../dto/sign-parallel-task.dto';
 import { CheckStartFlowResponseDto } from '../dto/start-flow-check.dto';
 import { CheckNextStepResponseDto } from '../dto/check-next-step.dto';
 import { JwtAuthGuard } from 'src/modules/auth/jwt.guard';
@@ -67,5 +68,19 @@ export class WorkflowController {
     async approveFlow(@Param('ticketId') ticketId: number, @Req() req: any) {
         await this.workflowService.approveFlow(Number(ticketId), req.user.id);
         return { message: 'Flujo aprobado correctamente' };
+    }
+
+    /**
+     * Signs an individual parallel task.
+     * When the last user signs, automatically advances the ticket.
+     * @param dto - Contains ticketId, optional comment and signature
+     */
+    @Post('sign-parallel-task')
+    @ApiOperation({ summary: 'Firmar tarea paralela individual' })
+    @ApiResponse({ status: 200, description: 'Firma registrada. Puede incluir auto-avance si es el último.' })
+    @ApiResponse({ status: 404, description: 'No tienes tarea paralela pendiente para este ticket' })
+    @CheckPolicies((ability: AppAbility) => ability.can('update', 'Ticket'))
+    async signParallelTask(@Body() dto: SignParallelTaskDto, @Req() req: any) {
+        return this.workflowService.signParallelTask(dto, req.user.id);
     }
 }
