@@ -161,10 +161,16 @@ export class AssignmentService {
             where.regionalId = regionalId;
         }
         if (empresaId) {
-            where.empresaId = empresaId;
+            // User entity has M2M relation 'empresas'
+            where.empresas = {
+                id: empresaId
+            };
         }
 
-        const users = await this.userRepo.find({ where, relations: ['cargo'] });
+        const users = await this.userRepo.find({
+            where,
+            relations: ['cargo', 'empresas'] // Need to load relation to filter? standard find handles it but let's be safe or just 'cargo' if we don't need company details returned
+        });
         if (users.length > 0) return users;
 
         // Fallback: If filtered by regional and none found, try just by role?

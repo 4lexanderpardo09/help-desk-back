@@ -352,7 +352,13 @@ export class WorkflowEngineService {
                 targetStepName: nextStep.nombre,
                 requiresManualAssignment: requiresManual,
                 candidates: candidateDtos
-            }
+            },
+            ...(nextStep.esParalelo ? {
+                parallelStatus: {
+                    isBlocked: false,
+                    pendingTasks: []
+                }
+            } : {})
         };
     }
 
