@@ -11,4 +11,5 @@ export class CheckStartFlowResponseDto {
     candidates: UserCandidateDto[];
     initialStepId: number;
     initialStepName: string;
+    templateFields?: any[]; // Dynamic fields needed for this step
 }

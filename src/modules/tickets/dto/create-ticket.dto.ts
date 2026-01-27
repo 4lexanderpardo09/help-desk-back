@@ -39,6 +39,11 @@ export class CreateTicketDto {
 
     @ApiProperty({ required: false })
     @IsOptional()
+    @IsArray()
+    templateValues?: { campoId: number; valor: string; }[];
+
+    @ApiProperty({ required: false })
+    @IsOptional()
     @IsNumber()
     usuarioAsignadoId?: number;
 }

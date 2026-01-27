@@ -11,6 +11,7 @@ import { TemplatesService } from '../../templates/services/templates.service';
 import { PdfStampingService, TextStampConfig } from '../../templates/services/pdf-stamping.service';
 import { NotificationsService } from '../../notifications/services/notifications.service';
 import { DocumentsService } from '../../documents/services/documents.service';
+import { TicketCampoValor } from '../entities/ticket-campo-valor.entity';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
@@ -32,6 +33,8 @@ export class TicketService {
         private readonly pdfStampingService: PdfStampingService,
         private readonly notificationsService: NotificationsService,
         private readonly documentsService: DocumentsService,
+        @InjectRepository(TicketCampoValor)
+        private readonly ticketCampoValorRepo: Repository<TicketCampoValor>,
     ) { }
 
     /**
@@ -69,10 +72,21 @@ export class TicketService {
         // This will update the ticket with the correct PasoFlujo and Assignee based on rules
         const ticketWithWorkflow = await this.workflowEngine.startTicketFlow(savedTicket, dto.usuarioAsignadoId);
 
-        // 5. Generate Initial PDF (if applicable)
-        await this.generateInitialPdf(ticketWithWorkflow, user);
+        // 5. Save Dynamic Fields (if any)
+        if (dto.templateValues && dto.templateValues.length > 0) {
+            const valuesToSave = dto.templateValues.map(tv => this.ticketCampoValorRepo.create({
+                ticketId: savedTicket.id,
+                campoId: tv.campoId,
+                valor: tv.valor,
+                estado: 1
+            }));
+            await this.ticketCampoValorRepo.save(valuesToSave);
+        }
 
-        // 6. Notify Creator
+        // 6. Generate Initial PDF (if applicable)
+        await this.generateInitialPdf(ticketWithWorkflow, user, dto.templateValues);
+
+        // 7. Notify Creator
         await this.notificationsService.notifyCreation(ticketWithWorkflow, user);
 
         return ticketWithWorkflow;
@@ -81,7 +95,7 @@ export class TicketService {
     /**
      * Generates an initial PDF if the ticket's flow has a configured template.
      */
-    private async generateInitialPdf(ticket: Ticket, creator: User): Promise<void> {
+    private async generateInitialPdf(ticket: Ticket, creator: User, templateValues?: { campoId: number; valor: string; }[]): Promise<void> {
         try {
             if (!ticket.pasoActual || !ticket.pasoActual.flujoId) return;
 
@@ -109,15 +123,23 @@ export class TicketService {
             // Here we implement a basic mapper for standard fields
             const textsToStamp: TextStampConfig[] = fields.map(field => {
                 let value = '';
-                // Simple static mapping based on legacy conventions or new standard codes
-                switch (field.codigo.toUpperCase()) {
-                    case 'TICKET_ID': value = ticket.id.toString(); break;
-                    case 'FECHA_CREACION': value = ticket.fechaCreacion!.toISOString().split('T')[0]; break;
-                    case 'TITULO': value = ticket.titulo || ''; break;
-                    case 'SOLICITANTE': value = `${creator.nombre} ${creator.apellido || ''}`; break;
-                    case 'CARGO': value = creator.cargo?.nombre || ''; break;
-                    // Add more mappings as needed
-                    default: value = ''; // For now, empty if not a system field
+
+                // 1. Check if we have a dynamic value for this field
+                const dynamicVal = templateValues?.find(tv => tv.campoId === field.id);
+
+                if (dynamicVal) {
+                    value = dynamicVal.valor;
+                } else {
+                    // 2. Fallback to System Field mapping
+                    switch (field.codigo.toUpperCase()) {
+                        case 'TICKET_ID': value = ticket.id.toString(); break;
+                        case 'FECHA_CREACION': value = ticket.fechaCreacion!.toISOString().split('T')[0]; break;
+                        case 'TITULO': value = ticket.titulo || ''; break;
+                        case 'SOLICITANTE': value = `${creator.nombre} ${creator.apellido || ''}`; break;
+                        case 'CARGO': value = creator.cargo?.nombre || ''; break;
+                        // Add more mappings as needed
+                        default: value = ''; // For now, empty if not a system field
+                    }
                 }
 
                 return {
