@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { PoliciesGuard } from '../../../common/guards/policies.guard';
@@ -40,8 +40,8 @@ export class FlowsController {
     @ApiResponse({ status: 200, description: 'Flujo encontrado' })
     @ApiResponse({ status: 404, description: 'Flujo no encontrado' })
     @CheckPolicies((ability: AppAbility) => ability.can('read', 'all'))
-    async show(@Param('id') id: number, @Query() query: ApiQueryDto) {
-        return this.flowsService.show(Number(id), {
+    async show(@Param('id', ParseIntPipe) id: number, @Query() query: ApiQueryDto) {
+        return this.flowsService.show(id, {
             included: query.included
         });
     }
@@ -58,15 +58,15 @@ export class FlowsController {
     @ApiOperation({ summary: 'Actualizar flujo' })
     @ApiResponse({ status: 200, description: 'Flujo actualizado' })
     @CheckPolicies((ability: AppAbility) => ability.can('update', 'all'))
-    async update(@Param('id') id: number, @Body() dto: UpdateFlujoDto) {
-        return this.flowsService.update(Number(id), dto);
+    async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateFlujoDto) {
+        return this.flowsService.update(id, dto);
     }
 
     @Delete(':id')
     @ApiOperation({ summary: 'Eliminar flujo (Soft Delete)' })
     @ApiResponse({ status: 200, description: 'Flujo eliminado' })
     @CheckPolicies((ability: AppAbility) => ability.can('delete', 'all'))
-    async delete(@Param('id') id: number) {
-        return this.flowsService.delete(Number(id));
+    async delete(@Param('id', ParseIntPipe) id: number) {
+        return this.flowsService.delete(id);
     }
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { PoliciesGuard } from '../../../common/guards/policies.guard';
@@ -41,8 +41,8 @@ export class RutaPasosController {
     @ApiQuery({ name: 'included', required: false, description: 'Relaciones a incluir' })
     @ApiResponse({ status: 200, description: 'Relación encontrada' })
     @CheckPolicies((ability: AppAbility) => ability.can('read', 'all'))
-    async show(@Param('id') id: number, @Query() query: ApiQueryDto) {
-        return this.rutaPasosService.show(Number(id), { included: query.included });
+    async show(@Param('id', ParseIntPipe) id: number, @Query() query: ApiQueryDto) {
+        return this.rutaPasosService.show(id, { included: query.included });
     }
 
     @Post()
@@ -57,15 +57,15 @@ export class RutaPasosController {
     @ApiOperation({ summary: 'Actualizar vínculo (# orden)' })
     @ApiResponse({ status: 200, description: 'Vínculo actualizado' })
     @CheckPolicies((ability: AppAbility) => ability.can('update', 'all'))
-    async update(@Param('id') id: number, @Body() dto: UpdateRutaPasoDto) {
-        return this.rutaPasosService.update(Number(id), dto);
+    async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRutaPasoDto) {
+        return this.rutaPasosService.update(id, dto);
     }
 
     @Delete(':id')
     @ApiOperation({ summary: 'Desvincular paso de la ruta (Soft Delete)' })
     @ApiResponse({ status: 200, description: 'Vínculo eliminado' })
     @CheckPolicies((ability: AppAbility) => ability.can('delete', 'all'))
-    async delete(@Param('id') id: number) {
-        return this.rutaPasosService.delete(Number(id));
+    async delete(@Param('id', ParseIntPipe) id: number) {
+        return this.rutaPasosService.delete(id);
     }
 }

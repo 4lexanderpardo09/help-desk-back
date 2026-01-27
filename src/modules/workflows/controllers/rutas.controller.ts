@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { PoliciesGuard } from '../../../common/guards/policies.guard';
@@ -39,8 +39,8 @@ export class RutasController {
     @ApiQuery({ name: 'included', required: false, description: 'Relaciones a incluir' })
     @ApiResponse({ status: 200, description: 'Ruta encontrada' })
     @CheckPolicies((ability: AppAbility) => ability.can('read', 'all'))
-    async show(@Param('id') id: number, @Query() query: ApiQueryDto) {
-        return this.rutasService.show(Number(id), { included: query.included });
+    async show(@Param('id', ParseIntPipe) id: number, @Query() query: ApiQueryDto) {
+        return this.rutasService.show(id, { included: query.included });
     }
 
     @Post()
@@ -55,15 +55,15 @@ export class RutasController {
     @ApiOperation({ summary: 'Actualizar ruta' })
     @ApiResponse({ status: 200, description: 'Ruta actualizada' })
     @CheckPolicies((ability: AppAbility) => ability.can('update', 'all'))
-    async update(@Param('id') id: number, @Body() dto: UpdateRutaDto) {
-        return this.rutasService.update(Number(id), dto);
+    async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRutaDto) {
+        return this.rutasService.update(id, dto);
     }
 
     @Delete(':id')
     @ApiOperation({ summary: 'Eliminar ruta (Soft Delete)' })
     @ApiResponse({ status: 200, description: 'Ruta eliminada' })
     @CheckPolicies((ability: AppAbility) => ability.can('delete', 'all'))
-    async delete(@Param('id') id: number) {
-        return this.rutasService.delete(Number(id));
+    async delete(@Param('id', ParseIntPipe) id: number) {
+        return this.rutasService.delete(id);
     }
 }
