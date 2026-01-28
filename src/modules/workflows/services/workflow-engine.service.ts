@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource, EntityManager } from 'typeorm';
 import { Ticket } from '../../tickets/entities/ticket.entity';
 import { PasoFlujo } from '../entities/paso-flujo.entity';
 import { FlujoTransicion } from '../entities/flujo-transicion.entity';
@@ -30,6 +30,7 @@ export class WorkflowEngineService {
     private readonly logger = new Logger(WorkflowEngineService.name);
 
     constructor(
+        private readonly dataSource: DataSource,
         @InjectRepository(Ticket)
         private readonly ticketRepo: Repository<Ticket>,
         @InjectRepository(PasoFlujo)
@@ -476,301 +477,290 @@ export class WorkflowEngineService {
      * @throws BadRequestException if transition is invalid or next step cannot be determined.
      */
     async transitionStep(dto: TransitionTicketDto): Promise<Ticket> {
-        const ticket = await this.ticketRepo.findOne({
-            where: { id: dto.ticketId },
-            relations: ['pasoActual', 'usuario']
-        });
+        return await this.dataSource.transaction(async (manager) => {
+            // Transactional Repositories
+            const txTicketRepo = manager.getRepository(Ticket);
+            const txTicketParaleloRepo = manager.getRepository(TicketParalelo);
+            const txTicketAsignadoRepo = manager.getRepository(TicketAsignado);
+            const txHistoryRepo = manager.getRepository(TicketAsignacionHistorico);
+            const txTicketDetalleRepo = manager.getRepository(TicketDetalle);
 
-        if (!ticket) throw new NotFoundException(`Ticket ${dto.ticketId} not found`);
-
-        const currentStep = ticket.pasoActual;
-        if (!currentStep) throw new BadRequestException('Ticket has no current step');
-
-        // 1.1 Handle Parallel Step Approval (If current step is parallel)
-        if (currentStep.esParalelo) {
-            // Find if this user has a pending parallel assignment
-            const pendingParallel = await this.ticketParaleloRepo.findOne({
-                where: {
-                    ticketId: ticket.id,
-                    pasoId: currentStep.id,
-                    usuarioId: dto.actorId,
-                    estado: 'Pendiente'
-                }
+            // 1. Fetch Ticket with Lock to prevent race conditions
+            const ticket = await txTicketRepo.findOne({
+                where: { id: dto.ticketId },
+                relations: ['pasoActual', 'usuario'],
+                lock: { mode: 'pessimistic_write' }
             });
 
-            if (pendingParallel) {
-                // User is approving their part
-                pendingParallel.estado = 'Aprobado'; // or 'Firmado'
-                pendingParallel.estadoTiempoPaso = 'A Tiempo'; // TODO: Calc SLA
-                pendingParallel.fechaCierre = new Date();
-                pendingParallel.comentario = dto.comentario || null;
-                await this.ticketParaleloRepo.save(pendingParallel);
+            if (!ticket) throw new NotFoundException(`Ticket ${dto.ticketId} not found`);
 
-                // Stamp Parallel Signature (Sequential)
-                const masterPdfPath = path.resolve(process.cwd(), 'public', 'documentos', ticket.id.toString(), `ticket_${ticket.id}.pdf`);
-                try {
-                    await fs.access(masterPdfPath);
-                    const signedBuffer = await this.signatureStampingService.stampSignaturesForStep(
-                        masterPdfPath,
-                        currentStep.id,
-                        ticket.id,
-                        dto.actorId // Only stamp THIS user's signature
-                    );
-                    await fs.writeFile(masterPdfPath, signedBuffer);
-                    // We don't necessarily create a new version for every parallel sign, or maybe we do?
-                    // User said "llenar de firmas". We update master.
-                } catch (e) {
-                    this.logger.warn(`Parallel signing failed: ${e.message}`);
-                }
+            const currentStep = ticket.pasoActual;
+            if (!currentStep) throw new BadRequestException('Ticket has no current step');
 
-                // Check if ALL are approved
-                const remaining = await this.ticketParaleloRepo.count({
+            // 1.1 Handle Parallel Step Approval (If current step is parallel)
+            if (currentStep.esParalelo) {
+                // Check pending parallel task for this user
+                const pendingParallel = await txTicketParaleloRepo.findOne({
                     where: {
                         ticketId: ticket.id,
                         pasoId: currentStep.id,
+                        usuarioId: dto.actorId,
                         estado: 'Pendiente'
                     }
                 });
 
-                if (remaining > 0) {
-                    // Still pending others. Stop transition.
-                    this.logger.log(`Ticket ${ticket.id} approved by ${dto.actorId} but waiting for ${remaining} others.`);
-                    return ticket; // Return without moving step
+                if (pendingParallel) {
+                    // This logic should ideally be handled by signParallelTask, but if reached here:
+                    pendingParallel.estado = 'Aprobado';
+                    pendingParallel.fechaCierre = new Date();
+                    pendingParallel.comentario = dto.comentario || null;
+                    await txTicketParaleloRepo.save(pendingParallel);
+
+                    // Stamp Parallel Signature (Sequential)
+                    const masterPdfPath = path.resolve(process.cwd(), 'public', 'documentos', ticket.id.toString(), `ticket_${ticket.id}.pdf`);
+                    try {
+                        await fs.access(masterPdfPath);
+                        const signedBuffer = await this.signatureStampingService.stampSignaturesForStep(
+                            masterPdfPath,
+                            currentStep.id,
+                            ticket.id,
+                            dto.actorId
+                        );
+                        await fs.writeFile(masterPdfPath, signedBuffer);
+                    } catch (e) {
+                        this.logger.warn(`Parallel signing failed: ${e.message}`);
+                    }
+
+                    // Check if ALL are approved
+                    const remaining = await txTicketParaleloRepo.count({
+                        where: {
+                            ticketId: ticket.id,
+                            pasoId: currentStep.id,
+                            estado: 'Pendiente'
+                        }
+                    });
+
+                    if (remaining > 0) {
+                        this.logger.log(`Ticket ${ticket.id} approved by ${dto.actorId} but waiting for ${remaining} others.`);
+                        return ticket;
+                    }
                 } else {
-                    this.logger.log(`All parallel approvals complete for Ticket ${ticket.id}. Proceeding to next step.`);
-                    // Fallthrough to normal transition logic below
-                }
-            } else {
-                // User might be trying to approve but is not in the parallel list or already approved.
-                // Or it's a forced admin transition?
-                // If normal user, we could throw if they aren't assigned.
-                // For now, allow fallthrough if they explicitly requested a transition (admin override?).
-                // But typically parallel steps lock linear flow.
-                const isAssigned = await this.ticketParaleloRepo.count({ where: { ticketId: ticket.id, pasoId: currentStep.id, usuarioId: dto.actorId } });
-                if (isAssigned > 0) {
-                    // Already approved?
-                    this.logger.warn(`User ${dto.actorId} already approved or signature not pending.`);
-                }
-            }
-        }
+                    // Check specific blocking condition
+                    const remainingTasks = await txTicketParaleloRepo.count({
+                        where: {
+                            ticketId: ticket.id,
+                            pasoId: currentStep.id,
+                            estado: 'Pendiente'
+                        }
+                    });
 
-        // 2. Determine Next Step
-        // Use Unified Resolver
-        const { nextStep, transitionUsed } = await this.resolveNextStep(currentStep, dto.transitionKeyOrStepId);
-
-        // Note: Strategies A, B, C are now inside resolveNextStep
-
-        if (!nextStep) throw new BadRequestException(`No se encontró un paso siguiente válido.`);
-
-        // 3. Resolve Assignee (The core complexity)
-        const assigneeId = await this.resolveStepAssignee(nextStep, ticket, dto.targetUserId);
-
-        // 3.1 Initialize Parallel Entries (If next step is parallel)
-        let parallelAssignees: number[] = [];
-        if (nextStep.esParalelo) {
-            // Fetch signatures required
-            const firmas = await this.pasoRepo.manager.find(PasoFlujoFirma, { // Quick access via manager or inject
-                where: { pasoId: nextStep.id, estado: 1 },
-                relations: ['usuario'] // Need to resolve roles
-            });
-            // We need to fetch 'PasoFlujoFirma' properly. I don't have its repo injected. 
-            // I'll access via nextStep.firmas if lazy/eager, or query builder.
-            // Better: Inject the repo or use relation. 'nextStep' from resolveNextStep might not have signatures loaded.
-            const signatures = await this.pasoRepo.createQueryBuilder()
-                .relation(PasoFlujo, 'firmas')
-                .of(nextStep)
-                .loadMany<PasoFlujoFirma>();
-
-            // Wait, loadMany returns related entities? Yes.
-            // We need to resolve Role based signatures to Users.
-
-            for (const sig of signatures) {
-                let targetUserId: number | null = sig.usuarioId;
-                if (!targetUserId && sig.cargoId) {
-                    const candidates = await this.assignmentService.getUsersByRole(sig.cargoId, ticket.empresaId, ticket.regionalId ?? undefined);
-
-
-                    if (dto.manualAssignments && dto.manualAssignments[sig.cargoId]) {
-                        targetUserId = dto.manualAssignments[sig.cargoId];
-                    } else if (candidates.length > 0) {
-                        targetUserId = candidates[0].id; // Pick first auto
-                    } else if (dto.targetUserId) {
-                        // [FALLBACK] Manual assignment if auto-resolution fails
-                        targetUserId = dto.targetUserId;
+                    if (remainingTasks > 0) {
+                        throw new BadRequestException(
+                            `No se puede avanzar. Este es un paso paralelo con ${remainingTasks} tarea(s) pendiente(s). ` +
+                            `Todos los participantes deben completar sus firmas antes de avanzar.`
+                        );
                     }
                 }
+            }
 
-                if (targetUserId) {
-                    parallelAssignees.push(targetUserId);
-                    const tp = this.ticketParaleloRepo.create({
-                        ticketId: ticket.id,
-                        pasoId: nextStep.id,
-                        usuarioId: targetUserId,
-                        estado: 'Pendiente',
-                        activo: 1
-                    });
-                    await this.ticketParaleloRepo.save(tp);
+            // 2. Determine Next Step
+            const { nextStep, transitionUsed } = await this.resolveNextStep(currentStep, dto.transitionKeyOrStepId);
+
+            if (!nextStep) throw new BadRequestException(`No se encontró un paso siguiente válido.`);
+
+            // 3. Resolve Assignee
+            const assigneeId = await this.resolveStepAssignee(nextStep, ticket, dto.targetUserId);
+
+            // 3.1 Initialize Parallel Entries (If next step is parallel)
+            let parallelAssignees: number[] = [];
+            if (nextStep.esParalelo) {
+                // Fetch signatures required for next step
+                // We use manager to ensure consistency
+                const signatures = await manager.createQueryBuilder(PasoFlujoFirma, 'sig')
+                    .leftJoinAndSelect('sig.cargo', 'cargo')
+                    .where('sig.pasoId = :pasoId', { pasoId: nextStep.id })
+                    .andWhere('sig.estado = :estado', { estado: 1 })
+                    .getMany();
+
+                for (const sig of signatures) {
+                    let targetUserId: number | null = sig.usuarioId;
+                    if (!targetUserId && sig.cargoId) {
+                        const candidates = await this.assignmentService.getUsersByRole(sig.cargoId, ticket.empresaId, ticket.regionalId ?? undefined);
+
+                        if (dto.manualAssignments && dto.manualAssignments[sig.cargoId]) {
+                            targetUserId = dto.manualAssignments[sig.cargoId];
+                        } else if (candidates.length > 0) {
+                            targetUserId = candidates[0].id; // Pick first auto
+                        } else if (dto.targetUserId) {
+                            targetUserId = dto.targetUserId;
+                        }
+                    }
+
+                    if (targetUserId) {
+                        parallelAssignees.push(targetUserId);
+
+                        // Check existence to prevent duplicate errors on retry (self-healing)
+                        const existing = await txTicketParaleloRepo.findOne({
+                            where: { ticketId: ticket.id, pasoId: nextStep.id, usuarioId: targetUserId }
+                        });
+
+                        if (!existing) {
+                            const tp = txTicketParaleloRepo.create({
+                                ticketId: ticket.id,
+                                pasoId: nextStep.id,
+                                usuarioId: targetUserId,
+                                estado: 'Pendiente',
+                                activo: 1
+                            });
+                            await txTicketParaleloRepo.save(tp);
+                        }
+                    }
                 }
             }
-        }
 
-        // 4. Update Ticket
-        ticket.pasoActualId = nextStep.id;
+            // 4. Update Ticket with new Step
+            ticket.pasoActual = nextStep; // Update relation object
+            ticket.pasoActualId = nextStep.id; // Update ID
 
-        if (nextStep.esParalelo && parallelAssignees.length > 0) {
-            ticket.usuarioAsignadoIds = parallelAssignees; // Assign to ALL parallel signers
-        } else {
-            ticket.usuarioAsignadoIds = assigneeId ? [assigneeId] : [];
-        }
-
-        // --- NEW: Sync with normalized table ---
-        // 1. Clear existing assignments
-        await this.ticketAsignadoRepo.delete({ ticketId: ticket.id });
-
-        // 2. Determine new user IDs
-        const newUserIds = (nextStep.esParalelo && parallelAssignees.length > 0)
-            ? parallelAssignees
-            : (assigneeId ? [assigneeId] : []);
-
-        // 3. Create new entries
-        const newAssignmentEntities = newUserIds.map(uid => this.ticketAsignadoRepo.create({
-            ticketId: ticket.id,
-            usuarioId: uid,
-            tipo: nextStep.esParalelo ? 'Paralelo' : 'Principal'
-        }));
-
-        if (newAssignmentEntities.length > 0) {
-            await this.ticketAsignadoRepo.save(newAssignmentEntities);
-        }
-
-        if (assigneeId || parallelAssignees.length > 0) {
-            // ticket.fechaAsignacion = new Date(); 
-        }
-
-        const savedTicket = await this.ticketRepo.save(ticket);
-
-
-
-        // 4.5. Handle Signature (Sequential Signing)
-
-        let signaturePath: string | null = null;
-
-        // Path to the "Master" PDF for this ticket (Accumulative)
-        // Storage logic: public/documentos/{ticketId}/filename
-        const masterPdfPath = path.resolve(process.cwd(), 'public', 'documentos', ticket.id.toString(), `ticket_${ticket.id}.pdf`);
-        let sourcePath = masterPdfPath;
-
-        try {
-            await fs.access(masterPdfPath);
-        } catch {
-            // File doesn't exist. Two cases: 
-            // 1. First time generating (e.g. didn't have template fields).
-            sourcePath = ''; // Marker for "No file"
-        }
-
-        if (sourcePath) {
-            try {
-                // Try to stamp signatures for the CURRENT step (the one being completed)
-                const signedBuffer = await this.signatureStampingService.stampSignaturesForStep(
-                    sourcePath,
-                    currentStep.id,
-                    ticket.id
-                );
-
-                // Overwrite master
-                await fs.writeFile(masterPdfPath, signedBuffer);
-
-                // Save version to history (documents)
-                const filename = `ticket_${ticket.id}_step_${currentStep.id}_signed.pdf`;
-                await this.documentsService.saveTicketFile(ticket.id, Buffer.from(signedBuffer), filename);
-
-                // Update signaturePath for history
-                signaturePath = filename;
-
-            } catch (e) {
-                this.logger.warn(`Sequential signing failed for Ticket ${ticket.id}: ${e.message}`);
+            if (nextStep.esParalelo && parallelAssignees.length > 0) {
+                ticket.usuarioAsignadoIds = parallelAssignees;
+            } else {
+                ticket.usuarioAsignadoIds = assigneeId ? [assigneeId] : [];
             }
-        }
 
-        // Legacy UI Signature Handling (Optional: if UI sends a drawing, we attach it too)
-        if (dto.signature) {
-            try {
-                const base64Data = dto.signature.replace(/^data:image\/\w+;base64,/, "");
-                const buffer = Buffer.from(base64Data, 'base64');
-                const filename = `signature_drawing_${Date.now()}.png`;
-                await this.documentsService.saveTicketFile(ticket.id, buffer, filename);
+            // 4.1 Sync with normalized table
+            await txTicketAsignadoRepo.delete({ ticketId: ticket.id });
 
-                // If we didn't have a sequential PDF, we can use this as ref
-                if (!signaturePath) signaturePath = filename;
-            } catch (e) {
-                this.logger.error(`Failed to save signature for ticket ${ticket.id}`, e);
-            }
-        }
+            const newUserIds = (nextStep.esParalelo && parallelAssignees.length > 0)
+                ? parallelAssignees
+                : (assigneeId ? [assigneeId] : []);
 
-        // 5. Record History
-        // 5a. Primary History Record (Generic for the step move)
-        // For parallel steps, use the first parallel assignee as the "primary" for history purposes
-        const primaryAssigneeForHistory = nextStep.esParalelo && parallelAssignees.length > 0
-            ? parallelAssignees[0]
-            : assigneeId;
-
-        const history = this.historyRepo.create({
-            ticketId: ticket.id,
-            pasoId: nextStep.id,
-            usuarioAsignadoId: primaryAssigneeForHistory || undefined,
-            usuarioAsignadorId: dto.actorId,
-            fechaAsignacion: new Date(),
-            // Log generic action description instead of user comment
-            comentario: transitionUsed?.condicionNombre
-                ? `Transición: ${transitionUsed.condicionNombre}`
-                : (nextStep.esParalelo ? `Asignación Paralela para paso: ${nextStep.nombre}` : `Avanzó al paso: ${nextStep.nombre}`),
-            estado: 1,
-            estadoTiempoPaso: 'A Tiempo',
-            firmaPath: signaturePath
-        });
-        await this.historyRepo.save(history);
-
-        // 5b. Parallel Assignments History
-        // If next step is parallel, we record an assignment for EACH person involved so it appears in their logs
-        // Skip the first one since it's already in the primary record
-        if (nextStep.esParalelo && parallelAssignees.length > 1) {
-            for (let i = 1; i < parallelAssignees.length; i++) {
-                const pUid = parallelAssignees[i];
-                const hPar = this.historyRepo.create({
-                    ticketId: ticket.id,
-                    pasoId: nextStep.id,
-                    usuarioAsignadoId: pUid,
-                    usuarioAsignadorId: dto.actorId,
-                    fechaAsignacion: new Date(),
-                    comentario: `Asignación Paralela para paso: ${nextStep.nombre}`,
-                    estado: 1,
-                    estadoTiempoPaso: 'Pendiente',
-                    firmaPath: null
-                });
-                await this.historyRepo.save(hPar);
-            }
-        }
-
-        if (assigneeId) {
-            const assignee = await this.userRepo.findOne({ where: { id: assigneeId } });
-            if (assignee) {
-                await this.notificationsService.notifyAssignment(savedTicket, assignee);
-            }
-        }
-
-        // 6. Save Dynamic Fields (Bulk Insert)
-        if (dto.templateValues && dto.templateValues.length > 0) {
-            const valuesToSave = dto.templateValues.map(tv => this.ticketCampoValorRepo.create({
+            const newAssignmentEntities = newUserIds.map(uid => txTicketAsignadoRepo.create({
                 ticketId: ticket.id,
-                campoId: tv.campoId,
-                valor: tv.valor,
-                estado: 1
+                usuarioId: uid,
+                tipo: nextStep.esParalelo ? 'Paralelo' : 'Principal',
+                fechaAsignacion: new Date()
             }));
 
-            await this.ticketCampoValorRepo.save(valuesToSave);
-        }
+            if (newAssignmentEntities.length > 0) {
+                await txTicketAsignadoRepo.save(newAssignmentEntities);
+            }
 
-        return savedTicket;
+            const savedTicket = await txTicketRepo.save(ticket);
+            this.logger.log(`Ticket ${savedTicket.id} moved to step ${nextStep.id} (${nextStep.nombre})`);
+
+            // 5. Handle Signature Stamping for PREVIOUS Step (Sequential)
+            // (Filesystem operations are side-effects, we do them here)
+            let signaturePath: string | null = null;
+            const masterPdfPath = path.resolve(process.cwd(), 'public', 'documentos', ticket.id.toString(), `ticket_${ticket.id}.pdf`);
+            let sourcePath = masterPdfPath;
+
+            try {
+                await fs.access(masterPdfPath);
+            } catch {
+                sourcePath = '';
+            }
+
+            if (sourcePath) {
+                try {
+                    const signedBuffer = await this.signatureStampingService.stampSignaturesForStep(
+                        sourcePath,
+                        currentStep.id,
+                        ticket.id
+                    );
+                    await fs.writeFile(masterPdfPath, signedBuffer);
+                    const filename = `ticket_${ticket.id}_step_${currentStep.id}_signed.pdf`;
+                    await this.documentsService.saveTicketFile(ticket.id, Buffer.from(signedBuffer), filename);
+                    signaturePath = filename;
+                } catch (e) {
+                    this.logger.warn(`Sequential signing failed for Ticket ${ticket.id}: ${e.message}`);
+                }
+            }
+
+            // Legacy Signature Support
+            if (dto.signature) {
+                try {
+                    const base64Data = dto.signature.replace(/^data:image\/\w+;base64,/, "");
+                    const buffer = Buffer.from(base64Data, 'base64');
+                    const filename = `signature_drawing_${Date.now()}.png`;
+                    await this.documentsService.saveTicketFile(ticket.id, buffer, filename);
+                    if (!signaturePath) signaturePath = filename;
+                } catch (e) {
+                    this.logger.error(`Failed to save signature`, e);
+                }
+            }
+
+            // 6. Save User Comment (if any)
+            if (dto.comentario) {
+                const commentDetails = txTicketDetalleRepo.create({
+                    ticketId: ticket.id,
+                    usuarioId: dto.actorId,
+                    descripcion: dto.comentario,
+                    fechaCreacion: new Date(),
+                    estado: 1
+                });
+                await txTicketDetalleRepo.save(commentDetails);
+            }
+
+            // 7. Record History
+            const primaryAssigneeForHistory = nextStep.esParalelo && parallelAssignees.length > 0
+                ? parallelAssignees[0]
+                : assigneeId;
+
+            const history = txHistoryRepo.create({
+                ticketId: ticket.id,
+                pasoId: nextStep.id,
+                usuarioAsignadoId: primaryAssigneeForHistory || undefined,
+                usuarioAsignadorId: dto.actorId,
+                fechaAsignacion: new Date(),
+                comentario: transitionUsed?.condicionNombre
+                    ? `Transición: ${transitionUsed.condicionNombre}`
+                    : (nextStep.esParalelo ? `Asignación Paralela para paso: ${nextStep.nombre}` : `Avanzó al paso: ${nextStep.nombre}`),
+                estado: 1,
+                estadoTiempoPaso: 'A Tiempo',
+                firmaPath: signaturePath
+            });
+            await txHistoryRepo.save(history);
+
+            // Parallel Assignments History (Secondary)
+            if (nextStep.esParalelo && parallelAssignees.length > 1) {
+                for (let i = 1; i < parallelAssignees.length; i++) {
+                    const pUid = parallelAssignees[i];
+                    const hPar = txHistoryRepo.create({
+                        ticketId: ticket.id,
+                        pasoId: nextStep.id,
+                        usuarioAsignadoId: pUid,
+                        usuarioAsignadorId: dto.actorId,
+                        fechaAsignacion: new Date(),
+                        comentario: `Asignación Paralela para paso: ${nextStep.nombre}`,
+                        estado: 1,
+                        estadoTiempoPaso: 'Pendiente',
+                        firmaPath: null
+                    });
+                    await txHistoryRepo.save(hPar);
+                }
+            }
+
+            // 8. Dynamic Fields
+            if (dto.templateValues && dto.templateValues.length > 0) {
+                const valuesToSave = dto.templateValues.map(tv => this.ticketCampoValorRepo.create({
+                    ticketId: ticket.id,
+                    campoId: tv.campoId,
+                    valor: tv.valor,
+                    estado: 1
+                }));
+                await manager.save(TicketCampoValor, valuesToSave);
+            }
+
+            // Notifications can be fire-and-forget or awaited outside
+            if (assigneeId) {
+                this.userRepo.findOne({ where: { id: assigneeId } }).then(assignee => {
+                    if (assignee) this.notificationsService.notifyAssignment(savedTicket, assignee);
+                });
+            }
+
+            return savedTicket;
+        });
     }
 
     /**
@@ -910,17 +900,38 @@ export class WorkflowEngineService {
         task.comentario = comentario || null;
         await this.ticketParaleloRepo.save(task);
 
-        // 3. Save signature if provided
+        // 3. Save signature & Stamp immediately
         if (signature) {
             try {
+                // 3a. Save File
                 const base64Data = signature.replace(/^data:image\/\w+;base64,/, "");
                 const buffer = Buffer.from(base64Data, 'base64');
                 const filename = `parallel_signature_user${userId}_${Date.now()}.png`;
                 await this.documentsService.saveTicketFile(ticketId, buffer, filename);
+
+                // 3b. Stamp PDF (using the file we just saved)
+                const masterPdfPath = path.resolve(process.cwd(), 'public', 'documentos', ticketId.toString(), `ticket_${ticketId}.pdf`);
+                const signatureAbsolutePath = path.resolve(process.cwd(), 'public', 'documentos', ticketId.toString(), filename);
+
+                await fs.access(masterPdfPath);
+
+                // Pass signatureAbsolutePath to stamp ONLY this signature using the fresh file
+                const signedBuffer = await this.signatureStampingService.stampSignaturesForStep(
+                    masterPdfPath,
+                    task.pasoId,
+                    ticketId,
+                    userId,
+                    signatureAbsolutePath
+                );
+
+                await fs.writeFile(masterPdfPath, signedBuffer);
+                this.logger.log(`Stamped signature for user ${userId} on ticket ${ticketId}`);
+
             } catch (e) {
-                this.logger.error(`Failed to save parallel signature for user ${userId}`, e);
+                this.logger.warn(`Failed to handle parallel signature for user ${userId}: ${e.message}`);
             }
         }
+
 
         // 4. Record comment if provided
         if (comentario) {

@@ -28,7 +28,7 @@ export class WorkflowController {
     @CheckPolicies((ability: AppAbility) => ability.can('update', 'Ticket'))
     async transition(@Body() dto: TransitionTicketDto, @Req() req: any) {
         // Force actor to be the logged in user
-        dto.actorId = req.user.id;
+        dto.actorId = req.user.usu_id;
         return this.workflowService.transitionStep(dto);
     }
 
@@ -66,7 +66,7 @@ export class WorkflowController {
     @ApiResponse({ status: 403, description: 'No es el aprobador asignado' })
     @CheckPolicies((ability: AppAbility) => ability.can('update', 'Ticket'))
     async approveFlow(@Param('ticketId') ticketId: number, @Req() req: any) {
-        await this.workflowService.approveFlow(Number(ticketId), req.user.id);
+        await this.workflowService.approveFlow(Number(ticketId), req.user.usu_id);
         return { message: 'Flujo aprobado correctamente' };
     }
 
@@ -81,6 +81,6 @@ export class WorkflowController {
     @ApiResponse({ status: 404, description: 'No tienes tarea paralela pendiente para este ticket' })
     @CheckPolicies((ability: AppAbility) => ability.can('update', 'Ticket'))
     async signParallelTask(@Body() dto: SignParallelTaskDto, @Req() req: any) {
-        return this.workflowService.signParallelTask(dto, req.user.id);
+        return this.workflowService.signParallelTask(dto, req.user.usu_id);
     }
 }

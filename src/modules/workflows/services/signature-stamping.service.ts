@@ -29,73 +29,118 @@ export class SignatureStampingService {
      * @param ticketId Optional Ticket ID context (if signatures depend on dynamic assignees in future).
      * @returns Uint8Array of the signed PDF.
      */
-    async stampSignaturesForStep(pdfPath: string, pasoId: number, ticketId?: number, signatoryUserId?: number): Promise<Uint8Array> {
+    async stampSignaturesForStep(pdfPath: string, pasoId: number, ticketId?: number, signatoryUserId?: number, overrideSignaturePath?: string): Promise<Uint8Array> {
         this.logger.log(`Preparing signatures for Step ${pasoId} on PDF: ${pdfPath}`);
 
         // 1. Get Signature Configurations for this Step
         const firmasConfig = await this.firmaRepo.find({
             where: { pasoId, estado: 1 },
             relations: ['usuario', 'cargo'],
+            order: { id: 'ASC' } // Deterministic order for slot allocation
         });
 
         if (firmasConfig.length === 0) {
             this.logger.log(`No signature configurations found for Step ${pasoId}. Returning original PDF.`);
-            // Return original file content if no stamps needed
-            const fs = require('fs/promises');
+            const fs = await import('fs/promises');
             return fs.readFile(pdfPath);
         }
 
         const imagesToStamp: ImageStampConfig[] = [];
 
-        // 2. Resolve Images for each config
-        for (const config of firmasConfig) {
-            let userToSign: User | null = null;
+        // Strategy: 
+        // If signatoryUserId is provided, we must identify WHICH specific config slot they occupy.
+        // 1. Check for Explicit Assignment (highest priority)
+        // 2. Check for Generic/Role Assignment (requires slot allocation by order)
 
-            if (config.usuarioId) {
-                // Direct User Assignment
-                userToSign = config.usuario;
-            } else if (config.cargoId) {
-                // Role-based Assignment
-                // Logic: Find a user with this role. 
-                // CRITICAL: Which user? The one assigned to the ticket? Or any user with the role?
-                // Legacy system often stamped the 'Boss' or specific static roles.
-                // For now, if ticketId is provided, we could try to resolve context, but let's look for *any* active user with that role 
-                // OR (better) relying on the specific user link if available.
-                // If it's pure role based, we might default to the first found or skip if ambiguous.
-                // Let's defer strict role resolution logic, prioritizing direct user link or checking if `usuario` relation is populated.
+        let configsToProcess = firmasConfig;
 
-                if (!userToSign) {
-                    // Try to find a user if not directly loaded (though relation should handle it)
-                    // If config.usuario is null, it means it's a generic role slot.
-                    // TODO: Resolve dynamic agent based on Ticket context (e.g. Current Assignee or Supervisor)
-                    this.logger.warn(`Signature config #${config.id} is Role-based (Cargo ${config.cargoId}) but dynamic resolution is pending. Skipping.`);
-                    continue;
+        if (signatoryUserId && ticketId) {
+            // Filter configs to only those relevant for this user
+            const explicitConfigs = firmasConfig.filter(c => c.usuarioId === signatoryUserId);
+
+            if (explicitConfigs.length > 0) {
+                // If explicitly defined, use those. Ignore generics to avoid double stamping.
+                configsToProcess = explicitConfigs;
+            } else {
+                // No explicit config. Check if we match any generic/role config.
+                // Logic: "First Come First Served" for generic slots.
+                const genericConfigs = firmasConfig.filter(c => !c.usuarioId);
+
+                if (genericConfigs.length > 0) {
+                    // Determine my "Slot Index" among all parallel signers for generic slots
+                    // We need TicketParalelo repo.
+                    const parallelRepo = this.firmaRepo.manager.getRepository('TicketParalelo');
+
+                    const completedTasks = await parallelRepo.find({
+                        where: {
+                            ticketId,
+                            pasoId,
+                            estado: 'Completado'
+                        },
+                        order: { fechaCierre: 'ASC', id: 'ASC' }
+                    }) as any[]; // Cast as any because we are using manager.getRepository('string')
+
+                    // Filter tasks to only those belonging to users who are GENERICALLY signing
+                    // (i.e. exclude users who had explicit slots if possible, but that's hard to know here)
+                    // Assumption: If I am generic, other generics are also competing for generic slots.
+
+                    // Simple heuristic: Get index of current user in the completed list.
+                    const myTaskIndex = completedTasks.findIndex(t => t.usuarioId === signatoryUserId);
+
+                    if (myTaskIndex !== -1 && myTaskIndex < genericConfigs.length) {
+                        // I occupy the Nth generic slot
+                        configsToProcess = [genericConfigs[myTaskIndex]];
+                        this.logger.log(`User ${signatoryUserId} allocated to Generic Signature Slot #${myTaskIndex + 1} (Config ID: ${configsToProcess[0].id})`);
+                    } else {
+                        if (myTaskIndex === -1) {
+                            this.logger.warn(`User ${signatoryUserId} signing but task not found in Parallel records? Skipping stamp.`);
+                            configsToProcess = [];
+                        } else {
+                            this.logger.warn(`User ${signatoryUserId} is signer #${myTaskIndex + 1} but only ${genericConfigs.length} generic slots available. Skipping stamp.`);
+                            configsToProcess = [];
+                        }
+                    }
+                } else {
+                    // No explicit and no generic slots?
+                    configsToProcess = [];
                 }
             }
+        }
 
-            if (!userToSign) {
-                this.logger.warn(`No user resolved for Signature Config #${config.id}. Skipping.`);
-                continue;
+        // 2. Resolve Images for each config
+        for (const config of configsToProcess) {
+            let userToSign: User | null = null;
+            let currentSignerId: number | null = config.usuarioId ? config.usuarioId : null;
+
+            // ... (rest of logic to resolve user/image)
+
+            if (signatoryUserId && (currentSignerId === null || currentSignerId === signatoryUserId)) {
+                // If we are overriding/stamping for a specific user, ensure we use their data
+                userToSign = await this.userRepo.findOne({ where: { id: signatoryUserId } });
+            } else if (config.usuarioId) {
+                userToSign = config.usuario;
             }
 
-            if (!userToSign.firma) {
-                this.logger.warn(`User #${userToSign.id} (${userToSign.email}) has no signature image configured. Skipping.`);
-                continue;
-            }
+            if (!userToSign) continue;
 
             // 3. Prepare Stamp Config
-            // user.firma typically stores relative path or filename. Need absolute path.
-            // Assumption: 'firma' stores distinct path, e.g., 'uploads/signatures/sign.png'
-            // We need to resolve this relative to the project root or upload dir.
-            // Adjust base path as per environment.
-            const signatureAbsolutePath = path.resolve(process.cwd(), userToSign.firma);
+            let signatureAbsolutePath: string;
+
+            // USE OVERRIDE IF AVAILABLE (for dynamic signatures of the current signer)
+            if (overrideSignaturePath && signatoryUserId && userToSign.id === signatoryUserId) {
+                signatureAbsolutePath = overrideSignaturePath;
+            } else if (userToSign.firma) {
+                signatureAbsolutePath = path.resolve(process.cwd(), userToSign.firma);
+            } else {
+                continue;
+            }
 
             imagesToStamp.push({
                 imagePath: signatureAbsolutePath,
                 x: config.coordX,
                 y: config.coordY,
                 page: config.pagina || 1,
-                width: 100, // Default width, can be adjusted or added to entity later
+                width: 100, // Default width
                 height: 50, // Default height
                 tag: config.etiqueta || undefined, // Smart Tag
             });
@@ -105,7 +150,7 @@ export class SignatureStampingService {
         if (imagesToStamp.length > 0) {
             return this.pdfStampingService.stampImages(pdfPath, imagesToStamp);
         } else {
-            const fs = require('fs/promises');
+            const fs = await import('fs/promises');
             return fs.readFile(pdfPath);
         }
     }
