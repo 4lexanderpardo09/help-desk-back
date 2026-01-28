@@ -162,4 +162,21 @@ export class DocumentsService {
             throw new NotFoundException(`No PDF generated yet for Ticket ${ticketId}`);
         }
     }
+
+    /**
+     * Download a Template PDF by filename
+     */
+    async getTemplate(filename: string): Promise<{ stream: StreamableFile, filename: string, mimeType: string }> {
+        // Validation basic
+        if (filename.includes('..') || filename.includes('/')) throw new BadRequestException('Invalid filename');
+
+        const relativePath = `document/formato/${filename}`;
+        const stream = await this.storageService.getStream(relativePath);
+
+        return {
+            stream,
+            filename,
+            mimeType: 'application/pdf'
+        };
+    }
 }

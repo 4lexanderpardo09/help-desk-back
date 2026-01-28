@@ -15,6 +15,11 @@ export class CreateTicketDto {
     @ApiProperty({ required: false })
     @IsOptional()
     @IsNumber()
+    empresaId?: number;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsNumber()
     subcategoriaId?: number;
 
     @ApiProperty({ required: false })

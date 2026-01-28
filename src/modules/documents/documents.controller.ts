@@ -134,4 +134,21 @@ export class DocumentsController {
 
         return stream;
     }
+
+    @Get('template/:filename')
+    @ApiOperation({ summary: 'Descargar Plantilla PDF' })
+    @CheckPolicies((ability: AppAbility) => ability.can('create', 'Ticket')) // Allow creators to get templates
+    async downloadTemplate(
+        @Param('filename') filename: string,
+        @Res({ passthrough: true }) res: Response,
+    ): Promise<StreamableFile> {
+        const { stream, mimeType } = await this.documentsService.getTemplate(filename);
+
+        res.set({
+            'Content-Type': mimeType,
+            'Content-Disposition': `attachment; filename="${filename}"`,
+        });
+
+        return stream;
+    }
 }

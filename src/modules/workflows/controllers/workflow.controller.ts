@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards, Req, Get, Param } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, Req, Get, Param, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { WorkflowEngineService } from '../services/workflow-engine.service';
 import { TransitionTicketDto } from '../dto/workflow-transition.dto';
@@ -40,8 +40,8 @@ export class WorkflowController {
     @ApiOperation({ summary: 'Verificar si el inicio de flujo requiere selección manual' })
     @ApiResponse({ status: 200, description: 'Retorna requerimientos y candidatos', type: CheckStartFlowResponseDto })
     @CheckPolicies((ability: AppAbility) => ability.can('create', 'Ticket'))
-    async checkStartFlow(@Param('subcategoriaId') subcategoriaId: number) {
-        return this.workflowService.checkStartFlow(Number(subcategoriaId));
+    async checkStartFlow(@Param('subcategoriaId') subcategoriaId: number, @Query('companyId') companyId?: number) {
+        return this.workflowService.checkStartFlow(Number(subcategoriaId), companyId ? Number(companyId) : undefined);
     }
 
     /**

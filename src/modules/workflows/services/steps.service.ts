@@ -5,6 +5,8 @@ import { PasoFlujo } from '../entities/paso-flujo.entity';
 import { PasoFlujoUsuario } from '../entities/paso-flujo-usuario.entity';
 import { CreatePasoFlujoDto } from '../dto/create-paso-flujo.dto';
 import { UpdatePasoFlujoDto } from '../dto/update-paso-flujo.dto';
+import { PasoFlujoFirma } from '../entities/paso-flujo-firma.entity';
+import { CampoPlantilla } from '../../templates/entities/campo-plantilla.entity';
 import { ApiQueryHelper, PaginatedResult } from '../../../common/utils/api-query-helper';
 
 @Injectable()
@@ -14,6 +16,10 @@ export class StepsService {
         private readonly pasoRepo: Repository<PasoFlujo>,
         @InjectRepository(PasoFlujoUsuario)
         private readonly pasoUsuarioRepo: Repository<PasoFlujoUsuario>,
+        @InjectRepository(PasoFlujoFirma)
+        private readonly firmaRepo: Repository<PasoFlujoFirma>,
+        @InjectRepository(CampoPlantilla)
+        private readonly campoRepo: Repository<CampoPlantilla>,
     ) { }
 
     private readonly allowedIncludes = ['flujo', 'cargoAsignado', 'firmas', 'campos', 'usuarios'];
@@ -95,8 +101,25 @@ export class StepsService {
             }
         }
 
-        // Note: firmas and campos are handled via cascade in their own services/controllers
-        // If needed, implement similar sync logic here
+        // Detect changes in signatures
+        if (firmas !== undefined) {
+            await this.firmaRepo.delete({ pasoId: id });
+            if (firmas.length > 0) {
+                // Determine clean objects
+                const newFirmas = this.firmaRepo.create(firmas.map((f: any) => ({ ...f, pasoId: id })));
+                await this.firmaRepo.save(newFirmas);
+            }
+        }
+
+        // Detect changes in template fields
+        if (campos !== undefined) {
+            // Because CampoPlantilla might be used loosely, assume simpler replacement model for this Step context
+            await this.campoRepo.delete({ pasoId: id });
+            if (campos.length > 0) {
+                const newCampos = this.campoRepo.create(campos.map((c: any) => ({ ...c, pasoId: id })));
+                await this.campoRepo.save(newCampos);
+            }
+        }
 
         return this.show(id);
     }

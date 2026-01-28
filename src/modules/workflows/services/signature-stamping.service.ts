@@ -67,37 +67,54 @@ export class SignatureStampingService {
                 const genericConfigs = firmasConfig.filter(c => !c.usuarioId);
 
                 if (genericConfigs.length > 0) {
-                    // Determine my "Slot Index" among all parallel signers for generic slots
-                    // We need TicketParalelo repo.
-                    const parallelRepo = this.firmaRepo.manager.getRepository('TicketParalelo');
+                    // Strategy Update: Prioritize Role Match over Order
+                    // 1. Find config that matches my Role (Cargo)
+                    let matchedConfig = undefined;
 
-                    const completedTasks = await parallelRepo.find({
-                        where: {
-                            ticketId,
-                            pasoId,
-                            estado: 'Completado'
-                        },
-                        order: { fechaCierre: 'ASC', id: 'ASC' }
-                    }) as any[]; // Cast as any because we are using manager.getRepository('string')
+                    // Fetch user's cargo to compare
+                    const signerUser = await this.userRepo.findOne({
+                        where: { id: signatoryUserId },
+                        relations: ['cargo']
+                    });
 
-                    // Filter tasks to only those belonging to users who are GENERICALLY signing
-                    // (i.e. exclude users who had explicit slots if possible, but that's hard to know here)
-                    // Assumption: If I am generic, other generics are also competing for generic slots.
+                    if (signerUser && signerUser.cargoId) {
+                        matchedConfig = genericConfigs.find(c => c.cargoId === signerUser.cargoId);
+                    }
 
-                    // Simple heuristic: Get index of current user in the completed list.
-                    const myTaskIndex = completedTasks.findIndex(t => t.usuarioId === signatoryUserId);
-
-                    if (myTaskIndex !== -1 && myTaskIndex < genericConfigs.length) {
-                        // I occupy the Nth generic slot
-                        configsToProcess = [genericConfigs[myTaskIndex]];
-                        this.logger.log(`User ${signatoryUserId} allocated to Generic Signature Slot #${myTaskIndex + 1} (Config ID: ${configsToProcess[0].id})`);
+                    if (matchedConfig) {
+                        configsToProcess = [matchedConfig];
+                        this.logger.log(`User ${signatoryUserId} allocated to Role-Matched Signature Slot (Config ID: ${matchedConfig.id}, Label: ${matchedConfig.etiqueta})`);
                     } else {
-                        if (myTaskIndex === -1) {
-                            this.logger.warn(`User ${signatoryUserId} signing but task not found in Parallel records? Skipping stamp.`);
-                            configsToProcess = [];
+                        // 2. Fallback: Determine my "Slot Index" among all parallel signers for REMAINING generic slots
+                        this.logger.warn(`User ${signatoryUserId} (Cargo: ${signerUser?.cargoId}) did not match any generic slot Cargo. Falling back to order-based allocation.`);
+
+                        // We need TicketParalelo repo.
+                        const parallelRepo = this.firmaRepo.manager.getRepository('TicketParalelo');
+
+                        const completedTasks = await parallelRepo.find({
+                            where: {
+                                ticketId,
+                                pasoId,
+                                estado: 'Completado'
+                            },
+                            order: { fechaCierre: 'ASC', id: 'ASC' }
+                        }) as any[];
+
+                        // Simple heuristic: Get index of current user in the completed list.
+                        const myTaskIndex = completedTasks.findIndex(t => t.usuarioId === signatoryUserId);
+
+                        if (myTaskIndex !== -1 && myTaskIndex < genericConfigs.length) {
+                            // I occupy the Nth generic slot (this is risky if roles are mixed, but valid fallback)
+                            configsToProcess = [genericConfigs[myTaskIndex]];
+                            this.logger.log(`User ${signatoryUserId} allocated to Generic Signature Slot #${myTaskIndex + 1} (Config ID: ${configsToProcess[0].id})`);
                         } else {
-                            this.logger.warn(`User ${signatoryUserId} is signer #${myTaskIndex + 1} but only ${genericConfigs.length} generic slots available. Skipping stamp.`);
-                            configsToProcess = [];
+                            if (myTaskIndex === -1) {
+                                this.logger.warn(`User ${signatoryUserId} signing but task not found in Parallel records? Skipping stamp.`);
+                                configsToProcess = [];
+                            } else {
+                                this.logger.warn(`User ${signatoryUserId} is signer #${myTaskIndex + 1} but only ${genericConfigs.length} generic slots available. Skipping stamp.`);
+                                configsToProcess = [];
+                            }
                         }
                     }
                 } else {

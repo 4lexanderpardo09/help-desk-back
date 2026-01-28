@@ -171,17 +171,10 @@ export class WorkflowEngineService {
      * @param subcategoriaId - ID of the subcategory
      * @returns DTO with requirements and candidates
      */
-    async checkStartFlow(subcategoriaId: number): Promise<CheckStartFlowResponseDto> {
+    async checkStartFlow(subcategoriaId: number, companyId?: number): Promise<CheckStartFlowResponseDto> {
         const step = await this.getInitialStep(subcategoriaId);
 
-        // Use unified assignment logic (Passing mock ticket shell with just usuarioId for context if needed, 
-        // but here we might not have a ticket yet. We need a way to pass context.
-        // Usually Start Flow is checked BEFORE ticket creation, so we might only have the potential creator (User ID from Token).
-        // Let's assume for this check we return ALL candidates or require context.
-        // Since this endpoint is usually public/auth, we can't easily guess the creator for regional logic 
-        // unless we passed the user ID to this service method.
-        // For now, let's keep it simple: Resolve candidates broadly.
-
+        // ... (existing logic) ...
         // FIXME: Ideally pass the current user from Controller to improve accuracy.
         // For now creating a dummy object for compatibility
         const dummyTicketContext = { usuarioId: -1, usuario: null };
@@ -189,17 +182,22 @@ export class WorkflowEngineService {
         const candidates = await this.assignmentService.getCandidatesForStep(step, dummyTicketContext);
 
         if (candidates.length === 0) {
-            // Auto assign (e.g. pool) or just no candidates found? 
-            // If strictly automatic (creator/boss) and found 1, returns 1.
-            // If Role based and found 0, returns 0.
-
             // Check if it was meant to be automatic but failed (e.g. Boss not found)
             if (step.asignarCreador || step.necesitaAprobacionJefe) {
+                // Resolve PDF for auto case too? Although usually auto-step implies instant creation.
+                // But if user needs to download it anyway:
+                let pdfTemplate = step.nombreAdjunto;
+                if (companyId) {
+                    const companyTemplate = await this.templatesService.getTemplateForFlow(step.flujoId, companyId);
+                    if (companyTemplate) pdfTemplate = companyTemplate.nombrePlantilla;
+                }
+
                 return {
                     requiresManualSelection: false,
                     candidates: [],
                     initialStepId: step.id,
-                    initialStepName: step.nombre
+                    initialStepName: step.nombre,
+                    pdfTemplate: pdfTemplate || undefined
                 };
             }
         }
@@ -213,21 +211,21 @@ export class WorkflowEngineService {
         }));
 
         // Determine if manual selection is required
-        // Prioritize explicit configuration in Step
         let requiresManual = !!step.requiereSeleccionManual;
 
-        // If not explicitly manual, check implicit conditions
         if (!requiresManual) {
-            // If it's a Role assignment (Tarea Nacional) with MULTIPLE candidates, we might force manual?
-            // Users usually uncheck "Manual" to imply "Pick Any" or "Auto".
-            // However, if we have 1 candidate, we definitely don't need manual.
             if (candidateDtos.length > 1) {
-                // Implicitly force manual if multiple choices exist and no other auto-logic is defined?
-                // Or trust the user? If they unchecked manual, maybe they want random assignment.
-                // For safety: If > 1 candidate, ask user.
                 requiresManual = true;
             }
-            // If 1 candidate, it will be auto-selected by createTicket.
+        }
+
+        // Resolve PDF Template
+        let pdfTemplate = step.nombreAdjunto;
+        if (companyId) {
+            const companyTemplate = await this.templatesService.getTemplateForFlow(step.flujoId, companyId);
+            if (companyTemplate) {
+                pdfTemplate = companyTemplate.nombrePlantilla;
+            }
         }
 
         return {
@@ -235,7 +233,8 @@ export class WorkflowEngineService {
             candidates: candidateDtos,
             initialStepId: step.id,
             initialStepName: step.nombre,
-            templateFields: await this.templatesService.getFieldsByStep(step.id)
+            templateFields: await this.templatesService.getFieldsByStep(step.id),
+            pdfTemplate: pdfTemplate || undefined
         };
     }
 

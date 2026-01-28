@@ -37,6 +37,7 @@ import { Ruta } from './entities/ruta.entity';
 import { RutaPaso } from './entities/ruta-paso.entity';
 import { TicketParalelo } from '../tickets/entities/ticket-paralelo.entity';
 import { TicketDetalle } from '../tickets/entities/ticket-detalle.entity';
+import { CampoPlantilla } from '../templates/entities/campo-plantilla.entity';
 
 @Module({
     imports: [
@@ -51,6 +52,7 @@ import { TicketDetalle } from '../tickets/entities/ticket-detalle.entity';
             TicketAsignacionHistorico,
             User,
             TicketCampoValor,
+            CampoPlantilla,
             Ruta,
             RutaPaso,
             TicketParalelo,

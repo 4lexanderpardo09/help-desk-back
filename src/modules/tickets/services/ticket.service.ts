@@ -63,7 +63,7 @@ export class TicketService {
         // 2. Prepare Entity (Initial State)
         const ticket = this.ticketRepo.create({
             ...dto,
-            empresaId: user.empresas?.[0]?.id || 1, // Default to first company or 1
+            empresaId: dto.empresaId || user.empresas?.[0]?.id || 1, // Prioritize DTO, then User default, then 1
             departamentoId: user.departamentoId || 0,
             regionalId: user.regionalId || 0,
             fechaCreacion: new Date(),
