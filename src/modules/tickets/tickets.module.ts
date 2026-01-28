@@ -20,6 +20,7 @@ import { TicketDetalle } from './entities/ticket-detalle.entity';
 import { TicketAsignacionHistorico } from './entities/ticket-asignacion-historico.entity';
 import { TicketError } from './entities/ticket-error.entity';
 import { TicketCampoValor } from './entities/ticket-campo-valor.entity';
+import { ErrorType } from '../error-types/entities/error-type.entity';
 
 // External Entities
 import { Documento } from '../documents/entities/documento.entity';
@@ -52,7 +53,8 @@ import { TicketParalelo } from './entities/ticket-paralelo.entity';
             TicketError,
             Documento,
             DocumentoFlujo,
-            User
+            User,
+            ErrorType
         ]),
         ReglasMapeoModule,
         AuthModule,

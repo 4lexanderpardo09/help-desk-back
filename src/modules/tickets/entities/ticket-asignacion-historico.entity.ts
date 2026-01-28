@@ -3,6 +3,7 @@ import { Ticket } from './ticket.entity';
 import { User } from '../../users/entities/user.entity';
 import { PasoFlujo } from '../../workflows/entities/paso-flujo.entity';
 import { ErrorType } from '../../error-types/entities/error-type.entity';
+import { ErrorSubtype } from '../../error-types/entities/error-subtype.entity';
 
 @Entity('th_ticket_asignacion')
 export class TicketAsignacionHistorico {
@@ -61,4 +62,11 @@ export class TicketAsignacionHistorico {
     @ManyToOne(() => ErrorType, (et) => et.historiales)
     @JoinColumn({ name: 'error_code_id' })
     errorCode: ErrorType;
+
+    @Column({ name: 'error_subtype_id', type: 'int', nullable: true })
+    errorSubtypeId: number | null;
+
+    @ManyToOne(() => ErrorSubtype)
+    @JoinColumn({ name: 'error_subtype_id' })
+    errorSubtype: ErrorSubtype;
 }

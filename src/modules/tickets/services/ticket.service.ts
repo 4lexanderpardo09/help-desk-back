@@ -14,6 +14,8 @@ import { DocumentsService } from '../../documents/services/documents.service';
 import { TicketCampoValor } from '../entities/ticket-campo-valor.entity';
 import { TicketAsignado } from '../entities/ticket-asignado.entity';
 import { TicketParalelo } from '../entities/ticket-paralelo.entity';
+import { TicketAsignacionHistorico } from '../entities/ticket-asignacion-historico.entity';
+import { ErrorType, ErrorTypeCategory } from '../../error-types/entities/error-type.entity';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
@@ -41,7 +43,110 @@ export class TicketService {
         private readonly ticketAsignadoRepo: Repository<TicketAsignado>,
         @InjectRepository(TicketParalelo)
         private readonly ticketParaleloRepo: Repository<TicketParalelo>,
+        @InjectRepository(TicketAsignacionHistorico)
+        private readonly ticketAsigRepo: Repository<TicketAsignacionHistorico>,
+        @InjectRepository(ErrorType)
+        private readonly errorTypeRepo: Repository<ErrorType>,
     ) { }
+
+    /**
+     * Registers an error event for a ticket.
+     * Creates a history record with the error code, preserving current state.
+     */
+    async registerErrorEvent(ticketId: number, userId: number, dto: any): Promise<void> {
+        const ticket = await this.ticketRepo.findOne({
+            where: { id: ticketId },
+            relations: ['pasoActual']
+        });
+
+        if (!ticket) throw new NotFoundException(`Ticket ${ticketId} not found`);
+
+        const errorType = await this.errorTypeRepo.findOne({ where: { id: dto.errorTypeId } });
+        if (!errorType) throw new NotFoundException(`Error Type ${dto.errorTypeId} not found`);
+
+        const comment = dto.description ? `Evento Registrado: ${dto.description}` : 'Evento de Error Registrado';
+
+        // Find previous valid assignment to attribute the error
+        const lastAssignments = await this.ticketAsigRepo.find({
+            where: { ticketId: ticket.id },
+            order: { id: 'DESC' },
+            take: 2 // Current and Previous
+        });
+
+        const previousAssignment = lastAssignments.length > 1 ? lastAssignments[1] : null;
+        const targetUserId = previousAssignment?.usuarioAsignadoId || ticket.usuarioAsignadoIds?.[0] || 0;
+        const targetStepId = previousAssignment?.pasoId || ticket.pasoActualId || 0;
+
+        // 1. Create the History Record for the Event
+        // We attribute it to the Previous User (targetUserId) as they are the cause.
+        const errorHistory = this.ticketAsigRepo.create({
+            ticketId: ticket.id,
+            errorCodeId: dto.errorTypeId,
+            errorSubtypeId: dto.errorSubtypeId || null,
+            errorDescripcion: dto.description || null,
+            usuarioAsignadorId: userId, // User reporting
+            usuarioAsignadoId: targetUserId, // User attributed (The previous one)
+            pasoId: ticket.pasoActualId || null, // Recorded at current step/state
+            fechaAsignacion: new Date(),
+            estado: 1,
+            comentario: comment
+        });
+        await this.ticketAsigRepo.save(errorHistory);
+
+        // 2. Handle Workflow Move Logic
+        // Only PROCESS_ERROR triggers a return/move.
+        if (errorType.category === ErrorTypeCategory.PROCESS_ERROR) {
+
+            if (previousAssignment) {
+                // Special Case: Process Error && Previous User is Creator
+                if (targetUserId === ticket.usuarioId) {
+                    // Close Ticket
+                    ticket.ticketEstado = 'Cerrado';
+                    ticket.estado = 2; // Closed status code
+                    ticket.fechaCierre = new Date();
+                    ticket.errorProceso = 1; // Mark as Process Error
+                    await this.ticketRepo.save(ticket);
+
+                    // Add Closing History
+                    const closeHistory = this.ticketAsigRepo.create({
+                        ticketId: ticket.id,
+                        usuarioAsignadorId: userId,
+                        usuarioAsignadoId: targetUserId, // Assigned back to creator? or just closed.
+                        pasoId: targetStepId,
+                        fechaAsignacion: new Date(),
+                        estado: 2, // Closed
+                        comentario: 'Ticket cerrado por Error de Proceso (Devuelto al creador)'
+                    });
+                    await this.ticketAsigRepo.save(closeHistory);
+
+                    this.logger.log(`Ticket ${ticketId} CLOSED due to Process Error by User ${userId}`);
+                } else {
+                    // Return to Previous User
+                    ticket.usuarioAsignadoIds = [targetUserId];
+                    ticket.pasoActualId = targetStepId;
+                    await this.ticketRepo.save(ticket);
+
+                    // Add Return History
+                    const returnHistory = this.ticketAsigRepo.create({
+                        ticketId: ticket.id,
+                        usuarioAsignadorId: userId,
+                        usuarioAsignadoId: targetUserId,
+                        pasoId: targetStepId,
+                        fechaAsignacion: new Date(),
+                        estado: 1,
+                        comentario: `Devuelto por ${errorType.title}: ${dto.description || ''}`
+                    });
+                    await this.ticketAsigRepo.save(returnHistory);
+
+                    this.logger.log(`Ticket ${ticketId} RETURNED to User ${targetUserId} due to ${errorType.title}`);
+                }
+            } else {
+                this.logger.warn(`Ticket ${ticketId}: Is Process Error but no previous assignment found.`);
+            }
+        }
+
+        this.logger.log(`Registered Error Event ${dto.errorTypeId} for Ticket ${ticketId}`);
+    }
 
     /**
      * Crea un nuevo ticket en el sistema.

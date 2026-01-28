@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagg
 import { TicketService } from '../services/ticket.service';
 import { CreateTicketDto } from '../dto/create-ticket.dto';
 import { UpdateTicketDto } from '../dto/update-ticket.dto';
+import { RegisterErrorEventDto } from '../dto/register-error-event.dto';
 import { JwtAuthGuard } from 'src/modules/auth/jwt.guard';
 import { PoliciesGuard } from '../../../common/guards/policies.guard';
 import { CheckPolicies } from 'src/modules/auth/decorators/check-policies.decorator';
@@ -55,5 +56,13 @@ export class TicketController {
     @CheckPolicies((ability: AppAbility) => ability.can('manage', 'all')) // Only Admins
     async migrateAssignments() {
         return this.ticketService.migrateLegacyAssignments();
+    }
+
+    @Post(':id/events')
+    @ApiOperation({ summary: 'Registrar evento de error en ticket' })
+    @ApiResponse({ status: 201, description: 'Evento registrado' })
+    @CheckPolicies((ability: AppAbility) => ability.can('update', 'Ticket'))
+    async registerEvent(@Param('id') id: string, @Body() dto: RegisterErrorEventDto, @Req() req: any) {
+        return this.ticketService.registerErrorEvent(+id, req.user.usu_id, dto);
     }
 }
