@@ -68,6 +68,6 @@ import { CampoPlantilla } from '../templates/entities/campo-plantilla.entity';
     ],
     controllers: [WorkflowController, StepsController, TransitionsController, RutasController, RutaPasosController, FlowsController],
     providers: [WorkflowEngineService, SlaService, SlaSchedulerService, SignatureStampingService, StepsService, FlowsService, TransitionsService, RutasService, RutaPasosService],
-    exports: [WorkflowEngineService, SignatureStampingService, StepsService, FlowsService]
+    exports: [WorkflowEngineService, SignatureStampingService, StepsService, FlowsService, SlaService]
 })
 export class WorkflowsModule { }

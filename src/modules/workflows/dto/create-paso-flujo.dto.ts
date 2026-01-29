@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsInt, IsOptional, IsString, MaxLength } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreatePasoFlujoDto {
     @ApiProperty()
@@ -17,11 +18,13 @@ export class CreatePasoFlujoDto {
 
     @ApiProperty({ required: false })
     @IsOptional()
+    @Transform(({ value }) => (value === '' || value === null ? undefined : Number(value)))
     @IsInt()
     cargoAsignadoId?: number;
 
     @ApiProperty({ required: false, description: 'Tiempo SLA en horas' })
     @IsOptional()
+    @Transform(({ value }) => (value === '' || value === null ? undefined : Number(value)))
     @IsInt()
     tiempoHabil?: number;
 
@@ -32,6 +35,7 @@ export class CreatePasoFlujoDto {
 
     @ApiProperty({ required: false })
     @IsOptional()
+    @Transform(({ value }) => (value === '' || value === null ? undefined : Number(value)))
     @IsInt()
     requiereSeleccionManual?: number;
 
@@ -51,11 +55,13 @@ export class CreatePasoFlujoDto {
 
     @ApiProperty({ required: false })
     @IsOptional()
+    @Transform(({ value }) => (value === '' || value === null ? undefined : Number(value)))
     @IsInt()
     campoReferenciaJefeId?: number;
 
     @ApiProperty({ required: false })
     @IsOptional()
+    @Transform(({ value }) => (value === '' || value === null ? undefined : Number(value)))
     @IsInt()
     permiteCerrar?: number;
 
@@ -76,6 +82,7 @@ export class CreatePasoFlujoDto {
 
     @ApiProperty({ required: false })
     @IsOptional()
+    @Transform(({ value }) => (value === '' || value === null ? undefined : Number(value)))
     @IsInt()
     requiereCamposPlantilla?: number;
 
