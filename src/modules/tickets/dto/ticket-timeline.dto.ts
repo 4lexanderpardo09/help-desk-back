@@ -68,4 +68,7 @@ export class TicketTimelineItemDto {
 
     @ApiProperty({ required: false, description: 'Si el evento es una asignacion, a quien se asigno' })
     asignadoA?: TimelineActorDto;
+
+    @ApiProperty({ required: false })
+    metadata?: Record<string, any>;
 }

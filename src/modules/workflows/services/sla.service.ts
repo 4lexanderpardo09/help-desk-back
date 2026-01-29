@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Ticket } from '../../tickets/entities/ticket.entity';
 import { TicketAsignacionHistorico } from '../../tickets/entities/ticket-asignacion-historico.entity';
 import { NotificationsService } from '../../notifications/services/notifications.service';
+import { DateHelper } from '../../../common/utils/date.helper';
 
 /**
  * SLA Service for tracking step time limits.
@@ -23,20 +24,18 @@ export class SlaService {
 
     /**
      * Calculates if a step is on time or late based on start time and SLA days.
+     * Uses true business day logic (excluding weekends and holidays).
      * 
      * @param startDate Date the ticket entered the step.
-     * @param slaDays SLA in business days (assumed sequential days for MVP, business days logic requires holiday calendar).
+     * @param slaDays SLA in business days.
      */
     calculateSlaStatus(startDate: Date, slaDays: number): 'A Tiempo' | 'Atrasado' {
         if (!startDate || slaDays === null || slaDays === undefined) return 'A Tiempo';
 
         const now = new Date();
-        const elapsedMillis = now.getTime() - startDate.getTime();
-        // Assuming slaDays is strictly 24-hour periods for now.
-        // TODO: Implement true business day calculation (excluding weekends/holidays) if required.
-        const slaMillis = slaDays * 24 * 60 * 60 * 1000;
+        const deadline = DateHelper.addBusinessDays(startDate, slaDays);
 
-        return elapsedMillis > slaMillis ? 'Atrasado' : 'A Tiempo';
+        return now > deadline ? 'Atrasado' : 'A Tiempo';
     }
 
     /**

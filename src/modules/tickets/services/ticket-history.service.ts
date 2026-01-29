@@ -84,6 +84,9 @@ export class TicketHistoryService {
                 asignadoA: {
                     id: asig.usuarioAsignadoId,
                     nombre: asig.usuarioAsignado ? `${asig.usuarioAsignado.nombre} ${asig.usuarioAsignado.apellido}` : 'Unknown'
+                },
+                metadata: {
+                    estadoTiempoPaso: asig.estadoTiempoPaso
                 }
             });
         }
