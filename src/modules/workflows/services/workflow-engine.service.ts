@@ -5,6 +5,8 @@ import { Ticket } from '../../tickets/entities/ticket.entity';
 import { PasoFlujo } from '../entities/paso-flujo.entity';
 import { FlujoTransicion } from '../entities/flujo-transicion.entity';
 import { Flujo } from '../entities/flujo.entity';
+import { Ruta } from '../entities/ruta.entity';
+import { RutaPaso } from '../entities/ruta-paso.entity';
 import { TicketAsignacionHistorico } from '../../tickets/entities/ticket-asignacion-historico.entity';
 import { User } from '../../users/entities/user.entity';
 import { TransitionTicketDto } from '../dto/workflow-transition.dto';
@@ -12,7 +14,7 @@ import { AssignmentService } from '../../assignments/assignment.service';
 import { NotificationsService } from '../../notifications/services/notifications.service';
 import { SlaService } from './sla.service';
 import { CheckStartFlowResponseDto, UserCandidateDto } from '../dto/start-flow-check.dto';
-import { CheckNextStepResponseDto } from '../dto/check-next-step.dto';
+import { CheckNextStepResponseDto, DecisionOptionDto } from '../dto/check-next-step.dto';
 import { DocumentsService } from '../../documents/services/documents.service';
 import { TicketCampoValor } from '../../tickets/entities/ticket-campo-valor.entity';
 import { TicketParalelo } from '../../tickets/entities/ticket-paralelo.entity';
@@ -57,6 +59,10 @@ export class WorkflowEngineService {
         private readonly ticketAsignadoRepo: Repository<TicketAsignado>,
         @InjectRepository(TicketDetalle)
         private readonly ticketDetalleRepo: Repository<TicketDetalle>,
+        @InjectRepository(Ruta)
+        private readonly rutaRepo: Repository<Ruta>,
+        @InjectRepository(RutaPaso)
+        private readonly rutaPasoRepo: Repository<RutaPaso>,
     ) { }
 
     /**
@@ -336,13 +342,31 @@ export class WorkflowEngineService {
         // 1. Check for Explicit Decisions (FlujoTransicion)
         const decisions = await this.transicionRepo.find({
             where: { pasoOrigenId: currentStep.id, estado: 1 },
-            relations: ['pasoDestino']
+            relations: ['pasoDestino', 'ruta']
         });
 
         if (decisions.length > 0) {
             // Decision Branch
             const decisionOptions = await Promise.all(decisions.map(async (d) => {
-                const targetStep = d.pasoDestino;
+                let targetStep = d.pasoDestino;
+                let isRoute = false;
+
+                // Handle Route Transition
+                if (!targetStep && d.rutaId) {
+                    // Find first step of the route
+                    const routeStart = await this.rutaPasoRepo.findOne({
+                        where: { rutaId: d.rutaId, estado: 1 },
+                        order: { orden: 'ASC' },
+                        relations: ['paso']
+                    });
+                    if (routeStart?.paso) {
+                        targetStep = routeStart.paso;
+                        isRoute = true;
+                    }
+                }
+
+                if (!targetStep) return null; // Skip invalid transitions
+
                 // Unified candidate check
                 const candidates = await this.assignmentService.getCandidatesForStep(targetStep, ticket);
                 // Convert to DTO
@@ -380,18 +404,26 @@ export class WorkflowEngineService {
 
                 return {
                     decisionId: d.condicionClave || '',
-                    label: d.condicionNombre || d.condicionClave || 'Opción',
+                    label: d.condicionNombre || (isRoute ? `Ruta: ${d.ruta?.nombre}` : (d.condicionClave || 'Opción')),
                     targetStepId: targetStep.id,
                     requiresManualAssignment: requiresManual,
                     candidates: candidateDtos,
-                    missingRoles: missingRoles.length > 0 ? missingRoles : undefined
+                    missingRoles: missingRoles.length > 0 ? missingRoles : undefined,
+                    isRoute: isRoute
                 };
             }));
 
-            return {
-                transitionType: 'decision',
-                decisions: decisionOptions
-            };
+            // Filter out nulls (invalid transitions)
+            const validDecisions = decisionOptions.filter(d => d !== null) as DecisionOptionDto[];
+
+            if (validDecisions.length > 0) {
+                return {
+                    transitionType: 'decision',
+                    decisions: validDecisions
+                };
+            }
+            // If no valid decisions found (e.g. Broken routes), fallback to linear?? 
+            // Better to return empty or fallback. Let's fallback to linear if decisions array is empty after filter.
         }
 
         // 2. Linear Progression (Fallback)
