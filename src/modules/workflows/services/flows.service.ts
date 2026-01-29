@@ -13,7 +13,18 @@ export class FlowsService {
         private readonly flujoRepo: Repository<Flujo>,
     ) { }
 
-    private readonly allowedIncludes = ['subcategoria', 'subcategoria.categoria'];
+    private readonly allowedIncludes = [
+        'subcategoria',
+        'subcategoria.categoria',
+        'pasos',
+        'pasos.transicionesOrigen',
+        'rutas',
+        'rutas.rutaPasos',
+        'rutas.rutaPasos.paso',
+        'rutas.rutaPasos.paso.transicionesOrigen',
+        'rutas.rutaPasos.paso.transicionesOrigen.pasoDestino', // Optional: simpler explicit target resolution
+        'pasos.transicionesOrigen.pasoDestino' // Also useful for main steps
+    ];
     private readonly allowedFilters = ['nombre', 'estado', 'subcategoria.id'];
 
     async list(options?: {
