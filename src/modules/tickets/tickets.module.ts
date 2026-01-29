@@ -39,6 +39,7 @@ import { ErrorTypesModule } from '../error-types/error-types.module';
 import { ReglasMapeoModule } from '../rules/reglas-mapeo.module';
 import { TicketAsignado } from './entities/ticket-asignado.entity';
 import { TicketParalelo } from './entities/ticket-paralelo.entity';
+import { TicketNovedad } from './entities/ticket-novedad.entity';
 
 @Module({
     imports: [
@@ -54,7 +55,9 @@ import { TicketParalelo } from './entities/ticket-paralelo.entity';
             Documento,
             DocumentoFlujo,
             User,
-            ErrorType
+            User,
+            ErrorType,
+            TicketNovedad
         ]),
         ReglasMapeoModule,
         AuthModule,

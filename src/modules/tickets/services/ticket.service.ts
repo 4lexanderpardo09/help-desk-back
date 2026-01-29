@@ -15,6 +15,8 @@ import { TicketCampoValor } from '../entities/ticket-campo-valor.entity';
 import { TicketAsignado } from '../entities/ticket-asignado.entity';
 import { TicketParalelo } from '../entities/ticket-paralelo.entity';
 import { TicketAsignacionHistorico } from '../entities/ticket-asignacion-historico.entity';
+import { TicketNovedad } from '../entities/ticket-novedad.entity';
+import { CreateTicketNovedadDto } from '../dto/create-ticket-novedad.dto';
 import { ErrorType, ErrorTypeCategory } from '../../error-types/entities/error-type.entity';
 import * as path from 'path';
 import * as fs from 'fs/promises';
@@ -45,6 +47,8 @@ export class TicketService {
         private readonly ticketParaleloRepo: Repository<TicketParalelo>,
         @InjectRepository(TicketAsignacionHistorico)
         private readonly ticketAsigRepo: Repository<TicketAsignacionHistorico>,
+        @InjectRepository(TicketNovedad)
+        private readonly ticketNovedadRepo: Repository<TicketNovedad>,
         @InjectRepository(ErrorType)
         private readonly errorTypeRepo: Repository<ErrorType>,
     ) { }
@@ -414,5 +418,90 @@ export class TicketService {
                 email: task.usuario.email
             } : undefined
         }));
+    }
+
+    /**
+     * Creates a "Novedad" (Novelty) for a ticket.
+     * Pauses the ticket logic and assigns a side-task.
+     */
+    async createNovelty(ticketId: number, userId: number, dto: CreateTicketNovedadDto) {
+        const ticket = await this.ticketRepo.findOne({ where: { id: ticketId } });
+        if (!ticket) throw new NotFoundException(`Ticket ${ticketId} not found`);
+
+        // Check if there is already an open novelty?
+        const existing = await this.ticketNovedadRepo.findOne({
+            where: { ticketId, estado: 'Abierta' }
+        });
+
+        if (existing) {
+            throw new BadRequestException(`El ticket ya tiene una novedad abierta. Debe resolverla antes de crear otra.`);
+        }
+
+        // 1. Create Novedad
+        const novedad = this.ticketNovedadRepo.create({
+            ticketId: ticketId,
+            pasoPausadoId: ticket.pasoActualId || 0,
+            usuarioAsignadoNovedadId: dto.usuarioAsignadoId,
+            usuarioCreadorNovedadId: userId,
+            descripcion: dto.descripcion,
+            fechaInicio: new Date(),
+            estado: 'Abierta'
+        });
+        await this.ticketNovedadRepo.save(novedad);
+
+        // 2. Pause Ticket
+        ticket.ticketEstado = 'Pausado';
+        await this.ticketRepo.save(ticket);
+
+        // 3. Add History
+        const history = this.ticketAsigRepo.create({
+            ticketId: ticketId,
+            usuarioAsignadorId: userId,
+            usuarioAsignadoId: dto.usuarioAsignadoId,
+            pasoId: ticket.pasoActualId,
+            fechaAsignacion: new Date(),
+            estado: 1,
+            comentario: `Novedad Creada: ${dto.descripcion}`
+        });
+        await this.ticketAsigRepo.save(history);
+
+        return novedad;
+    }
+
+    /**
+     * Resolves an active novelty for a ticket.
+     */
+    async resolveNovelty(ticketId: number, userId: number) {
+        const ticket = await this.ticketRepo.findOne({ where: { id: ticketId } });
+        if (!ticket) throw new NotFoundException(`Ticket ${ticketId} not found`);
+
+        const novelty = await this.ticketNovedadRepo.findOne({
+            where: { ticketId, estado: 'Abierta' }
+        });
+
+        if (!novelty) throw new BadRequestException(`No hay novedades abiertas para este ticket.`);
+
+        // 1. Close Novedad
+        novelty.estado = 'Resuelta';
+        novelty.fechaFin = new Date();
+        await this.ticketNovedadRepo.save(novelty);
+
+        // 2. Resume Ticket
+        ticket.ticketEstado = 'Abierto';
+        await this.ticketRepo.save(ticket);
+
+        // 3. History
+        const history = this.ticketAsigRepo.create({
+            ticketId: ticketId,
+            usuarioAsignadorId: userId,
+            usuarioAsignadoId: ticket.usuarioAsignadoIds?.[0] || userId, // Back to main assignee?
+            pasoId: ticket.pasoActualId,
+            fechaAsignacion: new Date(),
+            estado: 1,
+            comentario: `Novedad Resuelta. Ticket reanudado.`
+        });
+        await this.ticketAsigRepo.save(history);
+
+        return novelty;
     }
 }

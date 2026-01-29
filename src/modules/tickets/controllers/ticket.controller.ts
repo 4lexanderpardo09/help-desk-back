@@ -4,6 +4,7 @@ import { TicketService } from '../services/ticket.service';
 import { CreateTicketDto } from '../dto/create-ticket.dto';
 import { UpdateTicketDto } from '../dto/update-ticket.dto';
 import { RegisterErrorEventDto } from '../dto/register-error-event.dto';
+import { CreateTicketNovedadDto } from '../dto/create-ticket-novedad.dto';
 import { JwtAuthGuard } from 'src/modules/auth/jwt.guard';
 import { PoliciesGuard } from '../../../common/guards/policies.guard';
 import { CheckPolicies } from 'src/modules/auth/decorators/check-policies.decorator';
@@ -64,5 +65,21 @@ export class TicketController {
     @CheckPolicies((ability: AppAbility) => ability.can('update', 'Ticket'))
     async registerEvent(@Param('id') id: string, @Body() dto: RegisterErrorEventDto, @Req() req: any) {
         return this.ticketService.registerErrorEvent(+id, req.user.usu_id, dto);
+    }
+
+    @Post(':id/novelties')
+    @ApiOperation({ summary: 'Crear una novedad para el ticket (Pausar)' })
+    @ApiResponse({ status: 201, description: 'Novedad creada' })
+    @CheckPolicies((ability: AppAbility) => ability.can('update', 'Ticket'))
+    async createNovelty(@Param('id') id: string, @Body() dto: CreateTicketNovedadDto, @Req() req: any) {
+        return this.ticketService.createNovelty(+id, req.user.usu_id, dto);
+    }
+
+    @Put(':id/novelties/resolve')
+    @ApiOperation({ summary: 'Resolver novedad activa del ticket (Reanudar)' })
+    @ApiResponse({ status: 200, description: 'Novedad resuelta' })
+    @CheckPolicies((ability: AppAbility) => ability.can('update', 'Ticket'))
+    async resolveNovelty(@Param('id') id: string, @Req() req: any) {
+        return this.ticketService.resolveNovelty(+id, req.user.usu_id);
     }
 }
