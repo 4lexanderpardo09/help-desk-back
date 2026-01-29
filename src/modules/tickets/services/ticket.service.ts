@@ -11,6 +11,7 @@ import { TemplatesService } from '../../templates/services/templates.service';
 import { PdfStampingService, TextStampConfig } from '../../templates/services/pdf-stamping.service';
 import { NotificationsService } from '../../notifications/services/notifications.service';
 import { DocumentsService } from '../../documents/services/documents.service';
+import { SlaService } from '../../workflows/services/sla.service';
 import { TicketCampoValor } from '../entities/ticket-campo-valor.entity';
 import { TicketAsignado } from '../entities/ticket-asignado.entity';
 import { TicketParalelo } from '../entities/ticket-paralelo.entity';
@@ -51,6 +52,7 @@ export class TicketService {
         private readonly ticketNovedadRepo: Repository<TicketNovedad>,
         @InjectRepository(ErrorType)
         private readonly errorTypeRepo: Repository<ErrorType>,
+        private readonly slaService: SlaService,
     ) { }
 
     /**
@@ -81,6 +83,34 @@ export class TicketService {
         const targetUserId = previousAssignment?.usuarioAsignadoId || ticket.usuarioAsignadoIds?.[0] || 0;
         const targetStepId = previousAssignment?.pasoId || ticket.pasoActualId || 0;
 
+        // Calculate SLA for the user reporting the event (userId) if they have an active assignment
+        // We assume the user reporting is working on the ticket, so we check THEIR assignment.
+        const currentAssignment = await this.ticketAsigRepo.findOne({
+            where: {
+                ticketId: ticket.id,
+                usuarioAsignadoId: userId,
+                estado: 0 // Active assignment
+            },
+            order: { id: 'DESC' }
+        });
+
+        let slaStatus = 'A Tiempo';
+
+        if (currentAssignment) {
+            // Find the Step definition for SLA validation
+            // Ideally we need the 'Paso' entity. For now assuming ticket.pasoActual has days/hours if loaded.
+            // If ticket.pasoActual is loaded properly in findOne above (it is), we can use it.
+            if (ticket.pasoActual && ticket.pasoActual.tiempoHabil) {
+                const status = this.slaService.calculateSlaStatus(
+                    currentAssignment.fechaAsignacion,
+                    ticket.pasoActual.tiempoHabil
+                );
+                slaStatus = status;
+                currentAssignment.estadoTiempoPaso = slaStatus;
+                await this.ticketAsigRepo.save(currentAssignment);
+            }
+        }
+
         // 1. Create the History Record for the Event
         // We attribute it to the Previous User (targetUserId) as they are the cause.
         const errorHistory = this.ticketAsigRepo.create({
@@ -93,7 +123,8 @@ export class TicketService {
             pasoId: ticket.pasoActualId || null, // Recorded at current step/state
             fechaAsignacion: new Date(),
             estado: 1,
-            comentario: comment
+            comentario: comment,
+            estadoTiempoPaso: slaStatus // Record the status of the action
         });
         await this.ticketAsigRepo.save(errorHistory);
 
@@ -453,6 +484,30 @@ export class TicketService {
         ticket.ticketEstado = 'Pausado';
         await this.ticketRepo.save(ticket);
 
+        // Check SLA for the creator of the novelty
+        let slaStatus = 'A Tiempo';
+        if (ticket.pasoActualId && ticket.usuarioAsignadoIds?.includes(userId)) {
+            // Find assignment
+            const currentAssignment = await this.ticketAsigRepo.findOne({
+                where: {
+                    ticketId: ticketId,
+                    usuarioAsignadoId: userId,
+                    estado: 0
+                },
+                order: { id: 'DESC' }
+            });
+
+            if (currentAssignment && ticket.pasoActual && ticket.pasoActual.tiempoHabil) {
+                const status = this.slaService.calculateSlaStatus(
+                    currentAssignment.fechaAsignacion,
+                    ticket.pasoActual.tiempoHabil
+                );
+                slaStatus = status;
+                currentAssignment.estadoTiempoPaso = slaStatus;
+                await this.ticketAsigRepo.save(currentAssignment);
+            }
+        }
+
         // 3. Add History
         const history = this.ticketAsigRepo.create({
             ticketId: ticketId,
@@ -461,7 +516,8 @@ export class TicketService {
             pasoId: ticket.pasoActualId,
             fechaAsignacion: new Date(),
             estado: 1,
-            comentario: `Novedad Creada: ${dto.descripcion}`
+            comentario: `Novedad Creada: ${dto.descripcion}`,
+            estadoTiempoPaso: slaStatus
         });
         await this.ticketAsigRepo.save(history);
 
