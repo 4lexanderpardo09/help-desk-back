@@ -113,30 +113,33 @@ export class AssignmentService {
 
         // 3. Asignación por Rol (Cargo) + Regional del Ticket
         if (step.cargoAsignadoId) {
-            // Obtener datos del creador para saber su regional (si el ticket no tiene el creator cargado, buscarlo)
-            let regionalId = 1; // Default Central
-            if (ticket.usuario?.regionalId) {
-                regionalId = ticket.usuario.regionalId;
-            } else {
-                const creator = await this.userRepo.findOne({ where: { id: ticket.usuarioId } });
-                regionalId = creator?.regionalId || 1;
+            // Determinar Regional para búsqueda
+            let regionalIdToFilter: number | null = null;
+
+            if (!step.esTareaNacional) {
+                // Si no es nacional, buscamos la regional del contexto
+                if (ticket.usuario?.regionalId) {
+                    regionalIdToFilter = ticket.usuario.regionalId;
+                } else if (ticket.regionalId) {
+                    regionalIdToFilter = ticket.regionalId;
+                } else {
+                    const creator = await this.userRepo.findOne({ where: { id: ticket.usuarioId } });
+                    regionalIdToFilter = creator?.regionalId || 1;
+                }
             }
 
-            // Buscar usuarios con ese cargo en la regional
-            const agents = await this.userRepo.find({
-                where: {
-                    cargoId: step.cargoAsignadoId,
-                    regionalId: regionalId,
-                    estado: 1
-                },
-                relations: ['cargo']
-            });
+            // Buscar usuarios con ese cargo
+            const where: any = {
+                cargoId: step.cargoAsignadoId,
+                estado: 1
+            };
 
-            if (agents.length > 0) return agents;
+            if (regionalIdToFilter) {
+                where.regionalId = regionalIdToFilter;
+            }
 
-            // Fallback: Si no hay nadie en la regional, buscar en Sede Central (o todos si no hay restricción)
             return this.userRepo.find({
-                where: { cargoId: step.cargoAsignadoId, estado: 1 },
+                where,
                 relations: ['cargo']
             });
         }

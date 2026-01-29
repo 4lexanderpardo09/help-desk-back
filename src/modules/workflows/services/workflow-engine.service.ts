@@ -319,7 +319,8 @@ export class WorkflowEngineService {
         for (const sig of fullSignatures) {
             if (sig.usuarioId) continue; // Specific user assigned, no fallback needed
             if (sig.cargoId) {
-                const candidates = await this.assignmentService.getUsersByRole(sig.cargoId, ticket.empresaId, ticket.regionalId ?? undefined);
+                const regionalId = step.esTareaNacional ? undefined : (ticket.regionalId ?? undefined);
+                const candidates = await this.assignmentService.getUsersByRole(sig.cargoId, ticket.empresaId, regionalId);
                 if (candidates.length === 0) {
                     const name = sig.cargoId === -1 ? 'Jefe Inmediato' : (sig.cargo?.nombre || `Cargo ${sig.cargoId}`);
                     missing.push({ id: sig.cargoId, name });
@@ -616,7 +617,8 @@ export class WorkflowEngineService {
                 for (const sig of signatures) {
                     let targetUserId: number | null = sig.usuarioId;
                     if (!targetUserId && sig.cargoId) {
-                        const candidates = await this.assignmentService.getUsersByRole(sig.cargoId, ticket.empresaId, ticket.regionalId ?? undefined);
+                        const regionalId = nextStep.esTareaNacional ? undefined : (ticket.regionalId ?? undefined);
+                        const candidates = await this.assignmentService.getUsersByRole(sig.cargoId, ticket.empresaId, regionalId);
 
                         if (dto.manualAssignments && dto.manualAssignments[sig.cargoId]) {
                             targetUserId = dto.manualAssignments[sig.cargoId];
