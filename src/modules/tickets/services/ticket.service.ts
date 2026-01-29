@@ -17,6 +17,8 @@ import { TicketAsignado } from '../entities/ticket-asignado.entity';
 import { TicketParalelo } from '../entities/ticket-paralelo.entity';
 import { TicketAsignacionHistorico } from '../entities/ticket-asignacion-historico.entity';
 import { TicketNovedad } from '../entities/ticket-novedad.entity';
+import { TicketError } from '../entities/ticket-error.entity';
+import { TicketDetalle } from '../entities/ticket-detalle.entity';
 import { CreateTicketNovedadDto } from '../dto/create-ticket-novedad.dto';
 import { ErrorType, ErrorTypeCategory } from '../../error-types/entities/error-type.entity';
 import * as path from 'path';
@@ -50,6 +52,10 @@ export class TicketService {
         private readonly ticketAsigRepo: Repository<TicketAsignacionHistorico>,
         @InjectRepository(TicketNovedad)
         private readonly ticketNovedadRepo: Repository<TicketNovedad>,
+        @InjectRepository(TicketError)
+        private readonly ticketErrorRepo: Repository<TicketError>,
+        @InjectRepository(TicketDetalle)
+        private readonly ticketDetalleRepo: Repository<TicketDetalle>,
         @InjectRepository(ErrorType)
         private readonly errorTypeRepo: Repository<ErrorType>,
         private readonly slaService: SlaService,
@@ -107,26 +113,41 @@ export class TicketService {
                 );
                 slaStatus = status;
                 currentAssignment.estadoTiempoPaso = slaStatus;
+
+                // Legacy: Seal the assignment with the error code
+                currentAssignment.errorCodeId = dto.errorTypeId;
+                currentAssignment.errorDescripcion = dto.description || null;
+
                 await this.ticketAsigRepo.save(currentAssignment);
             }
         }
 
-        // 1. Create the History Record for the Event
-        // We attribute it to the Previous User (targetUserId) as they are the cause.
-        const errorHistory = this.ticketAsigRepo.create({
+        // 1. Create Detail (Legacy: insert_ticket_detalle)
+        const detalle = this.ticketDetalleRepo.create({
             ticketId: ticket.id,
-            errorCodeId: dto.errorTypeId,
-            errorSubtypeId: dto.errorSubtypeId || null,
-            errorDescripcion: dto.description || null,
-            usuarioAsignadorId: userId, // User reporting
-            usuarioAsignadoId: targetUserId, // User attributed (The previous one)
-            pasoId: ticket.pasoActualId || null, // Recorded at current step/state
-            fechaAsignacion: new Date(),
-            estado: 1,
-            comentario: comment,
-            estadoTiempoPaso: slaStatus // Record the status of the action
+            usuarioId: userId,
+            descripcion: comment, // Includes "Evento Registrado: ..."
+            fechaCreacion: new Date(),
+            estado: 1
         });
-        await this.ticketAsigRepo.save(errorHistory);
+        await this.ticketDetalleRepo.save(detalle);
+
+        // 2. Create the Ticket Error Record (Legacy Logic uses tm_ticket_error)
+        const ticketError = this.ticketErrorRepo.create({
+            ticketId: ticket.id,
+            usuarioReportaId: userId,
+            usuarioResponsableId: targetUserId,
+            errorTypeId: dto.errorTypeId,
+            descripcion: dto.description || null,
+            esErrorProceso: errorType.category === ErrorTypeCategory.PROCESS_ERROR,
+            fechaCreacion: new Date(),
+            estado: 1
+        });
+        await this.ticketErrorRepo.save(ticketError);
+
+        // NOTE: We do NOT create a TicketAsignacionHistorico for the event itself anymore,
+        // mirroring legacy behavior where errors are stored in tm_ticket_error and 
+        // th_ticket_asignacion is reserved for actual transfers (like Returns).
 
         // 2. Handle Workflow Move Logic
         // Only PROCESS_ERROR triggers a return/move.
@@ -508,18 +529,15 @@ export class TicketService {
             }
         }
 
-        // 3. Add History
-        const history = this.ticketAsigRepo.create({
+        // 3. Add Detail (Legacy: insert_ticket_detalle)
+        const detalle = this.ticketDetalleRepo.create({
             ticketId: ticketId,
-            usuarioAsignadorId: userId,
-            usuarioAsignadoId: dto.usuarioAsignadoId,
-            pasoId: ticket.pasoActualId,
-            fechaAsignacion: new Date(),
-            estado: 1,
-            comentario: `Novedad Creada: ${dto.descripcion}`,
-            estadoTiempoPaso: slaStatus
+            usuarioId: userId,
+            descripcion: `Novedad Creada: ${dto.descripcion}`,
+            fechaCreacion: new Date(),
+            estado: 1
         });
-        await this.ticketAsigRepo.save(history);
+        await this.ticketDetalleRepo.save(detalle);
 
         return novedad;
     }
