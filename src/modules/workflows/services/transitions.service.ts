@@ -19,7 +19,10 @@ export class TransitionsService {
         'estado',
         'pasoOrigen.id',
         'pasoDestino.id',
-        'pasoOrigen.flujo.id' // Important to list transitions of a whole flow
+        'pasoOrigen.flujo.id',
+        'pasoOrigenId',
+        'pasoDestinoId',
+        'rutaId'
     ];
 
     /**
