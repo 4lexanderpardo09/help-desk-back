@@ -23,7 +23,7 @@ export class FlowsController {
     @ApiQuery({ name: 'limit', required: false, description: 'Límite de resultados' })
     @ApiQuery({ name: 'page', required: false, description: 'Número de página' })
     @ApiResponse({ status: 200, description: 'Lista de flujos paginada' })
-    @CheckPolicies((ability: AppAbility) => ability.can('read', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('read', 'Workflow'))
     async list(@Query() query: ApiQueryDto) {
         return this.flowsService.list({
             limit: query.limit,
@@ -39,7 +39,7 @@ export class FlowsController {
     @ApiQuery({ name: 'included', required: false, description: 'Relaciones a incluir' })
     @ApiResponse({ status: 200, description: 'Flujo encontrado' })
     @ApiResponse({ status: 404, description: 'Flujo no encontrado' })
-    @CheckPolicies((ability: AppAbility) => ability.can('read', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('read', 'Workflow'))
     async show(@Param('id', ParseIntPipe) id: number, @Query() query: ApiQueryDto) {
         return this.flowsService.show(id, {
             included: query.included
@@ -49,7 +49,7 @@ export class FlowsController {
     @Post()
     @ApiOperation({ summary: 'Crear nuevo flujo' })
     @ApiResponse({ status: 201, description: 'Flujo creado' })
-    @CheckPolicies((ability: AppAbility) => ability.can('create', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('create', 'Workflow'))
     async create(@Body() dto: CreateFlujoDto) {
         return this.flowsService.create(dto);
     }
@@ -57,7 +57,7 @@ export class FlowsController {
     @Put(':id')
     @ApiOperation({ summary: 'Actualizar flujo' })
     @ApiResponse({ status: 200, description: 'Flujo actualizado' })
-    @CheckPolicies((ability: AppAbility) => ability.can('update', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('update', 'Workflow'))
     async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateFlujoDto) {
         return this.flowsService.update(id, dto);
     }
@@ -65,7 +65,7 @@ export class FlowsController {
     @Delete(':id')
     @ApiOperation({ summary: 'Eliminar flujo (Soft Delete)' })
     @ApiResponse({ status: 200, description: 'Flujo eliminado' })
-    @CheckPolicies((ability: AppAbility) => ability.can('delete', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('delete', 'Workflow'))
     async delete(@Param('id', ParseIntPipe) id: number) {
         return this.flowsService.delete(id);
     }

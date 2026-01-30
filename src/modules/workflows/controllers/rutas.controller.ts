@@ -23,7 +23,7 @@ export class RutasController {
     @ApiQuery({ name: 'limit', required: false })
     @ApiQuery({ name: 'page', required: false })
     @ApiResponse({ status: 200, description: 'Lista de rutas ordenada' })
-    @CheckPolicies((ability: AppAbility) => ability.can('read', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('read', 'Workflow'))
     async list(@Query() query: ApiQueryDto) {
         return this.rutasService.list({
             limit: query.limit,
@@ -38,7 +38,7 @@ export class RutasController {
     @ApiParam({ name: 'id', description: 'ID de la ruta' })
     @ApiQuery({ name: 'included', required: false, description: 'Relaciones a incluir' })
     @ApiResponse({ status: 200, description: 'Ruta encontrada' })
-    @CheckPolicies((ability: AppAbility) => ability.can('read', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('read', 'Workflow'))
     async show(@Param('id', ParseIntPipe) id: number, @Query() query: ApiQueryDto) {
         return this.rutasService.show(id, { included: query.included });
     }
@@ -46,7 +46,7 @@ export class RutasController {
     @Post()
     @ApiOperation({ summary: 'Crear nueva ruta' })
     @ApiResponse({ status: 201, description: 'Ruta creada' })
-    @CheckPolicies((ability: AppAbility) => ability.can('create', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('create', 'Workflow'))
     async create(@Body() dto: CreateRutaDto) {
         return this.rutasService.create(dto);
     }
@@ -54,7 +54,7 @@ export class RutasController {
     @Put(':id')
     @ApiOperation({ summary: 'Actualizar ruta' })
     @ApiResponse({ status: 200, description: 'Ruta actualizada' })
-    @CheckPolicies((ability: AppAbility) => ability.can('update', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('update', 'Workflow'))
     async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRutaDto) {
         return this.rutasService.update(id, dto);
     }
@@ -62,7 +62,7 @@ export class RutasController {
     @Delete(':id')
     @ApiOperation({ summary: 'Eliminar ruta (Soft Delete)' })
     @ApiResponse({ status: 200, description: 'Ruta eliminada' })
-    @CheckPolicies((ability: AppAbility) => ability.can('delete', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('delete', 'Workflow'))
     async delete(@Param('id', ParseIntPipe) id: number) {
         return this.rutasService.delete(id);
     }

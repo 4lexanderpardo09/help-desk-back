@@ -43,6 +43,9 @@ export type Subjects =
     | 'Rule'
     | 'Report'
     | 'Organigrama'
+    | 'Workflow'
+    | 'Template'
+    | 'Migration'
     | 'all';
 
 export type AppAbility = Ability<[Actions, Subjects]>;

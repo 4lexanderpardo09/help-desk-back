@@ -28,7 +28,7 @@ export class TransitionsController {
     @ApiQuery({ name: 'limit', required: false })
     @ApiQuery({ name: 'page', required: false })
     @ApiResponse({ status: 200, description: 'Lista de transiciones ordenada' })
-    @CheckPolicies((ability: AppAbility) => ability.can('read', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('read', 'Workflow'))
     async list(@Query() query: ApiQueryDto) {
         return this.transitionsService.list({
             limit: query.limit,
@@ -43,7 +43,7 @@ export class TransitionsController {
     @ApiParam({ name: 'id', description: 'ID de la transición' })
     @ApiQuery({ name: 'included', required: false, description: 'Relaciones a incluir' })
     @ApiResponse({ status: 200, description: 'Transición encontrada' })
-    @CheckPolicies((ability: AppAbility) => ability.can('read', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('read', 'Workflow'))
     async show(@Param('id') id: number, @Query() query: ApiQueryDto) {
         return this.transitionsService.show(Number(id), { included: query.included });
     }
@@ -51,7 +51,7 @@ export class TransitionsController {
     @Post()
     @ApiOperation({ summary: 'Crear nueva transición' })
     @ApiResponse({ status: 201, description: 'Transición creada' })
-    @CheckPolicies((ability: AppAbility) => ability.can('create', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('create', 'Workflow'))
     async create(@Body() dto: CreateTransitionDto) {
         return this.transitionsService.create(dto);
     }
@@ -59,7 +59,7 @@ export class TransitionsController {
     @Put(':id')
     @ApiOperation({ summary: 'Actualizar transición' })
     @ApiResponse({ status: 200, description: 'Transición actualizada' })
-    @CheckPolicies((ability: AppAbility) => ability.can('update', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('update', 'Workflow'))
     async update(@Param('id') id: number, @Body() dto: UpdateTransitionDto) {
         return this.transitionsService.update(Number(id), dto);
     }
@@ -67,7 +67,7 @@ export class TransitionsController {
     @Delete(':id')
     @ApiOperation({ summary: 'Eliminar transición (Soft Delete)' })
     @ApiResponse({ status: 200, description: 'Transición eliminada' })
-    @CheckPolicies((ability: AppAbility) => ability.can('delete', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('delete', 'Workflow'))
     async delete(@Param('id') id: number) {
         return this.transitionsService.delete(Number(id));
     }

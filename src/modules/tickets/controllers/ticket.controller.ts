@@ -54,7 +54,7 @@ export class TicketController {
 
     @Post('admin/migrate-assignments')
     @ApiOperation({ summary: 'Migrar asignaciones legacy a nueva tabla' })
-    @CheckPolicies((ability: AppAbility) => ability.can('manage', 'all')) // Only Admins
+    @CheckPolicies((ability: AppAbility) => ability.can('manage', 'Migration')) // Only Admins
     async migrateAssignments() {
         return this.ticketService.migrateLegacyAssignments();
     }

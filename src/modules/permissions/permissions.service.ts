@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Permission } from './entities/permission.entity';
@@ -23,7 +23,7 @@ export interface CachedPermission {
  * El caché se puede invalidar manualmente cuando se modifican permisos.
  */
 @Injectable()
-export class PermissionsService {
+export class PermissionsService implements OnModuleInit {
     private readonly logger = new Logger(PermissionsService.name);
 
     /**
@@ -42,9 +42,11 @@ export class PermissionsService {
         private readonly permissionRepository: Repository<Permission>,
         @InjectRepository(RolePermission)
         private readonly rolePermissionRepository: Repository<RolePermission>,
-    ) {
-        // Cargar caché al iniciar
-        this.refreshAllCache();
+    ) { }
+
+    async onModuleInit() {
+        // Cargar caché al iniciar el módulo
+        await this.refreshAllCache();
     }
 
     // ========================================

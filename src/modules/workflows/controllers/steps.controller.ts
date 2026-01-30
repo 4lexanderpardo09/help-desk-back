@@ -23,7 +23,7 @@ export class StepsController {
     @ApiQuery({ name: 'limit', required: false })
     @ApiQuery({ name: 'page', required: false })
     @ApiResponse({ status: 200, description: 'Lista de pasos ordenada' })
-    @CheckPolicies((ability: AppAbility) => ability.can('read', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('read', 'Workflow'))
     async list(@Query() query: ApiQueryDto) {
         return this.stepsService.list({
             limit: query.limit,
@@ -38,7 +38,7 @@ export class StepsController {
     @ApiParam({ name: 'id', description: 'ID del paso' })
     @ApiQuery({ name: 'included', required: false, description: 'Relaciones a incluir' })
     @ApiResponse({ status: 200, description: 'Paso encontrado' })
-    @CheckPolicies((ability: AppAbility) => ability.can('read', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('read', 'Workflow'))
     async show(@Param('id', ParseIntPipe) id: number, @Query() query: ApiQueryDto) {
         return this.stepsService.show(id, { included: query.included });
     }
@@ -46,7 +46,7 @@ export class StepsController {
     @Post()
     @ApiOperation({ summary: 'Crear nuevo paso de flujo' })
     @ApiResponse({ status: 201, description: 'Paso creado' })
-    @CheckPolicies((ability: AppAbility) => ability.can('create', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('create', 'Workflow'))
     async create(@Body() dto: CreatePasoFlujoDto) {
         return this.stepsService.create(dto);
     }
@@ -54,7 +54,7 @@ export class StepsController {
     @Put(':id')
     @ApiOperation({ summary: 'Actualizar paso de flujo' })
     @ApiResponse({ status: 200, description: 'Paso actualizado' })
-    @CheckPolicies((ability: AppAbility) => ability.can('update', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('update', 'Workflow'))
     async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePasoFlujoDto) {
         return this.stepsService.update(id, dto);
     }
@@ -62,7 +62,7 @@ export class StepsController {
     @Delete(':id')
     @ApiOperation({ summary: 'Eliminar paso de flujo (Soft Delete)' })
     @ApiResponse({ status: 200, description: 'Paso eliminado' })
-    @CheckPolicies((ability: AppAbility) => ability.can('delete', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('delete', 'Workflow'))
     async delete(@Param('id', ParseIntPipe) id: number) {
         return this.stepsService.delete(id);
     }

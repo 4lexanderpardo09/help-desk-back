@@ -20,7 +20,7 @@ export class TemplatesController {
     @ApiResponse({ status: 200, description: 'Lista de plantillas' })
     @ApiQuery({ name: 'included', required: false })
     @ApiQuery({ name: 'filter[flujo.id]', required: false })
-    @CheckPolicies((ability: AppAbility) => ability.can('read', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('read', 'Template'))
     async list(@Query() query: ApiQueryDto) {
         return this.templatesService.findAll({
             limit: query.limit,
@@ -58,7 +58,7 @@ export class TemplatesController {
     }
 
     @UseGuards(JwtAuthGuard, PoliciesGuard)
-    @CheckPolicies((ability: AppAbility) => ability.can('create', 'all')) // Assuming admin creates templates
+    @CheckPolicies((ability: AppAbility) => ability.can('create', 'Template')) // Assuming admin creates templates
     @Post()
     @UseInterceptors(FileInterceptor('file'))
     @ApiOperation({ summary: 'Crea una nueva plantilla para un flujo y empresa' })
@@ -72,7 +72,7 @@ export class TemplatesController {
     }
 
     @UseGuards(JwtAuthGuard, PoliciesGuard)
-    @CheckPolicies((ability: AppAbility) => ability.can('delete', 'all'))
+    @CheckPolicies((ability: AppAbility) => ability.can('delete', 'Template'))
     @Delete(':id')
     @ApiOperation({ summary: 'Elimina una plantilla (Soft Delete)' })
     async remove(@Param('id', ParseIntPipe) id: number) {
