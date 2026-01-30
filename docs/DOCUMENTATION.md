@@ -1,5 +1,27 @@
 # Help Desk API - Documentación
 
+## 2026-01-29: Ticket Error Visualization Fix
+
+### Summary
+Fixed a critical UX issue where ticket validation errors (e.g., "Returned to user", "Process Error") were displayed as generic comments. Now, they appear as distinct, red-styled error cards in the timeline, properly exposing the error title and description stored in the backend.
+
+### Technical Detail
+1.  **Backend (`TicketHistoryService`)**:
+    - **Relation**: Now eagerly fetches `errorCode` (TicketAsignacionHistorico -> ErrorType).
+    - **Mapping**: Maps `errorDescripcion` and `errorCode` details to the `metadata.error` object in `TicketTimelineItemDto`.
+    - **Processing**: Identifies "Process Errors" (which return tickets) vs "Info Errors".
+
+2.  **Frontend (`TicketTimeline`)**:
+    - **Visualization**: Implemented dedicated error card rendering when `item.metadata.error` is present.
+    - **Style**: Red border (`border-l-4 border-red-500`), red background (`bg-red-50`), and `report_problem` icon.
+    - **Content**: Displays the Error Title (e.g., "DOCUMENTO ILEGIBLE") and the specific user feedback.
+
+### Benefits
+- **Clarity**: Users immediately see why a ticket was returned or flagged.
+- **Legacy Parity**: Restores the "Error Stamp" functionality familiar to users of the legacy system.
+
+---
+
 ## 2026-01-26: Workflows Management (Flows & Steps)
 
 ### Summary

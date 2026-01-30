@@ -119,7 +119,7 @@ export class WorkflowEngineService {
             fechaAsignacion: new Date(),
             comentario: 'Inicio del flujo de trabajo',
             estado: 1,
-            estadoTiempoPaso: 'A Tiempo'
+            estadoTiempoPaso: null // Start as null, wait for SLA service to stamp status or completion
         });
         await this.historyRepo.save(history);
 
@@ -750,7 +750,7 @@ export class WorkflowEngineService {
                     ? `Transición: ${transitionUsed.condicionNombre}`
                     : (nextStep.esParalelo ? `Asignación Paralela para paso: ${nextStep.nombre}` : `Avanzó al paso: ${nextStep.nombre}`),
                 estado: 1,
-                estadoTiempoPaso: 'A Tiempo',
+                estadoTiempoPaso: null, // Start as null
                 firmaPath: signaturePath
             });
             await txHistoryRepo.save(history);

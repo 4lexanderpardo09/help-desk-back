@@ -6,6 +6,7 @@ import { TicketAsignacionHistorico } from '../entities/ticket-asignacion-histori
 import { TicketTimelineItemDto, TimelineItemType, SignedDocumentDto } from '../dto/ticket-timeline.dto';
 import { Documento } from '../../documents/entities/documento.entity';
 import { DocumentoFlujo } from '../../documents/entities/documento-flujo.entity';
+import { ErrorTypeCategory } from '../../error-types/entities/error-type.entity';
 
 @Injectable()
 export class TicketHistoryService {
@@ -37,7 +38,7 @@ export class TicketHistoryService {
         // 2. Fetch Assignments History
         const assignments = await this.ticketAsigRepo.find({
             where: { ticketId }, // History is always preserved, minimal state check
-            relations: ['usuarioAsignador', 'usuarioAsignado'],
+            relations: ['usuarioAsignador', 'usuarioAsignado', 'errorCode'],
             order: { fechaAsignacion: 'DESC' }
         });
 
@@ -86,7 +87,13 @@ export class TicketHistoryService {
                     nombre: asig.usuarioAsignado ? `${asig.usuarioAsignado.nombre} ${asig.usuarioAsignado.apellido}` : 'Unknown'
                 },
                 metadata: {
-                    estadoTiempoPaso: asig.estadoTiempoPaso
+                    estadoTiempoPaso: asig.estadoTiempoPaso,
+                    error: asig.errorCode ? {
+                        id: asig.errorCode.id,
+                        title: asig.errorCode.title,
+                        description: asig.errorDescripcion,
+                        isProcessError: asig.errorCode.category === ErrorTypeCategory.PROCESS_ERROR
+                    } : undefined
                 }
             });
         }

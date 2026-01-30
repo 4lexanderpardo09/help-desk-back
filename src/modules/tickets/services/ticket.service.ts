@@ -85,9 +85,28 @@ export class TicketService {
             take: 2 // Current and Previous
         });
 
+        const latestAssignment = lastAssignments[0]; // The active/latest assignment
         const previousAssignment = lastAssignments.length > 1 ? lastAssignments[1] : null;
-        const targetUserId = previousAssignment?.usuarioAsignadoId || ticket.usuarioAsignadoIds?.[0] || 0;
+
+        // Determine Target User for Return
+        // 1. Previous Assignee (if exists)
+        // 2. The person who assigned the current step (Assignador)
+        // 3. The ticket creator (Ultimate fallback)
+        let targetUserId = previousAssignment?.usuarioAsignadoId;
+        if (!targetUserId && latestAssignment?.usuarioAsignadorId) targetUserId = latestAssignment.usuarioAsignadorId;
+        if (!targetUserId) targetUserId = ticket.usuarioId;
+
+        // Target Step: If we go back, we ideally go back to Previous Step, or default to initial step?
+        // Target Step: If we go back, we ideally go back to Previous Step, or default to initial step?
+        // Actually, if we return to creator (closed), step doesn't matter much.
+        // If we return to previous assignee, we use their step.
         const targetStepId = previousAssignment?.pasoId || ticket.pasoActualId || 0;
+
+        this.logger.debug(`[ProcessError Debug] Ticket ${ticket.id}`);
+        this.logger.debug(`[ProcessError Debug] Latest Assignment: ${latestAssignment?.id} (User: ${latestAssignment?.usuarioAsignadoId}, Assigner: ${latestAssignment?.usuarioAsignadorId})`);
+        this.logger.debug(`[ProcessError Debug] Previous Assignment: ${previousAssignment?.id} (User: ${previousAssignment?.usuarioAsignadoId})`);
+        this.logger.debug(`[ProcessError Debug] Resolved Target User: ${targetUserId}`);
+        this.logger.debug(`[ProcessError Debug] Resolved Target Step: ${targetStepId}`);
 
         // Calculate SLA for the user reporting the event (userId) if they have an active assignment
         // We assume the user reporting is working on the ticket, so we check THEIR assignment.
@@ -95,7 +114,7 @@ export class TicketService {
             where: {
                 ticketId: ticket.id,
                 usuarioAsignadoId: userId,
-                estado: 0 // Active assignment
+                estado: 1 // Active assignment (history log)
             },
             order: { id: 'DESC' }
         });
@@ -153,8 +172,8 @@ export class TicketService {
         // Only PROCESS_ERROR triggers a return/move.
         if (errorType.category === ErrorTypeCategory.PROCESS_ERROR) {
 
-            if (previousAssignment) {
-                // Special Case: Process Error && Previous User is Creator
+            if (targetUserId) {
+                // Special Case: Process Error && Target User is Creator
                 if (targetUserId === ticket.usuarioId) {
                     // Close Ticket
                     ticket.ticketEstado = 'Cerrado';
@@ -197,7 +216,7 @@ export class TicketService {
                     this.logger.log(`Ticket ${ticketId} RETURNED to User ${targetUserId} due to ${errorType.title}`);
                 }
             } else {
-                this.logger.warn(`Ticket ${ticketId}: Is Process Error but no previous assignment found.`);
+                this.logger.warn(`Ticket ${ticketId}: Is Process Error but targetUserId 0 (System?). Logic fell through.`);
             }
         }
 
@@ -513,7 +532,7 @@ export class TicketService {
                 where: {
                     ticketId: ticketId,
                     usuarioAsignadoId: userId,
-                    estado: 0
+                    estado: 1
                 },
                 order: { id: 'DESC' }
             });
