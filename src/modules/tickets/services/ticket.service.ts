@@ -76,7 +76,9 @@ export class TicketService {
         const errorType = await this.errorTypeRepo.findOne({ where: { id: dto.errorTypeId } });
         if (!errorType) throw new NotFoundException(`Error Type ${dto.errorTypeId} not found`);
 
-        const comment = dto.description ? `Evento Registrado: ${dto.description}` : 'Evento de Error Registrado';
+        const comment = dto.description
+            ? `Evento Registrado (${errorType.title}): ${dto.description}`
+            : `Evento de Error Registrado: ${errorType.title}`;
 
         // Find previous valid assignment to attribute the error
         const lastAssignments = await this.ticketAsigRepo.find({
