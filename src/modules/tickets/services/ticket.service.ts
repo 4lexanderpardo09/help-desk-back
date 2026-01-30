@@ -132,6 +132,7 @@ export class TicketService {
                     currentAssignment.fechaAsignacion,
                     ticket.pasoActual.tiempoHabil
                 );
+                this.logger.debug(`[SLA Debug] Error Event - Ticket ${ticket.id}: Calculated Status '${status}' (Start: ${currentAssignment.fechaAsignacion}, Limit: ${ticket.pasoActual.tiempoHabil}h)`);
                 slaStatus = status;
                 currentAssignment.estadoTiempoPaso = slaStatus;
 
@@ -140,7 +141,12 @@ export class TicketService {
                 currentAssignment.errorDescripcion = dto.description || null;
 
                 await this.ticketAsigRepo.save(currentAssignment);
+                this.logger.debug(`[SLA Debug] Error Event - Ticket ${ticket.id}: Saved Assignment ${currentAssignment.id} with SLA ${slaStatus}`);
+            } else {
+                this.logger.debug(`[SLA Debug] Error Event - Ticket ${ticket.id}: No Time Limit configured or Step not loaded.`);
             }
+        } else {
+            this.logger.debug(`[SLA Debug] Error Event - Ticket ${ticket.id}: Active Assignment not found for User ${userId}`);
         }
 
         // 1. Create Detail (Legacy: insert_ticket_detalle)
@@ -544,9 +550,12 @@ export class TicketService {
                     currentAssignment.fechaAsignacion,
                     ticket.pasoActual.tiempoHabil
                 );
+                this.logger.debug(`[SLA Debug] Novelty - Ticket ${ticketId}: Calculated Status '${status}'`);
                 slaStatus = status;
                 currentAssignment.estadoTiempoPaso = slaStatus;
                 await this.ticketAsigRepo.save(currentAssignment);
+            } else {
+                this.logger.debug(`[SLA Debug] Novelty - Ticket ${ticketId}: Skipped SLA (No assignment or no time limit)`);
             }
         }
 

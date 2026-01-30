@@ -529,6 +529,34 @@ export class WorkflowEngineService {
             const currentStep = ticket.pasoActual;
             if (!currentStep) throw new BadRequestException('Ticket has no current step');
 
+            // --- [SLA Logic: Before Move] Calculate SLA for the step being completed ---
+            const activeAssignment = await txHistoryRepo.findOne({
+                where: {
+                    ticketId: ticket.id,
+                    usuarioAsignadoId: dto.actorId,
+                    estado: 1,
+                    pasoId: currentStep.id
+                },
+                order: { id: 'DESC' }
+            });
+
+            if (activeAssignment) {
+                if (currentStep.tiempoHabil) {
+                    const status = this.slaService.calculateSlaStatus(
+                        activeAssignment.fechaAsignacion,
+                        currentStep.tiempoHabil
+                    );
+                    activeAssignment.estadoTiempoPaso = status;
+                    await txHistoryRepo.save(activeAssignment);
+                    this.logger.debug(`[SLA Debug] Transition - Ticket ${ticket.id}: Completed Step ${currentStep.id}. Status: '${status}'`);
+                } else {
+                    this.logger.debug(`[SLA Debug] Transition - Ticket ${ticket.id}: Step ${currentStep.id} has no Time Limit.`);
+                }
+            } else {
+                this.logger.debug(`[SLA Debug] Transition - Ticket ${ticket.id}: No active assignment found for User ${dto.actorId} in Step ${currentStep.id}`);
+            }
+            // --------------------------------------------------------------------------
+
             // 1.1 Handle Parallel Step Approval (If current step is parallel)
             if (currentStep.esParalelo) {
                 // Check pending parallel task for this user
