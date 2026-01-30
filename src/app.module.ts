@@ -30,6 +30,7 @@ import { ErrorTypesModule } from './modules/error-types/error-types.module';
 import { ImportsModule } from './modules/imports/imports.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { TemplatesModule } from './modules/templates/templates.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 
 @Module({
@@ -77,6 +78,7 @@ import { TemplatesModule } from './modules/templates/templates.module';
     ImportsModule,
     TagsModule,
     TemplatesModule,
+    DashboardModule,
 
   ],
   controllers: [AppController],
