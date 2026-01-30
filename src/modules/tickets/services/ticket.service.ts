@@ -629,37 +629,42 @@ export class TicketService {
         let closingSlaStatus = null;
 
         // Buscar la asignación activa de este usuario (o la última activa si es admin/otro)
+        // Buscar la última asignación de este usuario
         const currentAssignment = await this.ticketAsigRepo.findOne({
             where: {
                 ticketId: ticket.id,
-                fechaFin: IsNull(),
-                usuarioAsignadoId: userId // Asumimos que quien cierra es quien lo tenía asignado
+                usuarioAsignadoId: userId
             },
             order: { fechaAsignacion: 'DESC' }
         });
 
         if (currentAssignment) {
-            currentAssignment.fechaFin = new Date();
+            this.logger.log(`[CloseTicket] Asignación encontrada para usuario ${userId}: ID ${currentAssignment.id}, Fecha: ${currentAssignment.fechaAsignacion}`);
 
-            // Calcular SLA si aplica
+            // Calcular SLA si aplica (usando fecha actual como "fin" lógico)
             if (ticket.pasoActual && ticket.pasoActual.tiempoHabil) {
                 const status = this.slaService.calculateSlaStatus(
                     currentAssignment.fechaAsignacion,
                     ticket.pasoActual.tiempoHabil
                 );
+                this.logger.log(`[CloseTicket] SLA calculado: ${status} (Tiempo Paso: ${ticket.pasoActual.tiempoHabil}h)`);
                 currentAssignment.estadoTiempoPaso = status;
                 closingSlaStatus = status; // Guardar para el registro de cierre
+            } else {
+                this.logger.log(`[CloseTicket] No se calcula SLA: Paso ${ticket.pasoActualId} no tiene tiempo habil configurado`);
             }
-
+            // Solo guardamos el estado del SLA, no cerramos fechaFin porque no existe
             await this.ticketAsigRepo.save(currentAssignment);
         } else {
-            const anyOpenAssignment = await this.ticketAsigRepo.findOne({
-                where: { ticketId: ticket.id, fechaFin: IsNull() },
+            this.logger.warn(`[CloseTicket] No se encontró asignación previa para usuario ${userId} en ticket ${ticket.id}`);
+            // Fallback: Buscar cualquier asignación reciente para al menos intentar calcular SLA
+            const anyAssignment = await this.ticketAsigRepo.findOne({
+                where: { ticketId: ticket.id },
                 order: { fechaAsignacion: 'DESC' }
             });
-            if (anyOpenAssignment) {
-                anyOpenAssignment.fechaFin = new Date();
-                await this.ticketAsigRepo.save(anyOpenAssignment);
+            if (anyAssignment) {
+                // Aquí podríamos calcular SLA también si quisiéramos ser robustos, 
+                // pero por ahora solo evitamos el error de fechaFin
             }
         }
 

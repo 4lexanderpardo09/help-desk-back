@@ -43,9 +43,6 @@ export class TicketAsignacionHistorico {
     @Column({ name: 'firma_path', type: 'varchar', length: 255, nullable: true, comment: 'Ruta del archivo de firma adjunta' })
     firmaPath: string | null;
 
-    @Column({ name: 'fecha_fin', type: 'datetime', nullable: true, comment: 'Fecha en que finalizó esta asignación' })
-    fechaFin: Date | null;
-
     @ManyToOne(() => Ticket, (t) => t.historiales)
     @JoinColumn({ name: 'tick_id' })
     ticket: Ticket;
