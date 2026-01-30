@@ -1,7 +1,5 @@
 import { Subcategoria } from 'src/modules/subcategories/entities/subcategoria.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn, ManyToMany, JoinTable } from 'typeorm';
-// import { CategoriaDepartamento } from './categoria-departamento.entity';
-// import { CategoriaEmpresa } from './categoria-empresa.entity';
 import { Ticket } from 'src/modules/tickets/entities/ticket.entity';
 import { Departamento } from 'src/modules/departments/entities/departamento.entity';
 import { Empresa } from 'src/modules/companies/entities/empresa.entity';

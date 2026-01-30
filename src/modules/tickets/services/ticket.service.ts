@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { Ticket } from '../entities/ticket.entity';
 import { CreateTicketDto } from '../dto/create-ticket.dto';
 import { UpdateTicketDto } from '../dto/update-ticket.dto';
@@ -20,6 +20,7 @@ import { TicketNovedad } from '../entities/ticket-novedad.entity';
 import { TicketError } from '../entities/ticket-error.entity';
 import { TicketDetalle } from '../entities/ticket-detalle.entity';
 import { CreateTicketNovedadDto } from '../dto/create-ticket-novedad.dto';
+import { CloseTicketDto } from '../dto/close-ticket.dto'; // Imported
 import { ErrorType, ErrorTypeCategory } from '../../error-types/entities/error-type.entity';
 import * as path from 'path';
 import * as fs from 'fs/promises';
@@ -576,6 +577,7 @@ export class TicketService {
      * Resolves an active novelty for a ticket.
      */
     async resolveNovelty(ticketId: number, userId: number) {
+        // ... (lines 578-609)
         const ticket = await this.ticketRepo.findOne({ where: { id: ticketId } });
         if (!ticket) throw new NotFoundException(`Ticket ${ticketId} not found`);
 
@@ -607,5 +609,81 @@ export class TicketService {
         await this.ticketAsigRepo.save(history);
 
         return novelty;
+    }
+
+    /**
+     * Cierra un ticket manualmente en el último paso.
+     */
+    async closeTicket(id: number, userId: number, dto: CloseTicketDto): Promise<Ticket> {
+        const ticket = await this.ticketRepo.findOne({
+            where: { id },
+            relations: ['pasoActual']
+        });
+
+        if (!ticket) throw new NotFoundException(`Ticket ${id} no encontrado`);
+
+        // Validar si ya está cerrado
+        if (ticket.estado === 3) throw new BadRequestException('El ticket ya está cerrado');
+
+        // 1. Cerrar asignación anterior y calcular SLA
+        let closingSlaStatus = null;
+
+        // Buscar la asignación activa de este usuario (o la última activa si es admin/otro)
+        const currentAssignment = await this.ticketAsigRepo.findOne({
+            where: {
+                ticketId: ticket.id,
+                fechaFin: IsNull(),
+                usuarioAsignadoId: userId // Asumimos que quien cierra es quien lo tenía asignado
+            },
+            order: { fechaAsignacion: 'DESC' }
+        });
+
+        if (currentAssignment) {
+            currentAssignment.fechaFin = new Date();
+
+            // Calcular SLA si aplica
+            if (ticket.pasoActual && ticket.pasoActual.tiempoHabil) {
+                const status = this.slaService.calculateSlaStatus(
+                    currentAssignment.fechaAsignacion,
+                    ticket.pasoActual.tiempoHabil
+                );
+                currentAssignment.estadoTiempoPaso = status;
+                closingSlaStatus = status; // Guardar para el registro de cierre
+            }
+
+            await this.ticketAsigRepo.save(currentAssignment);
+        } else {
+            const anyOpenAssignment = await this.ticketAsigRepo.findOne({
+                where: { ticketId: ticket.id, fechaFin: IsNull() },
+                order: { fechaAsignacion: 'DESC' }
+            });
+            if (anyOpenAssignment) {
+                anyOpenAssignment.fechaFin = new Date();
+                await this.ticketAsigRepo.save(anyOpenAssignment);
+            }
+        }
+
+        // 2. Actualizar estado Ticket
+        ticket.estado = 3; // Cerrado
+        ticket.ticketEstado = 'Cerrado';
+        ticket.fechaCierre = new Date();
+
+        await this.ticketRepo.save(ticket);
+
+        // 3. Registrar en Historial de Cierre
+        const history = this.ticketAsigRepo.create({
+            ticketId: ticket.id,
+            usuarioAsignadorId: userId,
+            usuarioAsignadoId: userId, // Self-assigned close
+            pasoId: ticket.pasoActualId || 0,
+            fechaAsignacion: new Date(),
+            estado: 2, // Closed status in history
+            comentario: `Ticket Cerrado Manualmente: ${dto.comentario}`,
+            estadoTiempoPaso: closingSlaStatus
+        });
+        await this.ticketAsigRepo.save(history);
+
+        this.logger.log(`Ticket ${id} cerrado por usuario ${userId}`);
+        return ticket;
     }
 }

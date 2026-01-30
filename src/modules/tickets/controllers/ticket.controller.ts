@@ -82,4 +82,12 @@ export class TicketController {
     async resolveNovelty(@Param('id') id: string, @Req() req: any) {
         return this.ticketService.resolveNovelty(+id, req.user.usu_id);
     }
+
+    @Post(':id/close')
+    @ApiOperation({ summary: 'Cerrar ticket manualmente (Paso Final)' })
+    @ApiResponse({ status: 200, description: 'Ticket cerrado exitosamente' })
+    @CheckPolicies((ability: AppAbility) => ability.can('update', 'Ticket'))
+    async close(@Param('id') id: string, @Body() dto: import('../dto/close-ticket.dto').CloseTicketDto, @Req() req: any) {
+        return this.ticketService.closeTicket(+id, req.user.usu_id, dto);
+    }
 }

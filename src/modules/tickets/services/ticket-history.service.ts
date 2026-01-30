@@ -71,6 +71,28 @@ export class TicketHistoryService {
 
         // 5. Convert Assignments -> Timeline Items
         for (const asig of assignments) {
+            // Check for Closed State (2)
+            if (asig.estado === 2) {
+                // Strip the systemic prefix if present
+                const cleanDescription = asig.comentario?.replace('Ticket Cerrado Manualmente:', '').trim() || 'Ticket Cerrado';
+
+                timeline.push({
+                    type: TimelineItemType.COMMENT, // Render as comment/log
+                    fecha: asig.fechaAsignacion,
+                    actor: {
+                        id: asig.usuarioAsignadorId || 0,
+                        nombre: asig.usuarioAsignador ? `${asig.usuarioAsignador.nombre} ${asig.usuarioAsignador.apellido}` : 'Sistema',
+                        avatar: asig.usuarioAsignador?.nombre ? asig.usuarioAsignador.nombre.charAt(0) + (asig.usuarioAsignador.apellido?.charAt(0) || '') : 'S'
+                    },
+                    descripcion: cleanDescription,
+                    // No 'asignadoA' so it won't show the assignment badge
+                    metadata: {
+                        isClosingEvent: true
+                    }
+                });
+                continue;
+            }
+
             let description = 'Reasignación de ticket';
             if (asig.comentario) description += `: ${asig.comentario}`;
 
