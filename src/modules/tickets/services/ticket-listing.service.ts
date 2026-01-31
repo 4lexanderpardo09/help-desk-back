@@ -101,12 +101,13 @@ export class TicketListingService {
                 .where('te.ticketId IN (:...ids)', { ids: ticketIds })
                 .andWhere('te.estado = 1')
                 .andWhere('e.estado = 1')
+                .andWhere('e.usuarioId = :userId', { userId: user.usu_id })
                 .getMany();
 
             tags.forEach(te => {
                 if (!tagsMap[te.ticketId]) tagsMap[te.ticketId] = [];
                 if (te.etiqueta) {
-                    tagsMap[te.ticketId].push({ nombre: te.etiqueta.nombre, color: te.etiqueta.color });
+                    tagsMap[te.ticketId].push({ id: te.etiqueta.id, nombre: te.etiqueta.nombre, color: te.etiqueta.color });
                 }
             });
         }

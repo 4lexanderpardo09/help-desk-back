@@ -19,6 +19,7 @@ import { TicketAsignacionHistorico } from '../entities/ticket-asignacion-histori
 import { TicketNovedad } from '../entities/ticket-novedad.entity';
 import { TicketError } from '../entities/ticket-error.entity';
 import { TicketDetalle } from '../entities/ticket-detalle.entity';
+import { TicketEtiqueta } from '../entities/ticket-etiqueta.entity';
 import { CreateTicketNovedadDto } from '../dto/create-ticket-novedad.dto';
 import { CloseTicketDto } from '../dto/close-ticket.dto'; // Imported
 import { ErrorType, ErrorTypeCategory } from '../../error-types/entities/error-type.entity';
@@ -59,6 +60,8 @@ export class TicketService {
         private readonly ticketDetalleRepo: Repository<TicketDetalle>,
         @InjectRepository(ErrorType)
         private readonly errorTypeRepo: Repository<ErrorType>,
+        @InjectRepository(TicketEtiqueta)
+        private readonly ticketEtiquetaRepo: Repository<TicketEtiqueta>,
         private readonly slaService: SlaService,
     ) { }
 
@@ -390,12 +393,41 @@ export class TicketService {
      * @param id ID del ticket
      * @returns Ticket con relaciones
      */
-    async findOne(id: number): Promise<Ticket> {
-        const ticket = await this.ticketRepo.findOne({
-            where: { id },
-            relations: ['usuario', 'categoria', 'subcategoria', 'prioridad', 'pasoActual']
-        });
+    async findOne(id: number, userId?: number): Promise<Ticket> {
+        const qb = this.ticketRepo.createQueryBuilder('t')
+            .leftJoinAndSelect('t.usuario', 'u')
+            .leftJoinAndSelect('t.categoria', 'c')
+            .leftJoinAndSelect('t.subcategoria', 'sc')
+            .leftJoinAndSelect('t.prioridad', 'p')
+            .leftJoinAndSelect('t.pasoActual', 'pa')
+            .where('t.id = :id', { id });
+
+        if (userId) {
+            // Load ONLY tags owned by this user
+            qb.leftJoinAndSelect('t.ticketEtiquetas', 'te', 'te.estado = 1')
+                .leftJoinAndSelect('te.etiqueta', 'e', 'e.estado = 1 AND e.usuarioId = :userId', { userId });
+        } else {
+            // Fallback: load all? Or keep empty? Let's keep empty or load all if no user specified (admin context?)
+            // But existing behavior was 'relations' which is all.
+            qb.leftJoinAndSelect('t.ticketEtiquetas', 'te', 'te.estado = 1')
+                .leftJoinAndSelect('te.etiqueta', 'e', 'e.estado = 1');
+        }
+
+        const ticket = await qb.getOne();
         if (!ticket) throw new NotFoundException(`Ticket ${id} no encontrado`);
+
+        // Map etiquetas relation to be compatible with frontend expectations if needed
+        // The entity has 'ticketEtiquetas' -> 'etiqueta'. 
+        if (ticket.ticketEtiquetas) {
+            (ticket as any).etiquetas = ticket.ticketEtiquetas
+                .filter(te => te.etiqueta) // Filter out nulls if any join failed
+                .map(te => ({
+                    id: te.etiqueta.id,
+                    nombre: te.etiqueta.nombre,
+                    color: te.etiqueta.color
+                }));
+        }
+
         return ticket;
     }
 
@@ -690,5 +722,70 @@ export class TicketService {
 
         this.logger.log(`Ticket ${id} cerrado por usuario ${userId}`);
         return ticket;
+    }
+
+    /**
+     * Associates a tag with a ticket.
+     */
+    async addTag(ticketId: number, tagId: number, userId: number): Promise<void> {
+        const ticket = await this.ticketRepo.findOne({ where: { id: ticketId } });
+        if (!ticket) throw new NotFoundException(`Ticket ${ticketId} not found`);
+
+        // Check if already assigned (active)
+        const existing = await this.ticketEtiquetaRepo.findOne({
+            where: {
+                ticketId,
+                etiquetaId: tagId,
+                estado: 1
+            }
+        });
+
+        if (existing) return; // Already exists, do nothing
+
+        // Check if previously assigned but inactive (reactivate)
+        const inactive = await this.ticketEtiquetaRepo.findOne({
+            where: {
+                ticketId,
+                etiquetaId: tagId,
+                estado: 0
+            }
+        });
+
+        if (inactive) {
+            inactive.estado = 1;
+            inactive.usuarioId = userId; // Update who re-added it
+            inactive.fechaCreacion = new Date();
+            await this.ticketEtiquetaRepo.save(inactive);
+            return;
+        }
+
+        // Create new
+        const newTag = this.ticketEtiquetaRepo.create({
+            ticketId,
+            etiquetaId: tagId,
+            usuarioId: userId,
+            fechaCreacion: new Date(),
+            estado: 1
+        });
+
+        await this.ticketEtiquetaRepo.save(newTag);
+    }
+
+    /**
+     * Removes a tag from a ticket (soft delete).
+     */
+    async removeTag(ticketId: number, tagId: number): Promise<void> {
+        const assignment = await this.ticketEtiquetaRepo.findOne({
+            where: {
+                ticketId,
+                etiquetaId: tagId,
+                estado: 1
+            }
+        });
+
+        if (!assignment) return; // Not found or already removed
+
+        assignment.estado = 0;
+        await this.ticketEtiquetaRepo.save(assignment);
     }
 }

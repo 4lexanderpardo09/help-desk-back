@@ -2,6 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class TicketTagDto {
     @ApiProperty()
+    id: number;
+
+    @ApiProperty()
     nombre: string;
 
     @ApiProperty()

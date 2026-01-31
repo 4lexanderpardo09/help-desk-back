@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Get, Param, Put, UseGuards, Req } from '@nestjs/common';
+import { Body, Controller, Post, Get, Param, Put, UseGuards, Req, Delete } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { TicketService } from '../services/ticket.service';
 import { CreateTicketDto } from '../dto/create-ticket.dto';
@@ -40,8 +40,8 @@ export class TicketController {
     @Get(':id')
     @ApiOperation({ summary: 'Obtener detalle de un ticket' })
     @CheckPolicies((ability: AppAbility) => ability.can('read', 'Ticket'))
-    async findOne(@Param('id') id: string) {
-        return this.ticketService.findOne(+id);
+    async findOne(@Param('id') id: string, @Req() req: any) {
+        return this.ticketService.findOne(+id, req.user?.usu_id);
     }
 
     @Get(':id/parallel-tasks')
@@ -89,5 +89,21 @@ export class TicketController {
     @CheckPolicies((ability: AppAbility) => ability.can('update', 'Ticket'))
     async close(@Param('id') id: string, @Body() dto: import('../dto/close-ticket.dto').CloseTicketDto, @Req() req: any) {
         return this.ticketService.closeTicket(+id, req.user.usu_id, dto);
+    }
+
+    @Post(':id/tags')
+    @ApiOperation({ summary: 'Asignar etiqueta a un ticket' })
+    @ApiResponse({ status: 201, description: 'Etiqueta asignada' })
+    @CheckPolicies((ability: AppAbility) => ability.can('update', 'Ticket'))
+    async addTag(@Param('id') id: string, @Body() body: { tagId: number }, @Req() req: any) {
+        return this.ticketService.addTag(+id, body.tagId, req.user.usu_id);
+    }
+
+    @Delete(':id/tags/:tagId')
+    @ApiOperation({ summary: 'Remover etiqueta de un ticket' })
+    @ApiResponse({ status: 200, description: 'Etiqueta removida' })
+    @CheckPolicies((ability: AppAbility) => ability.can('update', 'Ticket'))
+    async removeTag(@Param('id') id: string, @Param('tagId') tagId: string) {
+        return this.ticketService.removeTag(+id, +tagId);
     }
 }
