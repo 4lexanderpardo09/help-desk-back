@@ -5,6 +5,10 @@ import { UsersService } from '../users/users.service';
 import { PermissionsService } from '../permissions/permissions.service';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 
+/**
+ * Servicio encargado de la lógica de autenticación, validación de credenciales
+ * y gestión de perfiles de usuario.
+ */
 @Injectable()
 export class AuthService {
     constructor(
@@ -15,7 +19,11 @@ export class AuthService {
     ) { }
 
     /**
-     * Valida credenciales y genera token JWT
+     * Autentica a un usuario, valida sus perfiles activos y genera un token JWT.
+     * * @param email Correo electrónico del usuario.
+     * @param password Contraseña en texto plano.
+     * @returns Objeto con el `accessToken` generado.
+     * @throws {UnauthorizedException} Si las credenciales son incorrectas o el usuario no existe.
      */
     async login(
         email: string,
@@ -27,20 +35,20 @@ export class AuthService {
             throw new UnauthorizedException('Credenciales inválidas');
         }
 
-        // Verificar password
-        // El sistema legacy puede usar MD5 o bcrypt, verificamos ambos
+        // Validación de contraseña multiformato (Legacy/Modern)
         const isPasswordValid = await this.verifyPassword(password, user.password);
 
         if (!isPasswordValid) {
             throw new UnauthorizedException('Credenciales inválidas');
         }
 
-        // Obtener perfiles del usuario
+        // Filtrado de perfiles: Solo aquellos con estado activo (1)
         const usuarioPerfiles = user.usuarioPerfiles || [];
         const perfilIds = usuarioPerfiles
-            .filter(up => up.estado === 1) // Solo activos
+            .filter(up => up.estado === 1)
             .map(up => up.perfilId);
 
+        // Construcción del Payload con información contextual
         const payload: JwtPayload = {
             usu_id: user.id,
             usu_correo: user.email,
@@ -58,20 +66,26 @@ export class AuthService {
     }
 
     /**
-     * Verifica password - soporta bcrypt de PHP ($2y$) y Node.js ($2a$), y MD5
+     * Verifica la contraseña comparándola con el hash almacenado.
+     * Soporta tres formatos:
+     * 1. **Bcrypt Moderno**: Identifica prefijos `$2y$` (PHP) y los normaliza a `$2a$` (Node.js).
+     * 2. **Legacy MD5**: Identifica hashes de 32 caracteres.
+     * 3. **Texto Plano**: fallback para sistemas extremadamente antiguos (no recomendado).
+     * * @param plainPassword Contraseña ingresada por el usuario.
+     * @param hashedPassword Hash recuperado de la base de datos.
+     * @private
      */
     private async verifyPassword(
         plainPassword: string,
         hashedPassword: string,
     ): Promise<boolean> {
-        // Verificar si es bcrypt (empieza con $2)
+        // Caso Bcrypt: Normalización de versiones entre PHP y Node.js
         if (hashedPassword.startsWith('$2')) {
-            // PHP usa $2y$, Node.js bcrypt usa $2a$ - son compatibles, solo hay que convertir
             const normalizedHash = hashedPassword.replace(/^\$2y\$/, '$2a$');
             return bcrypt.compare(plainPassword, normalizedHash);
         }
 
-        // Verificar si es MD5 (32 caracteres hex)
+        // Caso Legacy MD5
         if (hashedPassword.length === 32) {
             const crypto = await import('crypto');
             const md5Hash = crypto
@@ -81,23 +95,28 @@ export class AuthService {
             return md5Hash === hashedPassword;
         }
 
-        // Comparación directa (sin hash - no recomendado pero posible en sistemas legacy)
+        // Fallback: Comparación directa
         return plainPassword === hashedPassword;
     }
 
     /**
-     * Verifica si un token es válido
+     * Verifica la integridad y vigencia de un token JWT.
+     * @param token String del JWT.
+     * @returns Payload decodificado si es válido.
      */
     verifyToken(token: string): JwtPayload {
         return this.jwtService.verify<JwtPayload>(token);
     }
 
     /**
-     * Obtiene el perfil completo del usuario con detalles y permisos
+     * Construye un perfil detallado combinando datos de usuario, relaciones y permisos.
+     * Útil para la carga inicial del Frontend (E.g. en un Store de Redux/Pinia).
+     * * @param user Payload básico extraído del token.
+     * @returns Objeto enriquecido con nombres, cargos, regionales y lista de permisos.
+     * @throws {UnauthorizedException} Si no se encuentra el detalle del usuario.
      */
     async getFullProfile(user: JwtPayload): Promise<any> {
-        // 1. Obtener detalles básicos del usuario (Nombre, Apellido, etc) e incluir relaciones útiles
-        // Definimos los scopes que queremos traer para el perfil completo
+        // Recuperar detalles extendidos de la base de datos
         const userDetails = await this.usersService.show(user.usu_id, {
             included: 'role,cargo,regional,departamento'
         });
@@ -106,17 +125,14 @@ export class AuthService {
             throw new UnauthorizedException('Usuario no encontrado');
         }
 
-        // 2. Obtener permisos del rol
+        // Resolución de permisos asociados al Rol del usuario
         let permissions: import('../permissions/permissions.service').CachedPermission[] = [];
         if (user.rol_id) {
-            const perms = await this.permissionsService.getPermissionsForRole(user.rol_id);
-            // Transformar a formato simple si es necesario, o devolver CachedPermission directo
-            permissions = perms;
+            permissions = await this.permissionsService.getPermissionsForRole(user.rol_id);
         }
 
-        // 3. Combinar respuesta
         return {
-            ...user, // Payload original (ids)
+            ...user, // IDs básicos
             nombre: userDetails.nombre,
             apellido: userDetails.apellido,
             permissions: permissions,
