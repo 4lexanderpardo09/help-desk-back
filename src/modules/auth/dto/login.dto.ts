@@ -2,16 +2,33 @@ import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 /**
- * DTO para inicio de sesión
+ * DTO para la transferencia de credenciales de inicio de sesión.
+ * * Este objeto valida que los datos recibidos en el cuerpo de la petición (body)
+ * cumplan con el formato esperado antes de llegar al AuthService.
  */
 export class LoginDto {
-    @ApiProperty({ description: 'Correo electrónico', example: 'usuario@example.com' })
+    
+    /** * Correo electrónico corporativo del usuario.
+     * Debe cumplir con el formato estándar de email (ej. texto@dominio.com).
+     */
+    @ApiProperty({ 
+        description: 'Correo electrónico registrado del usuario', 
+        example: 'juan.perez@empresa.com',
+        format: 'email' // Ayuda a Swagger UI a validar el input en la documentación
+    })
     @IsNotEmpty({ message: 'El email es requerido' })
-    @IsEmail({}, { message: 'Formato de email inválido' })
+    @IsEmail({}, { message: 'El formato del email no es válido' })
     email: string;
 
-    @ApiProperty({ description: 'Contraseña', example: 'secret123' })
+    /** * Contraseña de acceso en texto plano.
+     * Será verificada contra el hash (Bcrypt o MD5) almacenado en base de datos.
+     */
+    @ApiProperty({ 
+        description: 'Contraseña de acceso', 
+        example: 'Seguridad2025*',
+        type: String
+    })
     @IsNotEmpty({ message: 'La contraseña es requerida' })
-    @IsString()
+    @IsString({ message: 'La contraseña debe ser una cadena de texto' })
     password: string;
 }
