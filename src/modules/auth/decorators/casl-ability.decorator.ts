@@ -14,7 +14,7 @@ import { JwtPayload } from '../interfaces/jwt-payload.interface';
  * // 2. Obtener solo el ID (con autocompletado gracias a keyof)
  * update(@User('usu_id') userId: number)
  */
-export const User = createParamDecorator(
+export const CaslAbility = createParamDecorator(
     (data: keyof JwtPayload | undefined, ctx: ExecutionContext) => {
         // Cambiar al contexto HTTP para acceder al objeto Request estándar
         const request = ctx.switchToHttp().getRequest();
