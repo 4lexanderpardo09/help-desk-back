@@ -19,9 +19,8 @@ graph TD
     %% Estilos de Nodos
     classDef person fill:#08427b,stroke:#052e56,color:white,rx:5,ry:5;
     classDef system fill:#1168bd,stroke:#0b4884,color:white,rx:5,ry:5;
-    classDef external fill:#999999,stroke:#666666,color:white,rx:5,ry:5;
 
-    %% Actores Principales - Etiquetas simplificadas para evitar cortes
+    %% Actores Principales
     Solicitante[("👤 Solicitante")]:::person
     Agente[("🎧 Agente")]:::person
     Supervisor[("📊 Supervisor")]:::person
@@ -29,21 +28,16 @@ graph TD
     %% Sistema Central
     HelpDesk[("🖥️ Mesa de Ayuda")]:::system
 
-    %% Sistemas Externos
-    AD[("🪪 Directorio Activo")]:::external
-
     %% Interacciones
     Solicitante -- "1. Usa el sistema" --> HelpDesk
     Agente -- "2. Gestiona tickets" --> HelpDesk
     Supervisor -- "3. Audita" --> HelpDesk
-    
-    HelpDesk -. "4. Auth (Futuro)" .-> AD
 ```
 
 ---
 
 ## 3. Nivel 2: Diagrama de Contenedores (Arquitectura Técnica)
-Este nivel detalla la arquitectura de software, mostrando los contenedores desplegables y sus responsabilidades.
+Este nivel detalla los contenedores específicos y las tecnologías que dan vida al sistema.
 
 ```mermaid
 graph TD
@@ -53,29 +47,40 @@ graph TD
     classDef db fill:#336791,stroke:#20232a,color:white,rx:5,ry:5;
     classDef fs fill:#f39c12,stroke:#20232a,color:white,rx:5,ry:5;
 
-    subgraph "Cliente"
-        SPA("⚛️ Frontend (React)"):::spa
+    subgraph "Navegador Web (Cliente)"
+        SPA("⚛️ Single Page App<br>(React + Vite)"):::spa
     end
 
-    subgraph "Servidor Backend"
-        API("🛡️ API Gateway (NestJS)"):::api
+    subgraph "Servidor de Aplicación (Backend)"
+        API("🛡️ API REST Core<br>(NestJS)"):::api
     end
 
-    subgraph "Persistencia"
-        DB[("🐬 MySQL")]:::db
-        Files[("📂 Archivos")]:::fs
+    subgraph "Infraestructura de Datos"
+        DB[("🐬 Base de Datos<br>(MySQL 8)")]:::db
+        Files[("📂 Almacenamiento<br>(Local Disk)")]:::fs
     end
 
-    %% Relaciones
-    SPA -- "HTTPS / JSON" --> API
+    %% Relaciones Específicas
+    SPA -- "JSON / HTTPS (Axios)" --> API
 
-    API -- "SQL / TypeORM" --> DB
-    API -- "I/O" --> Files
+    API -- "Query / TCP (TypeORM)" --> DB
+    API -- "fs.writeFile / Stream" --> Files
 
-    %% Notas
-    note1[/"JWT Stateless"/] 
+    %% Detalles Internos del Backend (Notas)
+    note1[/"Auth: Passport + JWT"/]
+    note2[/"ACL: CASL (Roles)"/]
+    
     note1 -.-> API
+    note2 -.-> API
 ```
+
+### Componentes Clave del Nivel 2
+1.  **Single Page App (SPA)**: Aplicación React compilada con Vite. Se ejecuta totalmente en el navegador del usuario. Usa `Axios` para comunicarse con el servidor.
+2.  **API REST Core**: Aplicación Node.js construida sobre NestJS. Actúa como orquestador central.
+    *   **Passport + JWT**: Maneja la identificación segura de usuarios por token.
+    *   **CASL**: Motor que decide "quién puede hacer qué" dentro de la API.
+3.  **MySQL**: Motor de base de datos relacional. Almacena usuarios, tickets, flujos y configuraciones. Conectado vía `TypeORM`.
+4.  **File System**: Carpeta local del servidor donde se guardan físicamente los PDFs generados y evidencias adjuntas.
 
 ---
 
@@ -85,20 +90,17 @@ Justificación de las tecnologías elegidas para garantizar escalabilidad y mant
 ### 4.1 Frontend (La Cara del Usuario)
 *   **Tecnología**: **React** con **Vite**.
 *   **Lenguaje**: TypeScript (Strict Mode).
-*   **Estilos**: **Tailwind CSS**. No usamos CSS puro ni preprocesadores complejos para mantener la consistencia y velocidad de desarrollo.
-*   **Estado**: React Context + Hooks. Gestión ligera sin la complejidad de Redux.
-*   **Rol**: Renderizado de UI, validación de formularios y experiencia de usuario interactiva (SPA).
+*   **Estilos**: **Tailwind CSS**. Estilizado utilitario para desarrollo rápido.
+*   **Cliente HTTP**: **Axios**. Para manejo robusto de peticiones REST.
 
 ### 4.2 Backend (El Cerebro)
-*   **Tecnología**: **NestJS**. Framework progresivo que impone una arquitectura modular y ordenada.
-*   **Lenguaje**: TypeScript. Comparte tipos e interfaces con el frontend.
-*   **Seguridad**: **Passport + JWT**. Autenticación sin estado (Stateless).
-*   **Autorización**: **CASL**. Control de permisos granular basado en habilidades (Attribute Based Access Control - ABAC).
+*   **Tecnología**: **NestJS**. Framework modular para Node.js.
+*   **Lenguaje**: TypeScript.
+*   **Seguridad**: **JWT**. Tokens firmados para autenticación.
+*   **ORM**: **TypeORM**. Mapeo objeto-relacional seguro contra inyecciones SQL.
 
 ### 4.3 Datos (La Memoria)
-*   **Base de Datos**: **MySQL**. Robusta, relacional y consistente.
-*   **ORM**: **TypeORM**. Abstracción de base de datos que facilita migraciones y manejo de entidades.
-*   **Almacenamiento**: Sistema de archivos local para PDFs y adjuntos (escalable a S3 en el futuro).
+*   **Base de Datos**: **MySQL**. Estándar de industria para datos relacionales.
 
 ---
 
