@@ -75,7 +75,7 @@ export class TicketListingService {
         }
     }
 
-    private async processResult(qb: SelectQueryBuilder<Ticket>, filters: TicketFilterDto): Promise<TicketListResponseDto> {
+    private async processResult(qb: SelectQueryBuilder<Ticket>, filters: TicketFilterDto, userId: number): Promise<TicketListResponseDto> {
         const page = filters.page || 1;
         const limit = filters.limit || 10;
         const skip = (page - 1) * limit;
@@ -101,7 +101,7 @@ export class TicketListingService {
                 .where('te.ticketId IN (:...ids)', { ids: ticketIds })
                 .andWhere('te.estado = 1')
                 .andWhere('e.estado = 1')
-                .andWhere('e.usuarioId = :userId', { userId: user.usu_id })
+                .andWhere('e.usuarioId = :userId', { userId })
                 .getMany();
 
             tags.forEach(te => {
@@ -273,6 +273,6 @@ export class TicketListingService {
         // 3. Filtros Standard
         this.applyFilters(qb, filters);
 
-        return this.processResult(qb, filters);
+        return this.processResult(qb, filters, user.usu_id);
     }
 }

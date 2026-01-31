@@ -18,31 +18,27 @@ export class TagsController {
     @ApiOperation({ summary: 'Listar mis etiquetas' })
     @CheckPolicies((ability: AppAbility) => ability.can('read', 'Ticket')) // Using Ticket ability as proxy for general access
     async findAll(@Req() req: any) {
-        const user = req.user as AuthUser;
-        return this.service.findAllByUser(user.id);
+        return this.service.findAllByUser(req.user.usu_id);
     }
 
     @Post()
     @ApiOperation({ summary: 'Crear nueva etiqueta personal' })
     @CheckPolicies((ability: AppAbility) => ability.can('create', 'Ticket'))
     async create(@Body() body: any, @Req() req: any) {
-        const user = req.user as AuthUser;
-        return this.service.create(body, user.id);
+        return this.service.create(body, req.user.usu_id);
     }
 
     @Patch(':id')
     @ApiOperation({ summary: 'Actualizar etiqueta' })
     @CheckPolicies((ability: AppAbility) => ability.can('update', 'Ticket'))
     async update(@Param('id') id: number, @Body() body: any, @Req() req: any) {
-        const user = req.user as AuthUser;
-        return this.service.update(id, body, user.id);
+        return this.service.update(id, body, req.user.usu_id);
     }
 
     @Delete(':id')
     @ApiOperation({ summary: 'Eliminar etiqueta' })
     @CheckPolicies((ability: AppAbility) => ability.can('delete', 'Ticket'))
     async delete(@Param('id') id: number, @Req() req: any) {
-        const user = req.user as AuthUser;
-        return this.service.delete(id, user.id);
+        return this.service.delete(id, req.user.usu_id);
     }
 }

@@ -18,24 +18,21 @@ export class TicketErrorController {
     @ApiOperation({ summary: 'Reportar un error en un ticket' })
     @CheckPolicies((ability: AppAbility) => ability.can('create', 'Ticket')) // Any active user
     async create(@Body() body: any, @Req() req: any) {
-        const user = req.user as AuthUser;
-        return this.service.create(body, user.id);
+        return this.service.create(body, req.user.usu_id);
     }
 
     @Get('received')
     @ApiOperation({ summary: 'Errores reportados hacia mí' })
     @CheckPolicies((ability: AppAbility) => ability.can('read', 'Ticket'))
     async getReceived(@Req() req: any) {
-        const user = req.user as AuthUser;
-        return this.service.getReceivedErrors(user.id);
+        return this.service.getReceivedErrors(req.user.usu_id);
     }
 
     @Get('reported')
     @ApiOperation({ summary: 'Errores que yo reporté' })
     @CheckPolicies((ability: AppAbility) => ability.can('read', 'Ticket'))
     async getReported(@Req() req: any) {
-        const user = req.user as AuthUser;
-        return this.service.getReportedErrors(user.id);
+        return this.service.getReportedErrors(req.user.usu_id);
     }
 
     @Get('stats')
