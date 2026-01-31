@@ -7,12 +7,12 @@ El sistema **Help Desk (Mesa de Ayuda)** es una plataforma empresarial diseñada
 *   **Centralización**: Un único punto de entrada para todos los requerimientos.
 *   **Automatización**: Flujos de trabajo configurables que asignan tickets automáticamente según reglas de negocio.
 *   **Seguridad**: Control de acceso granular basado en Roles y Habilidades (CASL).
-*   **Visibilidad**: Dashboards en tiempo real y reportes de cumplimiento de SLA.
+*   **Visibilidad**: Dashboards y reportes de cumplimiento de SLA.
 
 ---
 
 ## 2. Nivel 1: Diagrama de Contexto del Sistema
-Este nivel representa el "Big Picture". Muestra el sistema en el centro y su relación con usuarios y sistemas externos.
+Este nivel representa el "Big Picture". Muestra el sistema en el centro y su relación con los usuarios.
 
 ```mermaid
 graph TD
@@ -30,7 +30,6 @@ graph TD
     HelpDesk[("🖥️ Sistema Mesa de Ayuda<br><small>Gestión de Tickets, SLAs y Flujos</small>")]:::system
 
     %% Sistemas Externos
-    EmailSys[("📧 Servidor de Correo<br><small>SMTP / Exchange</small>")]:::external
     AD[("🪪 Directorio Activo (Futuro)<br><small>SSO / Autenticación</small>")]:::external
 
     %% Interacciones
@@ -38,8 +37,7 @@ graph TD
     Agente -- "2. Recibe asignaciones, resuelve incidentes" --> HelpDesk
     Supervisor -- "3. Monitorea SLAs, reasigna cargas" --> HelpDesk
     
-    HelpDesk -- "4. Envía notificaciones de estado" --> EmailSys
-    HelpDesk -. "5. Valida credenciales (Proyección)" .-> AD
+    HelpDesk -. "4. Valida credenciales (Proyección)" .-> AD
 ```
 
 ---
@@ -64,23 +62,20 @@ graph TD
     end
 
     subgraph "Capa de Persistencia"
-        DB[("� MySQL<br><small>Datos Relacionales, Usuarios, Tickets</small>")]:::db
+        DB[("🐬 MySQL<br><small>Datos Relacionales, Usuarios, Tickets</small>")]:::db
         Files[("📂 File System<br><small>Archivos Adjuntos, PDFs Generados</small>")]:::fs
     end
 
     %% Relaciones
     SPA -- "HTTPS / JSON (REST)" --> API
-    SPA -- "WSS (Socket.io)" --> API
 
     API -- "TypeORM (SQL Pool)" --> DB
     API -- "IO Streams" --> Files
 
     %% Notas de Implementación
     note1[/"⚠️ Autenticación Stateless (JWT)"/] 
-    note2[/"⚡ Eventos en tiempo real"/]
     
     note1 -.-> API
-    note2 -.-> SPA
 ```
 
 ---
@@ -100,7 +95,6 @@ Justificación de las tecnologías elegidas para garantizar escalabilidad y mant
 *   **Lenguaje**: TypeScript. Comparte tipos e interfaces con el frontend.
 *   **Seguridad**: **Passport + JWT**. Autenticación sin estado (Stateless).
 *   **Autorización**: **CASL**. Control de permisos granular basado en habilidades (Attribute Based Access Control - ABAC).
-*   **WebSockets**: **Socket.io**. Comunicación bidireccional para notificar "Nuevo Ticket" o "Ticket Asignado" sin que el usuario recargue la página.
 
 ### 4.3 Datos (La Memoria)
 *   **Base de Datos**: **MySQL**. Robusta, relacional y consistente.
@@ -117,5 +111,4 @@ Para entender cómo conectan las piezas, describimos el viaje de un dato a trav�
 3.  **Backend (Guard)**: `JwtAuthGuard` verifica el token. `PoliciesGuard` verifica si el usuario tiene permiso `create` sobre `Ticket`.
 4.  **Backend (Service)**: `TicketService` recibe los datos, calcula asignaciones automáticas (Motor de Reglas) e inicia el flujo.
 5.  **Base de Datos**: Se inserta el registro en MySQL dentro de una transacción.
-6.  **Backend (Event)**: Se emite un evento WebSocket `ticket.created` a la sala de coordinadores.
-7.  **Frontend (Coordinador)**: La interfaz del coordinador recibe el evento y muestra una notificación "Toast" instantánea y actualiza la tabla de tickets.
+6.  **Respuesta**: El backend confirma la creación (`201 Created`) y el frontend redirige al usuario al detalle del ticket o listado.
