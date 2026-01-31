@@ -1,61 +1,61 @@
 import { Injectable } from '@nestjs/common';
-import { addDays, isWeekend, addMinutes, format } from 'date-fns';
+import { addDays, isWeekend, addHours, isSaturday, isSunday } from 'date-fns';
 
+/**
+ * Servicio de Utilidades de Fecha (DateHelper).
+ * * Provee métodos para manipulación de fechas considerando reglas de negocio
+ * básicas, principalmente la exclusión de fines de semana (Sábados y Domingos).
+ */
 @Injectable()
 export class DateUtilService {
 
     /**
-     * Calcula la fecha final sumando horas hábiles a una fecha de inicio.
-     * Considera fines de semana como no hábiles.
-     * (Simplificado: 8h a 18h, Lunes a Viernes)
-     * 
-     * @param startDate Fecha Inicio
-     * @param hours Horas a sumar
-     * @returns Fecha calculada
+     * Calcula una fecha final sumando una cantidad de horas hábiles.
+     * * Lógica simplificada para migración MVP:
+     * 1. Suma las horas solicitadas a la fecha actual.
+     * 2. Si el resultado cae en fin de semana, lo mueve al siguiente Lunes a la misma hora.
+     * * * Nota: No contempla festivos ni horarios de oficina (ej. 8am-6pm) en esta versión.
+     * Para cálculo estricto de horas laborales, se requiere una lógica iterativa más compleja.
+     * * @param startDate Fecha y hora de inicio.
+     * @param hours Cantidad de horas a sumar.
+     * @returns Fecha calculada, garantizando que no sea fin de semana.
      */
     addBusinessHours(startDate: Date, hours: number): Date {
-        // Legacy "DateHelper" implementation logic would go here.
-        // For now, using a simplified approximation or direct conversion if business rules are standard.
-        // If strict business hours needed (e.g. 8-5pm), logic is complex.
+        // 1. Suma directa de horas
+        let finalDate = addHours(startDate, hours);
 
-        // Basic approximation: 
-        // If plain hours, just add.
-        // But legacy implied business days. 
-
-        let currentDate = new Date(startDate);
-        let minutesToAdd = hours * 60;
-
-        // Simple loop approach (expensive for large durations but precise)
-        while (minutesToAdd > 0) {
-            currentDate = addMinutes(currentDate, 1);
-
-            // Check if within business hours (e.g., 08:00 - 18:00) and not weekend
-            // This needs specific rules from legacy. Defaulting to standard 24h for now 
-            // unless simplified "Business Days" logic is preferred.
-
-            // For MVP migration: 
-            // If hours <= 24, add directly.
-            // If checking business days (weekends):
-            if (!isWeekend(currentDate)) {
-                minutesToAdd--;
+        // 2. Ajuste si cae en fin de semana
+        if (isWeekend(finalDate)) {
+            if (isSaturday(finalDate)) {
+                // Si es Sábado, sumar 2 días para llegar al Lunes
+                finalDate = addDays(finalDate, 2);
+            } else if (isSunday(finalDate)) {
+                // Si es Domingo, sumar 1 día para llegar al Lunes
+                finalDate = addDays(finalDate, 1);
             }
-            // If weekend, we loop but don't decrement minutesToAdd?
-            // No, simply skipping weekends.
-            // If current is weekend, just move to next day 00:00?
-            // Correct logic is simpler: Add days, skipping weekends.
         }
-        return currentDate;
+
+        return finalDate;
     }
 
     /**
-     * Suma días hábiles
+     * Calcula una fecha final sumando días hábiles (Business Days).
+     * * Omite Sábados y Domingos del conteo.
+     * * Ejemplo: Si sumas 2 días hábiles a un Viernes, el resultado será el Martes.
+     * * @param startDate Fecha de inicio.
+     * @param days Cantidad de días hábiles a sumar.
+     * @returns Fecha resultante saltando fines de semana.
      */
     addBusinessDays(startDate: Date, days: number): Date {
         let currentDate = new Date(startDate);
         let addedDays = 0;
 
+        // Bucle hasta completar los días requeridos
         while (addedDays < days) {
+            // Avanzamos un día natural
             currentDate = addDays(currentDate, 1);
+
+            // Solo incrementamos el contador si NO es fin de semana
             if (!isWeekend(currentDate)) {
                 addedDays++;
             }
